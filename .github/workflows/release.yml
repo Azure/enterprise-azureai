@@ -1,0 +1,75 @@
+name: Release
+
+env:
+  # deploymentNameBuild: ${{ github.event.inputs.deploymentNameBuild }}
+  # location: ${{ github.event.inputs.location }}
+  resourceGroup: '${{ secrets.PREFIX }}-rg'
+  releaseAPIMBicepPath: './deploy/release/apim_apis.bicep'
+  deploymentNameAPIMRelease: '${{ secrets.PREFIX }}apimrelease'
+
+on:
+  # Only trigger, when the build workflow succeeded
+  workflow_run:
+    workflows: ["Build"]
+    types:
+      - completed
+  # Allows you to run this workflow manually from the Actions tab
+  workflow_dispatch:
+  #   inputs:
+  #     deploymentNameBuild:
+  #       description: 'Deployment Name Build'     
+  #       required: true
+  #     location:
+  #       description: 'Location for deployment'     
+  #       required: true
+
+# A workflow run is made up of one or more jobs that can run sequentially or in parallel
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+
+      # LOGIN TO AZURE. THE LOGGED IN SESSION IS ACTIVE TILL A LOGOUT ACTION IS CALLED (OR THE JOB FINISHED)
+      - uses: azure/login@v1
+        with:
+          creds: ${{ secrets.AZURE_CREDENTIALS }}
+          enable-AzPSSession: true 
+
+      # SET CORRECT AZURE CONTEXT
+      - name: 'Set context to subscription'
+        uses: azure/powershell@v1
+        with:
+          inlineScript: |
+            Set-AzContext -Subscription ${{ secrets.AZURE_SUBSCRIPTION_ID }}
+          azPSVersion: "latest"
+
+      # IMPORT MODULES
+      - name: 'Import modules & extensions'
+        uses: azure/powershell@v1
+        with:
+          inlineScript: |
+            az extension add --name application-insights
+          azPSVersion: "latest"
+
+      - name: 'Retrieve API Management Instance & Application Insights Name'
+        uses: azure/powershell@v1
+        with:
+          inlineScript: |
+            $apimName = az apim list --resource-group '${{ env.resourceGroup }}' --subscription '${{ secrets.AZURE_SUBSCRIPTION_ID }}' --query '[].{Name:name}' -o tsv
+            $appInsightsName = az monitor app-insights component show -g '${{ env.resourceGroup }}'--query "[].{applicationId:applicationId}" -o tsv
+            echo "APIM_NAME=$apimName" >> $Env:GITHUB_ENV
+            echo "APPINSIGHTS_NAME=$appInsightsName" >> $Env:GITHUB_ENV
+          azPSVersion: "latest"
+
+      - name: 'Release API definition to API Management'
+        uses: azure/powershell@v1
+        with:
+          inlineScript: |
+            New-AzResourceGroupDeployment -Name '${{ env.deploymentNameAPIMRelease }}' -ResourceGroupName '${{ env.resourceGroup }}' -apimName '${{ env.APIM_NAME }}' -appInsightsName '${{ env.APPINSIGHTS_NAME }}' -TemplateFile '${{ env.releaseAPIMBicepPath }}'
+          azPSVersion: "latest"
+
+      # LOGOUT
+      - name: logout
+        run: |
+          az logout

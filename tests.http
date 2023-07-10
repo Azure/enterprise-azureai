@@ -1,0 +1,4 @@
+@apimName = <your_apim_name>
+
+### HttpBin API - Get
+GET https://{{apimName}}.azure-api.net/httpbin/get

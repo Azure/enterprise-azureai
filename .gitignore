@@ -1,2 +1,1 @@
-local.deploy.ps1
-local.tests.http
+.azure

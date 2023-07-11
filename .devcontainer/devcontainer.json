@@ -1,116 +1,39 @@
-// For format details, see https://aka.ms/devcontainer.json. For config options, see the
-// README at: https://github.com/devcontainers/templates/tree/main/src/dotnet
 {
-	"name": "AIS (.NET Core 3)",
-	// Or use a Dockerfile or Docker Compose file. More info: https://containers.dev/guide/dockerfile
-	//"image": "mcr.microsoft.com/devcontainers/dotnet:0-7.0-bullseye",
-	"image": "mcr.microsoft.com/azure-functions/dotnet:3.0-dotnet3-core-tools",
-	"features": {
-		"ghcr.io/devcontainers/features/azure-cli:1": {}
-	},
-	"customizations": {
-		"vscode": {
-			"extensions": [
-				// Required extensions
-				"GitHub.copilot",
-				"GitHub.copilot-nightly",
-				"ms-dotnettools.csharp",
-				"ms-vscode.PowerShell",
-				"ms-vscode.vscode-node-azure-pack",
-				"VisualStudioExptTeam.vscodeintellicode",
-				
-				// Recommended extensions - Azure
-				"Azurite.azurite",
-				"ms-azuretools.vscode-bicep",
-				"ms-vscode.azure-account",
-				"ms-azuretools.vscode-azurecli",
-				"ms-azuretools.vscode-azurestorage",
-				"formulahendry.azure-storage-explorer",
-
-				// Recommended extensions - Azure Integration Services
-				"ms-azuretools.vscode-apimanagement",
-				"ms-azuretools.vscode-logicapps",
-				"ms-azuretools.vscode-azurelogicapps",
-				"ms-azuretools.data-mapper-vscode-extension",
-				"digital-molecules.service-bus-explorer",
-
-				// Recommended extensions - Integration
-				"humao.rest-client",
-				"kirchner-trevor.shopify-liquid-preview",
-				"sissel.shopify-liquid",
-				"DotJoshJohnson.xml",
-				"42Crunch.vscode-openapi",
-				"GraphQL.vscode-graphql",
-				"GraphQL.vscode-graphql-syntax",
-
-				// Recommended extensions - Azure Data Services
-				//"ms-azuretools.vscode-cosmosdb",
-				//"ms-mssql.mssql",
-				//"mtxr.sqltools",
-				//"ms-mssql.data-workspace-vscode",
-
-				// Recommended extensions - Azure Streaming Services
-				//"Summer.azure-event-hub-explorer",
-				//"ms-azuretools.vscode-azureeventhubs",
-				//"ms-bigdatatools.vscode-asa",
-
-				// Recommended extensions - Collaboration
-				//"eamodio.gitlens",
-				//"EditorConfig.EditorConfig",
-				//"MS-vsliveshare.vsliveshare-pack",
-				//"streetsidesoftware.code-spell-checker",
-
-				// Recommended extensions - .NET
-				//"Fudge.auto-using",
-				//"jongrant.csharpsortusings",
-				//"kreativ-software.csharpextensions",
-
-				// Recommended extensions - Power Platform
-				//"microsoft-IsvExpTools.powerplatform-vscode",
-
-				// Recommended extensions - Markdown
-				//"bierner.github-markdown-preview",
-				//"DavidAnson.vscode-markdownlint",
-				//"docsmsft.docs-linting",
-				//"johnpapa.read-time",
-				//"yzhang.markdown-all-in-one",
-			],
-			"settings": {
-				// Uncomment if you want to use zsh as the default shell
-				"terminal.integrated.defaultProfile.linux": "pwsh",
-				"terminal.integrated.profiles.linux": {
-				  "zsh": {
-					"path": "/usr/bin/zsh"
-				  },
-				  "pwsh": {
-					"path": "pwsh",
-					"icon": "terminal-powershell"
-				  }
-				}
-			}
-		}
-	},
-	// Features to add to the dev container. More info: https://containers.dev/features.
-	// "features": {},
-	// Use 'forwardPorts' to make a list of ports inside the container available locally.
-	// "forwardPorts": [5000, 5001],
-	// "portsAttributes": {
-	//		"5001": {
-	//			"protocol": "https"
-	//		}
-	// }
-	// Use 'postCreateCommand' to run commands after the container is created.
-	// "postCreateCommand": "dotnet restore",
-	// Configure tool-specific properties.
-	// "customizations": {},
-	// Uncomment to connect as root instead. More info: https://aka.ms/dev-containers-non-root.
-	// "remoteUser": "root"
-	"postCreateCommand": "sudo chmod a+rwx /usr/share/dotnet" // avoids needing to run as 'sudo' when starting KernelHttpServer
+    "name": "Azure Developer CLI",
+    "build": {
+        "dockerfile": "Dockerfile",
+        "args": {
+            // List of images: https://github.com/devcontainers/images/tree/main/src
+            "IMAGE": "python:3.10"
+        }
+    },
+    "features": {
+        // See https://containers.dev/features for list of features
+    },
+    "customizations": {
+        "vscode": {
+            "extensions": [
+                "GitHub.vscode-github-actions",
+                "ms-azuretools.azure-dev",
+                "ms-azuretools.vscode-azurefunctions",
+                "ms-azuretools.vscode-bicep",
+                "ms-azuretools.vscode-docker",
+                "humao.rest-client",
+                "ms-vscode.vscode-node-azure-pack",
+                "ms-azuretools.vscode-apimanagement",
+                "GitHub.copilot",
+                "DotJoshJohnson.xml"
+                // Include other VSCode language extensions if needed
+                // Right click on an extension inside VSCode to add directly to devcontainer.json, or copy the extension ID
+            ]
+        }
+    },
+    "forwardPorts": [
+        // Forward ports if needed for local development
+    ],
+    "postCreateCommand": "",
+    "remoteUser": "vscode",
+    "hostRequirements": {
+        "memory": "8gb"
+    }
 }
-// "features": {
-// 	"ghcr.io/devcontainers/features/node:1": {},
-// 	"ghcr.io/devcontainers/features/dotnet:1": {},
-// 	"ghcr.io/jlaundry/devcontainer-features/azure-functions-core-tools:1": {}
-// },
-// "postCreateCommand": "sudo chmod a+rwx /usr/share/dotnet" // avoids needing to run as 'sudo' when starting KernelHttpServer
-// }

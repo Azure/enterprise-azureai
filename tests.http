@@ -1,4 +1,53 @@
-@apimName = <your_apim_name>
+@tenantId = <your_tenant_id>
+@scope = user_impersonation
+@clientId = <app_id_consumer_app_registration>
+@clientSecret = <password_consumer_app_registration>
+@apimName = <api_management_name>
+@apiPath = <api_path>
+@azureOpenAIName = <azure_open_ai_name>
+@azureOpenAIDeploymentId = <azure_open_ai_deployment_id>
+@azureOpenAIApiVersion = 2023-05-15
+@azureOpenAIApiKey = <azure_open_ai_api_key>
+@prompt = "You are a helpful assistant."
 
-### HttpBin API - Get
-GET https://{{apimName}}.azure-api.net/httpbin/get
+### Get Token for consumer
+# @name consumerToken
+
+POST https://login.microsoftonline.com/{{tenantId}}/oauth2/token HTTP/1.1
+Content-Type: application/x-www-form-urlencoded
+
+client_id={{clientId}}
+&scope={{scope}}
+&client_secret={{clientSecret}}
+&grant_type=client_credentials
+
+#### Get Token Response
+@accessToken = {{consumerToken.response.body.$.access_token}}
+
+### Test Azure OpenAI endpoint, chat completion
+POST https://{{azureOpenAIName}}.openai.azure.com/openai/deployments/{{azureOpenAIDeploymentId}}/chat/completions?api-version={{azureOpenAIApiVersion}}
+Content-Type: application/json
+api-key: {{azureOpenAIApiKey}}
+
+{
+    "messages": [
+        {
+            "role": "user",
+            "content": {{prompt}}
+        }
+    ]
+}
+
+### Test Azure API Management endpoint, chat completion
+POST https://{{apimName}}.azure-api.net/{{apiPath}}/deployments/{{azureOpenAIDeploymentId}}/chat/completions?api-version={{azureOpenAIApiVersion}}
+Content-Type: application/json
+Authorization: Bearer {{accessToken}}
+
+{
+    "messages": [
+        {
+            "role": "user",
+            "content": {{prompt}}
+        }
+    ]
+}

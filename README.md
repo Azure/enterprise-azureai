@@ -1,102 +1,75 @@
-# ais-apim-devops
+# Azure Developer CLI (azd) Bicep Starter
 
-## Build Status
+A starter blueprint for getting your application up on Azure using [Azure Developer CLI](https://learn.microsoft.com/en-us/azure/developer/azure-developer-cli/overview) (azd). Add your application code, write Infrastructure as Code assets in [Bicep](https://aka.ms/bicep) to get your application up and running quickly.
 
-| GitHub Action | Status |
-| ----------- | ----------- |
-| Build | [![Build](https://github.com/pascalvanderheiden/ais-apim-devops/actions/workflows/build.yml/badge.svg?branch=main)](https://github.com/pascalvanderheiden/ais-apim-devops/actions/workflows/build.yml) |
-| Release | [![Release](https://github.com/pascalvanderheiden/ais-apim-devops/actions/workflows/release.yml/badge.svg)](https://github.com/pascalvanderheiden/ais-apim-devops/actions/workflows/release.yml) |
+The following assets have been provided:
 
-## About
+- Infrastructure-as-code (IaC) Bicep files under the `infra` folder that demonstrate how to provision resources and setup resource tagging for azd.
+- A [dev container](https://containers.dev) configuration file under the `.devcontainer` directory that installs infrastructure tooling by default. This can be readily used to create cloud-hosted developer environments such as [GitHub Codespaces](https://aka.ms/codespaces).
+- Continuous deployment workflows for CI providers such as GitHub Actions under the `.github` directory, and Azure Pipelines under the `.azdo` directory that work for most use-cases.
 
-This a repository about how you can setup [Azure API Management](https://docs.microsoft.com/en-us/azure/api-management/overview) service via a centrally managed team, which enforced organizational policies, but provides a self-service experience for developers to manage their own APIs. This is question I get every often, and I wanted to create a reference architecture for this.
+## Next Steps
 
-Policies are used to modify, enforced on different levels and secure your APIs in API Management. The API Management Product Team already created a very useful set of [snippets](https://github.com/Azure/api-management-policy-snippets), but I wanted to make it easy to use and deploy them. I've added the VSCode snippets file from the above repository to this VSCode project. This makes it a lot easier to create your policies from VSCode. Follow [this instruction](https://code.visualstudio.com/docs/editor/userdefinedsnippets#_create-your-own-snippets) to create your own snippets or use this one with other projects. 
+### Step 1: Add application code
 
-For deployment I choose to do it all in Bicep templates. I got most of my examples from [here](https://github.com/Azure/bicep/tree/main/docs/examples).
+1. Initialize the service source code projects anywhere under the current directory. Ensure that all source code projects can be built successfully.
+    - > Note: For `function` services, it is recommended to initialize the project using the provided [quickstart tools](https://learn.microsoft.com/en-us/azure/azure-functions/functions-get-started).
+2. Once all service source code projects are building correctly, update `azure.yaml` to reference the source code projects.
+3. Run `azd package` to validate that all service source code projects can be built and packaged locally.
 
-For the teams to have their own environment of API Management, we'll be using the Preview Feature in API Management, Workspaces.
+### Step 2: Provision Azure resources
 
-Hope you find this useful!
+Update or add Bicep files to provision the relevant Azure resources. This can be done incrementally, as the list of [Azure resources](https://learn.microsoft.com/en-us/azure/?product=popular) are explored and added.
 
-## Architecture
+- A reference library that contains all of the Bicep modules used by the azd templates can be found [here](https://github.com/Azure-Samples/todo-nodejs-mongo/tree/main/infra/core).
+- All Azure resources available in Bicep format can be found [here](https://learn.microsoft.com/en-us/azure/templates/).
 
-![ais-apim-devops](docs/images/arch.png)
+Run `azd provision` whenever you want to ensure that changes made are applied correctly and work as expected.
 
-## Prerequisites
+### Step 3: Tie in application and infrastructure
 
-* Install [Visual Studio Code](https://code.visualstudio.com/download)
-* Install [REST Client](https://marketplace.visualstudio.com/items?itemName=humao.rest-client) Extension for Visual Studio Code.
-* Install [Azure CLI](https://docs.microsoft.com/en-us/cli/azure/install-azure-cli)
+Certain changes to Bicep files or deployment manifests are required to tie in application and infrastructure together. For example:
 
-## Deploy Manually
+1. Set up [application settings](#application-settings) for the code running in Azure to connect to other Azure resources.
+1. If you are accessing sensitive resources in Azure, set up [managed identities](#managed-identities) to allow the code running in Azure to securely access the resources.
+1. If you have secrets, it is recommended to store secrets in [Azure Key Vault](#azure-key-vault) that then can be retrieved by your application, with the use of managed identities.
+1. Configure [host configuration](#host-configuration) on your hosting platform to match your application's needs. This may include networking options, security options, or more advanced configuration that helps you take full advantage of Azure capabilities.
 
-* Git Clone the repository
+For more details, see [additional details](#additional-details) below.
 
-```ps1
-git clone https://github.com/pascalvanderheiden/ais-apim-snippets.git
-```
+When changes are made, use azd to validate and apply your changes in Azure, to ensure that they are working as expected:
 
-* Deploy it all by one script
+- Run `azd up` to validate both infrastructure and application code changes.
+- Run `azd deploy` to validate application code changes only.
 
-I've included all the steps in 1 Powershell script. This will create all the needed resources. Keep in mind that this will take a while to deploy.
+### Step 4: Up to Azure
 
-I've used these variables:
+Finally, run `azd up` to run the end-to-end infrastructure provisioning (`azd provision`) and deployment (`azd deploy`) flow. Visit the service endpoints listed to see your application up-and-running!
 
-```ps1
-$subscriptionId = "<subscription_id>"
-$namePrefix = "<project_prefix>"
+## Additional Details
 
-# For removing soft-delete
-$apimName = "<apim_name>"
-```
+The following section examines different concepts that help tie in application and infrastructure.
 
-```ps1
-.\deploy\manual-deploy.ps1 -subscriptionId $subscriptionId -namePrefix $namePrefix
-```
+### Application settings
 
-* Remove the APIM Soft-delete
+It is recommended to have application settings managed in Azure, separating configuration from code. Typically, the service host allows for application settings to be defined.
 
-If you deleted the deployment via the Azure Portal, and you want to run this deployment again, you might run into the issue that the APIM name is still reserved because of the soft-delete feature. You can remove the soft-delete by using this script:
+- For `appservice` and `function`, application settings should be defined on the Bicep resource for the targeted host. Reference template example [here](https://github.com/Azure-Samples/todo-nodejs-mongo/tree/main/infra).
+- For `aks`, application settings are applied using deployment manifests under the `<service>/manifests` folder. Reference template example [here](https://github.com/Azure-Samples/todo-nodejs-mongo-aks/tree/main/src/api/manifests).
 
-```ps1
-.\deploy\del-soft-delete-apim.ps1 -subscriptionId $subscriptionId -apimName $apimName
-```
+### Managed identities
 
-* Testing
+[Managed identities](https://learn.microsoft.com/en-us/azure/active-directory/managed-identities-azure-resources/overview) allows you to secure communication between services. This is done without having the need for you to manage any credentials.
 
-I've included a tests.http file with relevant Test you can perform, to check if your deployment is successful.
+### Azure Key Vault
 
-## Deploy with Azure DevOps
+[Azure Key Vault](https://learn.microsoft.com/en-us/azure/key-vault/general/overview) allows you to store secrets securely. Your application can access these secrets securely through the use of managed identities.
 
-tbd
+### Host configuration
 
-## Setup Azure DevOps for Teams
+For `appservice`, the following host configuration options are often modified:
 
-## Deploy with Github Actions
-
-* Fork this repository
-
-* Generate a Service Principal
-
-```ps1
-az ad sp create-for-rbac -n <name_sp> --role Contributor --sdk-auth --scopes /subscriptions/<subscription_id>
-```
-
-Copy the json output of this command.
-
-* Update GitHub Secrets for customizing your deployment
-
-In the repository go to 'Settings', on the left 'Secrets', 'Actions'.
-And pass the json output in the command used above into the secret 'AZURE_CREDENTIALS'.
-
-The following secrets need to be created:
-
-* AZURE_CREDENTIALS
-* AZURE_SUBSCRIPTION_ID
-* LOCATION
-* PREFIX
-
-### Commit
-
-Commit the changes, and this will trigger the CI Build Pipeline.
+- Language runtime version
+- Exposed port from the running container (if running a web service)
+- Allowed origins for CORS (Cross-Origin Resource Sharing) protection (if running a web service backend with a frontend)
+- The run command that starts up your service

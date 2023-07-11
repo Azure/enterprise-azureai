@@ -1,0 +1,22 @@
+<policies>
+    <inbound>
+        <base/>
+        <validate-azure-ad-token tenant-id="{{aad-tenant-id}}">
+            <client-application-ids>
+                <application-id>{{aad-client-application-id}}</application-id>
+            </client-application-ids>
+        </validate-azure-ad-token>
+        <set-header name="api-key" exists-action="override">
+            <value>{{openai-apikey}}</value>
+        </set-header>
+    </inbound>
+    <backend>
+        <base/>
+    </backend>
+    <outbound>
+        <base/>
+    </outbound>
+    <on-error>
+        <base/>
+    </on-error>
+</policies>

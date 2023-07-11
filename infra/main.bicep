@@ -47,14 +47,30 @@ module appreg './modules/azuread/appregistration.bicep' = {
   }
 }
 
-module security './modules/security/security.bicep' = {
-  name: 'security'
+module keyVault './modules/security/keyvault.bicep' = {
+  name: 'keyvault'
   scope: resourceGroup
   params: {
+    name: !empty(keyVaultName) ? keyVaultName : '${abbrs.keyVaultVaults}${resourceToken}'
     location: location
     tags: tags
     principalId: principalId
-    keyVaultName: !empty(keyVaultName) ? keyVaultName : '${abbrs.keyVaultVaults}${resourceToken}'
+  }
+}
+
+module keyVaultAccess './modules/security/keyvault-access.bicep' = {
+  name: 'keyvault-access'
+  scope: resourceGroup
+  params: {
+    keyVaultName: keyVault.outputs.name
+  }
+}
+
+module keyVaultSecret './modules/security/keyvault-secret.bicep' = {
+  name: 'keyvault-secret'
+  scope: resourceGroup
+  params: {
+    keyVaultName: keyVault.outputs.name
     openaiApiKey: openAi.outputs.key
   }
 }
@@ -79,8 +95,8 @@ module apim './modules/apim/apim.bicep' = {
     location: location
     tags: tags
     applicationInsightsName: monitoring.outputs.applicationInsightsName
-    keyVaultSecretName: security.outputs.keyVaultSecretName
-    keyVaultName: security.outputs.keyVaultName
+    keyVaultSecretName: keyVaultSecret.outputs.keyVaultSecretName
+    keyVaultName: keyVault.outputs.name
     openaiEndpoint: openAi.outputs.endpoint
     aadClientApplicationId: appreg.outputs.clientId
   }

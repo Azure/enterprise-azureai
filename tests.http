@@ -2,7 +2,7 @@
 @scope = user_impersonation
 @clientId = <app_id_consumer_app_registration>
 @clientSecret = <password_consumer_app_registration>
-@apimName = <api_management_name>
+@frontDoorName = <api_management_name>
 @apiPath = <api_path>
 @azureOpenAIName = <azure_open_ai_name>
 @azureOpenAIDeploymentId = <azure_open_ai_deployment_id>
@@ -24,22 +24,11 @@ client_id={{clientId}}
 #### Get Token Response
 @accessToken = {{consumerToken.response.body.$.access_token}}
 
-### Test Azure OpenAI endpoint, chat completion
-POST https://{{azureOpenAIName}}.openai.azure.com/openai/deployments/{{azureOpenAIDeploymentId}}/chat/completions?api-version={{azureOpenAIApiVersion}}
-Content-Type: application/json
-api-key: {{azureOpenAIApiKey}}
-
-{
-    "messages": [
-        {
-            "role": "user",
-            "content": {{prompt}}
-        }
-    ]
-}
+### Test Front door health check for API Management backend
+GET https://{{frontDoorName}}-fd.azurefd.net/status-0123456789abcdef
 
 ### Test Azure API Management endpoint, chat completion
-POST https://{{apimName}}.azure-api.net/{{apiPath}}/deployments/{{azureOpenAIDeploymentId}}/chat/completions?api-version={{azureOpenAIApiVersion}}
+POST https://{{frontDoorName}}.azurefd.net/{{apiPath}}/deployments/{{azureOpenAIDeploymentId}}/chat/completions?api-version={{azureOpenAIApiVersion}}
 Content-Type: application/json
 Authorization: Bearer {{accessToken}}
 

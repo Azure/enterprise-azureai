@@ -1,6 +1,16 @@
-# Azure Developer CLI (azd) Bicep Starter
+[![Open in GitHub Codespaces](https://github.com/codespaces/badge.svg)](https://github.com/codespaces/new?hide_repo_select=true&repo=pascalvanderheiden%2Fais-apim-openai)
 
-A starter blueprint for getting your application up on Azure using [Azure Developer CLI](https://learn.microsoft.com/en-us/azure/developer/azure-developer-cli/overview) (azd). Add your application code, write Infrastructure as Code assets in [Bicep](https://aka.ms/bicep) to get your application up and running quickly.
+
+## Build Status
+
+| GitHub Action | Status |
+| ----------- | ----------- |
+| Deploy | [![Deploy](https://github.com/pascalvanderheiden/ais-apim-openai/actions/workflows/build.yml/badge.svg?branch=main)](https://github.com/pascalvanderheiden/ais-apim-openai/actions/workflows/azure-dev.yml) |
+
+## About
+Unleash the power of Azure OpenAI to your application developers in a secure & manageable way with Azure API Management.
+
+I've used the Azure Developer CLI Bicep Starter template to create this repository. With AZD you can create a new repository with a fully functional CI/CD pipeline in minutes. You can find more information about AZD [here](https://learn.microsoft.com/en-us/azure/developer/azure-developer-cli/).
 
 The following assets have been provided:
 
@@ -8,68 +18,100 @@ The following assets have been provided:
 - A [dev container](https://containers.dev) configuration file under the `.devcontainer` directory that installs infrastructure tooling by default. This can be readily used to create cloud-hosted developer environments such as [GitHub Codespaces](https://aka.ms/codespaces).
 - Continuous deployment workflows for CI providers such as GitHub Actions under the `.github` directory, and Azure Pipelines under the `.azdo` directory that work for most use-cases.
 
+## Architecture
+
+![ais-apim-openai](docs/images/arch.png)
+
+## Prerequisites
+
+- [Azure Developer CLI](https://docs.microsoft.com/en-us/azure/developer/azure-developer-cli/)
+
 ## Next Steps
 
-### Step 1: Add application code
+### Step 1: Initialize a new `azd` environment
 
-1. Initialize the service source code projects anywhere under the current directory. Ensure that all source code projects can be built successfully.
-    - > Note: For `function` services, it is recommended to initialize the project using the provided [quickstart tools](https://learn.microsoft.com/en-us/azure/azure-functions/functions-get-started).
-2. Once all service source code projects are building correctly, update `azure.yaml` to reference the source code projects.
-3. Run `azd package` to validate that all service source code projects can be built and packaged locally.
+```shell
+azd init
+```
 
-### Step 2: Provision Azure resources
+It will prompt you to provide a name that will later be used in the name of the deployed resources.
 
-Update or add Bicep files to provision the relevant Azure resources. This can be done incrementally, as the list of [Azure resources](https://learn.microsoft.com/en-us/azure/?product=popular) are explored and added.
+### Step 2: Provision and deploy all the resources
 
-- A reference library that contains all of the Bicep modules used by the azd templates can be found [here](https://github.com/Azure-Samples/todo-nodejs-mongo/tree/main/infra/core).
-- All Azure resources available in Bicep format can be found [here](https://learn.microsoft.com/en-us/azure/templates/).
+```shell
+azd up
+```
 
-Run `azd provision` whenever you want to ensure that changes made are applied correctly and work as expected.
+It will prompt you to login, pick a subscription, and provide a location (like "westeurope"). Then it will provision the resources in your account and deploy the latest code.
 
-### Step 3: Tie in application and infrastructure
+For more details on the deployed services, see [additional details](#additional-details) below.
 
-Certain changes to Bicep files or deployment manifests are required to tie in application and infrastructure together. For example:
+## CI/CD pipeline
 
-1. Set up [application settings](#application-settings) for the code running in Azure to connect to other Azure resources.
-1. If you are accessing sensitive resources in Azure, set up [managed identities](#managed-identities) to allow the code running in Azure to securely access the resources.
-1. If you have secrets, it is recommended to store secrets in [Azure Key Vault](#azure-key-vault) that then can be retrieved by your application, with the use of managed identities.
-1. Configure [host configuration](#host-configuration) on your hosting platform to match your application's needs. This may include networking options, security options, or more advanced configuration that helps you take full advantage of Azure capabilities.
+This project includes a Github workflow and a Azure DevOps Pipeline for deploying the resources to Azure on every push to main. That workflow requires several Azure-related authentication secrets to be stored as Github action secrets. To set that up, run:
 
-For more details, see [additional details](#additional-details) below.
+```shell
+azd pipeline config
+```
 
-When changes are made, use azd to validate and apply your changes in Azure, to ensure that they are working as expected:
+## Monitoring
 
-- Run `azd up` to validate both infrastructure and application code changes.
-- Run `azd deploy` to validate application code changes only.
+The deployed resources include a Log Analytics workspace with an Application Insights dashboard to measure metrics like server response time.
 
-### Step 4: Up to Azure
+To open that dashboard, run this command once you've deployed:
 
-Finally, run `azd up` to run the end-to-end infrastructure provisioning (`azd provision`) and deployment (`azd deploy`) flow. Visit the service endpoints listed to see your application up-and-running!
+```shell
+azd monitor --overview
+```
+
+## Remove the APIM Soft-delete
+
+If you deleted the deployment via the Azure Portal, and you want to run this deployment again, you might run into the issue that the APIM name is still reserved because of the soft-delete feature. You can remove the soft-delete by using this script:
+
+```ps1
+$subscriptionId = "<your-subscription-id>"
+$apimName = "<your-apim-name>"
+Connect-AzAccount
+Set-AzContext -Subscription $subscriptionId
+.\del-soft-delete-apim.ps1 -subscriptionId $subscriptionId -apimName $apimName
+```
+
+## Testing
+
+I've included a [tests.http](tests.http) file with relevant tests you can perform, to check if your deployment is successful.
 
 ## Additional Details
 
 The following section examines different concepts that help tie in application and infrastructure.
 
-### Application settings
+### Azure Front Door
 
-It is recommended to have application settings managed in Azure, separating configuration from code. Typically, the service host allows for application settings to be defined.
+[Azure Front Door](https://azure.microsoft.com/en-us/services/frontdoor/) is a global, scalable entry-point that uses the Microsoft global edge network to create fast, secure, and widely scalable web applications. It offers Layer 7 load balancing and protection against DDoS attacks.
 
-- For `appservice` and `function`, application settings should be defined on the Bicep resource for the targeted host. Reference template example [here](https://github.com/Azure-Samples/todo-nodejs-mongo/tree/main/infra).
-- For `aks`, application settings are applied using deployment manifests under the `<service>/manifests` folder. Reference template example [here](https://github.com/Azure-Samples/todo-nodejs-mongo-aks/tree/main/src/api/manifests).
+### Azure API Management
+
+[Azure API Management](https://azure.microsoft.com/en-us/services/api-management/) is a fully managed service that enables customers to publish, secure, transform, maintain, and monitor APIs. It is a great way to expose your APIs to the outside world in a secure and manageable way.
+
+### Azure OpenAI
+
+[Azure OpenAI](https://azure.microsoft.com/en-us/services/openai/) is a service that provides AI models that are trained on a large amount of data. You can use these models to generate text, images, and more.
 
 ### Managed identities
 
 [Managed identities](https://learn.microsoft.com/en-us/azure/active-directory/managed-identities-azure-resources/overview) allows you to secure communication between services. This is done without having the need for you to manage any credentials.
 
+### Virtual Network
+
+[Azure Virtual Network](https://azure.microsoft.com/en-us/services/virtual-network/) allows you to create a private network in Azure. You can use this to secure communication between services.
+
 ### Azure Key Vault
 
 [Azure Key Vault](https://learn.microsoft.com/en-us/azure/key-vault/general/overview) allows you to store secrets securely. Your application can access these secrets securely through the use of managed identities.
 
-### Host configuration
+### Application Insights
 
-For `appservice`, the following host configuration options are often modified:
+[Application Insights](https://azure.microsoft.com/en-us/services/monitor/) allows you to monitor your application. You can use this to monitor the performance of your application.
 
-- Language runtime version
-- Exposed port from the running container (if running a web service)
-- Allowed origins for CORS (Cross-Origin Resource Sharing) protection (if running a web service backend with a frontend)
-- The run command that starts up your service
+### Log Analytics
+
+[Log Analytics](https://azure.microsoft.com/en-us/services/monitor/) allows you to collect and analyze telemetry data from your application. You can use this to monitor the performance of your application.

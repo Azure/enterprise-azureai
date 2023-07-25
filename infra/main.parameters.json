@@ -7,9 +7,6 @@
       },
       "location": {
         "value": "${AZURE_LOCATION}"
-      },
-      "principalId": {
-      "value": "53948b42-c71b-4fc1-87ad-e0a25d9ae22a"
       }
     }
 }

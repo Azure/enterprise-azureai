@@ -1,19 +1,18 @@
 param keyVaultName string = ''
 @secure()
-param openaiApiKey string
-
-var secretName = 'openai-apikey'
+param secret string
+param secretName string
 
 resource keyVault 'Microsoft.KeyVault/vaults@2022-07-01' existing = {
   name: keyVaultName
 }
 
-resource secret 'Microsoft.KeyVault/vaults/secrets@2021-11-01-preview' = {
+resource keyVaultSecret 'Microsoft.KeyVault/vaults/secrets@2021-11-01-preview' = {
   parent: keyVault
   name: secretName
   properties: {
-    value: openaiApiKey
+    value: secret
   }
 }
 
-output keyVaultSecretName string = secret.name
+output keyVaultSecretName string = keyVaultSecret.name

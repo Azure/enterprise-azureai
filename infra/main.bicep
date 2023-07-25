@@ -9,26 +9,30 @@ param environmentName string
 @description('Primary location for all resources')
 param location string
 
-@description('Id of the user or app to assign application roles')
-param principalId string = ''
-
-@description('Leave blank to use default naming convention')
-param aadClientApplicationName string = ''
+//Leave blank to use default naming conventions
 param resourceGroupName string = ''
 param openAiServiceName string = ''
 param keyVaultName string = ''
+param identityName string = ''
 param apimServiceName string = ''
+param frontDoorName string = ''
+param frontDoorWafName string = ''
 param logAnalyticsName string = ''
 param applicationInsightsDashboardName string = ''
 param applicationInsightsName string = ''
+param vnetName string = ''
+param apimSubnetName string = ''
+param apimNsgName string = ''
+param openaiSubnetName string = ''
+param openaiNsgName string = ''
 
-param openAiSkuName string = 'S0'
-param chatGptDeploymentName string = 'chat'
-param chatGptModelName string = 'gpt-35-turbo'
-
-var subscriptionId = subscription().id
 var abbrs = loadJsonContent('./abbreviations.json')
 var resourceToken = toLower(uniqueString(subscription().id, environmentName, location))
+var keyVaultSecretsUserRoleDefinitionId = '4633458b-17de-408a-b874-0445c86b69e6'
+var openAiSkuName = 'S0'
+var chatGptDeploymentName = 'chat'
+var chatGptModelName = 'gpt-35-turbo'
+var openaiApiKeySecretName = 'openai-apikey'
 var tags = { 'azd-env-name': environmentName }
 
 // Organize resources in a resource group
@@ -38,12 +42,13 @@ resource resourceGroup 'Microsoft.Resources/resourceGroups@2021-04-01' = {
   tags: tags
 }
 
-module appreg './modules/azuread/appregistration.bicep' = {
-  name: 'appreg'
+module userIdentity './modules/security/managed-identity.bicep' = {
+  name: 'userIdentity'
   scope: resourceGroup
   params: {
-    name: !empty(aadClientApplicationName) ? aadClientApplicationName : 'appreg-${environmentName}'
+    name: !empty(identityName) ? identityName : '${abbrs.managedIdentityUserAssignedIdentities}${resourceToken}'
     location: location
+    tags: tags
   }
 }
 
@@ -54,7 +59,16 @@ module keyVault './modules/security/keyvault.bicep' = {
     name: !empty(keyVaultName) ? keyVaultName : '${abbrs.keyVaultVaults}${resourceToken}'
     location: location
     tags: tags
-    principalId: principalId
+  }
+}
+
+module keyVaultRoleAssignment './modules/security/role-assignment.bicep' = {
+  name: 'role-assignment'
+  scope: resourceGroup
+  params: {
+    name: guid(keyVaultSecretsUserRoleDefinitionId,userIdentity.outputs.id,keyVault.outputs.id)
+    userIdentityPrincipalId: userIdentity.outputs.principalId
+    keyVaultSecretsUserRoleDefinitionId: keyVaultSecretsUserRoleDefinitionId
   }
 }
 
@@ -63,15 +77,31 @@ module keyVaultAccess './modules/security/keyvault-access.bicep' = {
   scope: resourceGroup
   params: {
     keyVaultName: keyVault.outputs.name
+    apimName: apim.outputs.name
   }
 }
 
-module keyVaultSecret './modules/security/keyvault-secret.bicep' = {
-  name: 'keyvault-secret'
+module openaiKeyVaultSecret './modules/security/keyvault-secret.bicep' = {
+  name: 'openai-keyvault-secret'
   scope: resourceGroup
   params: {
     keyVaultName: keyVault.outputs.name
-    openaiApiKey: openAi.outputs.key
+    secret: openAi.outputs.key
+    secretName: openaiApiKeySecretName
+  }
+}
+
+module vnet './modules/networking/vnet.bicep' = {
+  name: 'vnet'
+  scope: resourceGroup
+  params: {
+    name: !empty(vnetName) ? vnetName : '${abbrs.networkVirtualNetworks}${resourceToken}'
+    apimSubnetName: !empty(apimSubnetName) ? apimSubnetName : '${abbrs.networkVirtualNetworksSubnets}${resourceToken}-apim'
+    apimNsgName: !empty(apimNsgName) ? apimNsgName : '${abbrs.networkNetworkSecurityGroups}${resourceToken}-apim'
+    openaiSubnetName: !empty(openaiSubnetName) ? openaiSubnetName : '${abbrs.networkVirtualNetworksSubnets}${resourceToken}-openai'
+    openaiNsgName: !empty(openaiNsgName) ? openaiNsgName : '${abbrs.networkNetworkSecurityGroups}${resourceToken}-openai'
+    location: location
+    tags: tags
   }
 }
 
@@ -95,10 +125,31 @@ module apim './modules/apim/apim.bicep' = {
     location: location
     tags: tags
     applicationInsightsName: monitoring.outputs.applicationInsightsName
-    keyVaultSecretName: keyVaultSecret.outputs.keyVaultSecretName
+    openaiKeyVaultSecretName: openaiKeyVaultSecret.outputs.keyVaultSecretName
     keyVaultName: keyVault.outputs.name
     openaiEndpoint: openAi.outputs.endpoint
-    aadClientApplicationId: appreg.outputs.clientId
+    userIdentity: userIdentity.outputs.id
+    apimSubnetId: vnet.outputs.apimSubnetId
+  }
+}
+
+module frontDoor './modules/networking/frontdoor.bicep' = {
+  name: 'frontdoor'
+  scope: resourceGroup
+  params: {
+    name: !empty(frontDoorName) ? frontDoorName : '${abbrs.networkFrontDoors}${resourceToken}'
+    frontDoorWafName: !empty(frontDoorWafName) ? frontDoorWafName : '${abbrs.networkFirewallPoliciesWebApplication}${resourceToken}'
+    apimGwUrl: '${apim.outputs.name}.azure-api.net'
+  }
+}
+
+//Needed for recursive references
+module apimGlobal './modules/apim/apim_global.bicep' = {
+  name: 'apim-global'
+  scope: resourceGroup
+  params: {
+    apimName: apim.outputs.name
+    frontDoorId: frontDoor.outputs.id
   }
 }
 
@@ -128,14 +179,10 @@ module openAi 'modules/ai/cognitiveservices.bicep' = {
   }
 }
 
-
 // App outputs
+output TENTANT_ID string = subscription().tenantId
 output AOI_NAME string = openAi.outputs.name
 output AOI_DEPLOYMENTID string = chatGptDeploymentName
 output AOI_APIKEY string = openAi.outputs.key //note: for production use, this should not be exposed
-output CLIENT_ID string = appreg.outputs.clientId
-output CLIENT_SECRET string = appreg.outputs.clientSecret
-output TENANT_ID string = tenant().tenantId
-output APIM_NAME string = apim.outputs.apimServiceName
+output APIM_NAME string = apim.outputs.name
 output APIM_AOI_PATH string = apim.outputs.apimOpenaiApiPath
-output AZURE_PORTAL_APIM string = 'https://portal.azure.com/resource/subscriptions/${subscriptionId}/resourceGroups/${resourceGroup.name}/providers/Microsoft.ApiManagement/service/${apim.outputs.apimServiceName}/apim-apis'

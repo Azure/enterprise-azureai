@@ -16,7 +16,7 @@ resource keyVaultAccessPolicies 'Microsoft.KeyVault/vaults/accessPolicies@2022-0
   name: name
   properties: {
     accessPolicies: [ {
-        objectId: apim.identity.principalId
+        objectId: apim.identity.userAssignedIdentities[apimName].principalId
         tenantId: subscription().tenantId
         permissions: permissions
       } ]

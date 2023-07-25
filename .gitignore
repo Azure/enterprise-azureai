@@ -1,1 +1,3 @@
 .azure
+local.tests.http
+local.deploy.ps1

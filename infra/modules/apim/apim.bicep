@@ -7,15 +7,16 @@ param publisherEmail string = 'noreply@microsoft.com'
 
 @minLength(1)
 param publisherName string = 'n/a'
-param sku string = 'Consumption'
+param sku string = 'Developer'
 param skuCount int = 1
 param applicationInsightsName string
 param openaiEndpoint string
-param aadClientApplicationId string
-param keyVaultSecretName string
+param openaiKeyVaultSecretName string
 param keyVaultName string
+param userIdentity string
+param apimSubnetId string
 
-var tenantId = tenant().tenantId
+var openaiApiKeyNamedValue = 'openai-apikey'
 
 resource applicationInsights 'Microsoft.Insights/components@2020-02-02' existing = if (!empty(applicationInsightsName)) {
   name: applicationInsightsName
@@ -33,9 +34,19 @@ resource apimService 'Microsoft.ApiManagement/service@2021-08-01' = {
     name: sku
     capacity: (sku == 'Consumption') ? 0 : ((sku == 'Developer') ? 1 : skuCount)
   }
+  identity: {
+    type: 'UserAssigned'
+    userAssignedIdentities: {
+      '${userIdentity}': {}
+    }
+  }
   properties: {
     publisherEmail: publisherEmail
     publisherName: publisherName
+    virtualNetworkType: 'External'
+    virtualNetworkConfiguration: {
+      subnetResourceId: apimSubnetId
+    }
     // Custom properties are not supported for Consumption SKU
     customProperties: sku == 'Consumption' ? {} : {
       'Microsoft.WindowsAzure.ApiManagement.Gateway.Security.Ciphers.TLS_ECDHE_RSA_WITH_AES_256_CBC_SHA': 'false'
@@ -65,46 +76,28 @@ resource apimOpenaiApi 'Microsoft.ApiManagement/service/apis@2022-08-01' = {
     displayName: 'Azure OpenAI Service API'
     serviceUrl: openaiEndpoint
     subscriptionRequired: true
-    format: 'openapi+json-link'
-    value:  'https://raw.githubusercontent.com/pascalvanderheiden/ais-apim-openai/main/infra/modules/apim/openapi/openai-openapiv3.json'
+    format: 'openapi+json'
+    value: loadJsonContent('./openapi/openai-openapiv3.json')
     protocols: [
       'https'
     ]
   }
 }
 
-resource openaiApiKeyNamedValue 'Microsoft.ApiManagement/service/namedValues@2022-08-01' = {
-  name: 'openaiapikey'
+resource apimOpenaiApiKeyNamedValue 'Microsoft.ApiManagement/service/namedValues@2022-08-01' = {
+  name: 'apim-openai-apikey-named-value'
   parent: apimService
   properties: {
-    displayName: keyVaultSecretName
+    displayName: openaiApiKeyNamedValue
     secret: true
     keyVault:{
-      secretIdentifier: '${keyVault.properties.vaultUri}secrets/${keyVaultSecretName}'
-      identityClientId: apimService.identity.principalId
+      secretIdentifier: '${keyVault.properties.vaultUri}secrets/${openaiKeyVaultSecretName}'
+      identityClientId: apimService.identity.userAssignedIdentities[userIdentity].clientId
     }
   }
 }
 
-resource aadTenantIdNamedValue 'Microsoft.ApiManagement/service/namedValues@2022-08-01' = {
-  name: 'aadTenantId'
-  parent: apimService
-  properties: {
-    displayName: 'aad-tenant-id'
-    value: tenantId
-  }
-}
-
-resource aadClientApplicationIdNamedValue 'Microsoft.ApiManagement/service/namedValues@2022-08-01' = {
-  name: 'aadClientApplicationId'
-  parent: apimService
-  properties: {
-    displayName: 'aad-client-application-id'
-    value: aadClientApplicationId
-  }
-}
-
-resource openaiApiPolicies 'Microsoft.ApiManagement/service/apis/policies@2022-08-01' = {
+resource openaiApiPolicy 'Microsoft.ApiManagement/service/apis/policies@2022-08-01' = {
   name: 'policy'
   parent: apimOpenaiApi
   properties: {
@@ -114,7 +107,7 @@ resource openaiApiPolicies 'Microsoft.ApiManagement/service/apis/policies@2022-0
 }
 
 resource apimLogger 'Microsoft.ApiManagement/service/loggers@2021-12-01-preview' = if (!empty(applicationInsightsName)) {
-  name: 'app-insights-logger'
+  name: 'appinsights-logger'
   parent: apimService
   properties: {
     credentials: {
@@ -127,18 +120,14 @@ resource apimLogger 'Microsoft.ApiManagement/service/loggers@2021-12-01-preview'
   }
 }
 
-resource openaiApiMonitoring 'Microsoft.ApiManagement/service/apis/diagnostics@2022-08-01' = {
-  name: 'applicationinsights'
-  parent: apimOpenaiApi
-  properties: {
-    alwaysLog: 'allErrors'
-    loggerId: apimLogger.id  
-    logClientIp: true
-    httpCorrelationProtocol: 'W3C'
-    verbosity: 'verbose'
-    operationNameFormat: 'Url'
+resource apimDiagnostics 'Microsoft.ApiManagement/service/diagnostics@2022-08-01'={
+  name:'apimdiagnostics'
+  parent: apimService
+  properties:{
+    loggerId: apimLogger.id 
+    alwaysLog:'allErrors'
   }
 }
 
-output apimServiceName string = apimService.name
+output name string = apimService.name
 output apimOpenaiApiPath string = apimOpenaiApi.properties.path

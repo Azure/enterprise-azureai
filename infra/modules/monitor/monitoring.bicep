@@ -5,7 +5,7 @@ param location string = resourceGroup().location
 param tags object = {}
 
 module logAnalytics 'loganalytics.bicep' = {
-  name: 'loganalytics'
+  name: 'log-analytics'
   params: {
     name: logAnalyticsName
     location: location
@@ -14,7 +14,7 @@ module logAnalytics 'loganalytics.bicep' = {
 }
 
 module applicationInsights 'applicationinsights.bicep' = {
-  name: 'applicationinsights'
+  name: 'application-insights'
   params: {
     name: applicationInsightsName
     location: location

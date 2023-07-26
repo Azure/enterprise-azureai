@@ -104,6 +104,7 @@
     "portalDashboards": "dash-",
     "powerBIDedicatedCapacities": "pbi-",
     "purviewAccounts": "pview-",
+    "privateEndpoints": "pe-",
     "recoveryServicesVaults": "rsv-",
     "resourcesResourceGroups": "rg-",
     "searchSearchServices": "srch-",

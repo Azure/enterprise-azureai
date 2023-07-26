@@ -5,12 +5,18 @@
 
 | GitHub Action | Status |
 | ----------- | ----------- |
-| Deploy | [![Deploy](https://github.com/pascalvanderheiden/ais-apim-openai/actions/workflows/build.yml/badge.svg?branch=main)](https://github.com/pascalvanderheiden/ais-apim-openai/actions/workflows/azure-dev.yml) |
+| Deploy | [![Deploy](https://github.com/pascalvanderheiden/ais-apim-openai/actions/workflows/azure-dev.yml/badge.svg?branch=main)](https://github.com/pascalvanderheiden/ais-apim-openai/actions/workflows/azure-dev.yml) |
 
 ## About
 Unleash the power of Azure OpenAI to your application developers in a secure & manageable way with Azure API Management.
 
 I've used the Azure Developer CLI Bicep Starter template to create this repository. With AZD you can create a new repository with a fully functional CI/CD pipeline in minutes. You can find more information about AZD [here](https://learn.microsoft.com/en-us/azure/developer/azure-developer-cli/).
+
+One of the key points of AZD templates is that we can implement best practices together with our solution when it comes to security, network isolation, monitoring, etc. Users are free to define their own best practices for their dev teams & organization, so all deployments are followed by the same standards. The best practices I followed for this architecture are: [Azure Integration Service Landingzone Accelerator](https://github.com/Azure/Integration-Services-Landing-Zone-Accelerator/tree/main) and for Azure OpenAI I used the blog post [Azure OpenAI Landing Zone reference architecture](https://techcommunity.microsoft.com/t5/azure-architecture-blog/azure-openai-landing-zone-reference-architecture/ba-p/3882102). 
+
+When it comes to security, there are recommendations mentioned for securing your Azure API Management instance in the Azure Integration Service Landingzone Accelerator. For example, with the use of Front Door or Application Gateway, proving Layer 7 protection and WAF capabilities, and by implementing OAuth authentication on the API Management instance. How to implement OAuth authentication on the API Management instance is described in another repository I've created: [OAuth flow with Azure AD and Azure API Management.](https://github.com/pascalvanderheiden/ais-apim-oauth-flow). Because it really depends on the use case, I didn't implement Front Door or Application Gateway in this repository. But you can easily add it to the Bicep files if you want to, see [this](https://github.com/pascalvanderheiden/ais-sync-pattern-la-std-vnet) repository for an example.
+
+I'm also using [Azure Monitor Private Link Scope](https://learn.microsoft.com/en-us/azure/azure-monitor/logs/private-link-security#configure-access-to-your-resources). This allows me to define the boundaries of my monitoring network, and only allow traffic from within that network to my Log Analytics workspace. This is a great way to secure your monitoring network.
 
 The following assets have been provided:
 
@@ -78,15 +84,11 @@ Set-AzContext -Subscription $subscriptionId
 
 ## Testing
 
-I've included a [tests.http](tests.http) file with relevant tests you can perform, to check if your deployment is successful.
+I've included a [tests.http](tests.http) file with relevant tests you can perform, to check if your deployment is successful. I've also included a sample test if you implemented OAuth authentication on the API in API Management. You need a subcription key in API Management in order to test the API. You can find more information about how to get a subscription key [here](https://docs.microsoft.com/en-us/azure/api-management/api-management-howto-create-subscriptions#add-a-subscription-key-to-a-user).
 
 ## Additional Details
 
 The following section examines different concepts that help tie in application and infrastructure.
-
-### Azure Front Door
-
-[Azure Front Door](https://azure.microsoft.com/en-us/services/frontdoor/) is a global, scalable entry-point that uses the Microsoft global edge network to create fast, secure, and widely scalable web applications. It offers Layer 7 load balancing and protection against DDoS attacks.
 
 ### Azure API Management
 
@@ -104,6 +106,10 @@ The following section examines different concepts that help tie in application a
 
 [Azure Virtual Network](https://azure.microsoft.com/en-us/services/virtual-network/) allows you to create a private network in Azure. You can use this to secure communication between services.
 
+### Azure Private DNS Zone
+
+[Azure Private DNS Zone](https://docs.microsoft.com/en-us/azure/dns/private-dns-overview) allows you to create a private DNS zone in Azure. You can use this to resolve hostnames in your private network.
+
 ### Azure Key Vault
 
 [Azure Key Vault](https://learn.microsoft.com/en-us/azure/key-vault/general/overview) allows you to store secrets securely. Your application can access these secrets securely through the use of managed identities.
@@ -115,3 +121,11 @@ The following section examines different concepts that help tie in application a
 ### Log Analytics
 
 [Log Analytics](https://azure.microsoft.com/en-us/services/monitor/) allows you to collect and analyze telemetry data from your application. You can use this to monitor the performance of your application.
+
+### Azure Monitor Private Link Scope
+
+[Azure Monitor Private Link Scope](https://learn.microsoft.com/en-us/azure/azure-monitor/logs/private-link-security#configure-access-to-your-resources) allows you to define the boundaries of your monitoring network, and only allow traffic from within that network to your Log Analytics workspace. This is a great way to secure your monitoring network.
+
+### Private Endpoint
+
+[Azure Private Endpoint](https://docs.microsoft.com/en-us/azure/private-link/private-endpoint-overview) allows you to connect privately to a service powered by Azure Private Link. Private Endpoint uses a private IP address from your VNet, effectively bringing the service into your VNet.

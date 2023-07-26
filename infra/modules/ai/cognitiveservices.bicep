@@ -5,10 +5,14 @@ param tags object = {}
 param customSubDomainName string = name
 param deployments array = []
 param kind string = 'OpenAI'
-param publicNetworkAccess string = 'Enabled'
+param publicNetworkAccess string = 'Disabled'
 param sku object = {
   name: 'S0'
 }
+param openAiPrivateEndpointName string
+param vNetName string
+param privateEndpointSubnetName string
+param openAiDnsZoneName string
 
 resource account 'Microsoft.CognitiveServices/accounts@2023-05-01' = {
   name: name
@@ -18,6 +22,9 @@ resource account 'Microsoft.CognitiveServices/accounts@2023-05-01' = {
   properties: {
     customSubDomainName: customSubDomainName
     publicNetworkAccess: publicNetworkAccess
+    networkAcls: {
+      defaultAction: 'Deny'
+    }
   }
   sku: sku
 }
@@ -36,7 +43,20 @@ resource deployment 'Microsoft.CognitiveServices/accounts/deployments@2023-05-01
   }
 }]
 
-output endpoint string = account.properties.endpoint
-output id string = account.id
-output name string = account.name
-output key string = account.listKeys().key1
+module privateEndpoint '../networking/private-endpoint.bicep' = {
+  name: '${account.name}-privateEndpoint-deployment'
+  params: {
+    groupIds: [
+      'account'
+    ]
+    dnsZoneName: openAiDnsZoneName
+    name: openAiPrivateEndpointName
+    subnetName: privateEndpointSubnetName
+    privateLinkServiceId: account.id
+    vNetName: vNetName
+    location: location
+  }
+}
+
+output openAiName string = account.name
+output openAiEndpointUri string = '${account.properties.endpoint}openai/'

@@ -2,8 +2,9 @@ param name string
 param location string = resourceGroup().location
 param apimSubnetName string
 param apimNsgName string
-param openaiSubnetName string
-param openaiNsgName string
+param privateEndpointSubnetName string
+param privateEndpointNsgName string
+param privateDnsZoneNames array
 param tags object = {}
 
 resource apimNsg 'Microsoft.Network/networkSecurityGroups@2020-07-01' = {
@@ -13,6 +14,19 @@ resource apimNsg 'Microsoft.Network/networkSecurityGroups@2020-07-01' = {
   properties: {
     securityRules: [
       {
+        name: 'AllowClientToGateway'
+        properties: {
+            protocol: 'Tcp'
+            sourcePortRange: '*'
+            destinationPortRange: '443'
+            sourceAddressPrefix: 'Internet'
+            destinationAddressPrefix: 'VirtualNetwork'
+            access: 'Allow'
+            priority: 2721
+            direction: 'Inbound'
+        }
+      }
+      {
         name: 'AllowAPIMPortal'
         properties: {
             protocol: 'Tcp'
@@ -21,89 +35,33 @@ resource apimNsg 'Microsoft.Network/networkSecurityGroups@2020-07-01' = {
             sourceAddressPrefix: 'ApiManagement'
             destinationAddressPrefix: 'VirtualNetwork'
             access: 'Allow'
-            priority: 2721
+            priority: 2731
             direction: 'Inbound'
         }
       }
       {
-          name: 'AllowVnetStorage'
-          properties: {
-              protocol: '*'
-              sourcePortRange: '*'
-              destinationPortRange: '443'
-              sourceAddressPrefix: 'VirtualNetwork'
-              destinationAddressPrefix: 'Storage'
-              access: 'Allow'
-              priority: 2731
-              direction: 'Outbound'
-          }
-      }
-      {
-          name: 'AllowVnetMonitor'
-          properties: {
-              protocol: '*'
-              sourcePortRange: '*'
-              sourceAddressPrefix: 'VirtualNetwork'
-              destinationAddressPrefix: 'AzureMonitor'
-              access: 'Allow'
-              priority: 2741
-              direction: 'Outbound'
-              destinationPortRanges: [
-                  '1886'
-                  '443'
-              ]
-          }
-      }
-      {
-          name: 'AllowAPIMLoadBalancer'
-          properties: {
-              protocol: '*'
-              sourcePortRange: '*'
-              destinationPortRange: '6390'
-              sourceAddressPrefix: 'AzureLoadBalancer'
-              destinationAddressPrefix: 'VirtualNetwork'
-              access: 'Allow'
-              priority: 2751
-              direction: 'Inbound'
-          }
-      }
-      {
-          name: 'AllowAPIMFrontdoor'
-          properties: {
-              protocol: 'Tcp'
-              sourcePortRange: '*'
-              destinationPortRange: '443'
-              sourceAddressPrefix: 'AzureFrontDoor.Backend'
-              destinationAddressPrefix: 'VirtualNetwork'
-              access: 'Allow'
-              priority: 2761
-              direction: 'Inbound'
-          }
+        name: 'AllowAPIMLoadBalancer'
+        properties: {
+            protocol: '*'
+            sourcePortRange: '*'
+            destinationPortRange: '6390'
+            sourceAddressPrefix: 'AzureLoadBalancer'
+            destinationAddressPrefix: 'VirtualNetwork'
+            access: 'Allow'
+            priority: 2741
+            direction: 'Inbound'
+        }
       }
     ]
   }
 }
 
-resource openaiNsg 'Microsoft.Network/networkSecurityGroups@2020-07-01' = {
-  name: openaiNsgName
+resource privateEndpointNsg 'Microsoft.Network/networkSecurityGroups@2020-07-01' = {
+  name: privateEndpointNsgName
   location: location
-  tags: union(tags, { 'azd-service-name': openaiNsgName })
+  tags: union(tags, { 'azd-service-name': privateEndpointNsgName })
   properties: {
-    securityRules: [
-      {
-        name: 'AllowOpenAI'
-        properties: {
-            protocol: 'Tcp'
-            sourcePortRange: '*'
-            destinationPortRange: '443'
-            sourceAddressPrefix: 'ApiManagement'
-            destinationAddressPrefix: 'VirtualNetwork'
-            access: 'Allow'
-            priority: 2721
-            direction: 'Inbound'
-        }
-      }
-    ]
+    securityRules: []
   }
 }
 
@@ -134,11 +92,11 @@ resource virtualNetwork 'Microsoft.Network/virtualNetworks@2019-11-01' = {
         }
       }
       {
-        name: openaiSubnetName
+        name: privateEndpointSubnetName
         properties: {
           addressPrefix: '10.0.2.0/24'
-          networkSecurityGroup: openaiNsg.id == '' ? null : {
-            id: openaiNsg.id
+          networkSecurityGroup: privateEndpointNsg.id == '' ? null : {
+            id: privateEndpointNsg.id
           }
         }
       }
@@ -153,13 +111,25 @@ resource virtualNetwork 'Microsoft.Network/virtualNetworks@2019-11-01' = {
     name: apimSubnetName
   }
 
-  resource openaiSubnet 'subnets' existing = {
-    name: openaiSubnetName
+  resource privateEndpointSubnet 'subnets' existing = {
+    name: privateEndpointSubnetName
   }
 }
 
+resource privateDnsZoneLink 'Microsoft.Network/privateDnsZones/virtualNetworkLinks@2020-06-01' = [for privateDnsZoneName in privateDnsZoneNames: {
+  name: '${privateDnsZoneName}/privateDnsZoneLink'
+  location: 'global'
+  properties: {
+    virtualNetwork: {
+      id: virtualNetwork.id
+    }
+    registrationEnabled: false
+  }
+}]
+
 output virtualNetworkId string = virtualNetwork.id
+output vnetName string = virtualNetwork.name
 output apimSubnetName string = virtualNetwork::apimSubnet.name
 output apimSubnetId string = virtualNetwork::apimSubnet.id
-output openaiSubnetName string = virtualNetwork::openaiSubnet.name
-output openaiSubnetId string = virtualNetwork::openaiSubnet.id
+output privateEndpointSubnetName string = virtualNetwork::privateEndpointSubnet.name
+output privateEndpointSubnetId string = virtualNetwork::privateEndpointSubnet.id

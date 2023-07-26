@@ -1,6 +1,22 @@
 <policies>
     <inbound>
         <base/>
+        <!--  CORS needed for local testing / development  -->
+        <cors allow-credentials="false">
+            <allowed-origins>
+                <origin>*</origin>
+            </allowed-origins>
+            <allowed-methods preflight-result-max-age="300">
+                <method>*</method>
+            </allowed-methods>
+            <allowed-headers>
+                <header>*</header>
+            </allowed-headers>
+            <expose-headers>
+                <header>*</header>
+            </expose-headers>
+        </cors>
+        <set-backend-service backend-id="openai-backend" />
         <set-header name="api-key" exists-action="override">
             <value>{{openai-apikey}}</value>
         </set-header>

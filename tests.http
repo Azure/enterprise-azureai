@@ -2,15 +2,28 @@
 @scope = user_impersonation
 @clientId = <app_id_consumer_app_registration>
 @clientSecret = <password_consumer_app_registration>
-@frontDoorName = <api_management_name>
+@apimName = <api_management_name>
 @apiPath = <api_path>
-@azureOpenAIName = <azure_open_ai_name>
-@azureOpenAIDeploymentId = <azure_open_ai_deployment_id>
-@azureOpenAIApiVersion = 2023-05-15
-@azureOpenAIApiKey = <azure_open_ai_api_key>
+@azureOpenAIDeploymentId = chat
+@azureOpenAIApiVersion = 2023-03-15-preview
 @prompt = "You are a helpful assistant."
+@subscriptionKey = <subscription_key>
 
-### Get Token for consumer
+### Test Azure API Management endpoint, chat completion without OAuth2
+POST https://{{apimName}}.azure-api.net/{{apiPath}}/deployments/{{azureOpenAIDeploymentId}}/chat/completions?api-version={{azureOpenAIApiVersion}}
+Content-Type: application/json
+Ocp-Apim-Subscription-Key: {{subscriptionKey}}
+
+{
+    "messages": [
+        {
+            "role": "user",
+            "content": {{prompt}}
+        }
+    ]
+}
+
+### Get Token for consumer for OAuth2
 # @name consumerToken
 
 POST https://login.microsoftonline.com/{{tenantId}}/oauth2/token HTTP/1.1
@@ -24,11 +37,8 @@ client_id={{clientId}}
 #### Get Token Response
 @accessToken = {{consumerToken.response.body.$.access_token}}
 
-### Test Front door health check for API Management backend
-GET https://{{frontDoorName}}-fd.azurefd.net/status-0123456789abcdef
-
-### Test Azure API Management endpoint, chat completion
-POST https://{{frontDoorName}}.azurefd.net/{{apiPath}}/deployments/{{azureOpenAIDeploymentId}}/chat/completions?api-version={{azureOpenAIApiVersion}}
+### Test Azure API Management endpoint, chat completion with OAuth2
+POST https://{{apimName}}.azure-api.net/{{apiPath}}/deployments/{{azureOpenAIDeploymentId}}/chat/completions?api-version={{azureOpenAIApiVersion}}
 Content-Type: application/json
 Authorization: Bearer {{accessToken}}
 

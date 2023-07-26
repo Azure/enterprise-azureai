@@ -10,20 +10,21 @@ param publisherName string = 'n/a'
 param sku string = 'Developer'
 param skuCount int = 1
 param applicationInsightsName string
-param openaiEndpoint string
+param openAiUri string
 param openaiKeyVaultSecretName string
-param keyVaultName string
-param userIdentity string
+param keyVaultEndpoint string
+param managedIdentityName string
 param apimSubnetId string
 
-var openaiApiKeyNamedValue = 'openai-apikey'
+var openAiApiKeyNamedValue = 'openai-apikey'
+var openAiApiBackendId = 'openai-backend'
 
-resource applicationInsights 'Microsoft.Insights/components@2020-02-02' existing = if (!empty(applicationInsightsName)) {
+resource applicationInsights 'Microsoft.Insights/components@2020-02-02' existing = {
   name: applicationInsightsName
 }
 
-resource keyVault 'Microsoft.KeyVault/vaults@2022-07-01' existing = {
-  name: keyVaultName
+resource managedIdentity 'Microsoft.ManagedIdentity/userAssignedIdentities@2018-11-30' existing = {
+  name: managedIdentityName
 }
 
 resource apimService 'Microsoft.ApiManagement/service@2021-08-01' = {
@@ -37,7 +38,7 @@ resource apimService 'Microsoft.ApiManagement/service@2021-08-01' = {
   identity: {
     type: 'UserAssigned'
     userAssignedIdentities: {
-      '${userIdentity}': {}
+      '${managedIdentity.id}': {}
     }
   }
   properties: {
@@ -74,7 +75,6 @@ resource apimOpenaiApi 'Microsoft.ApiManagement/service/apis@2022-08-01' = {
     path: 'openai'
     apiRevision: '1'
     displayName: 'Azure OpenAI Service API'
-    serviceUrl: openaiEndpoint
     subscriptionRequired: true
     format: 'openapi+json'
     value: loadJsonContent('./openapi/openai-openapiv3.json')
@@ -84,15 +84,29 @@ resource apimOpenaiApi 'Microsoft.ApiManagement/service/apis@2022-08-01' = {
   }
 }
 
-resource apimOpenaiApiKeyNamedValue 'Microsoft.ApiManagement/service/namedValues@2022-08-01' = {
-  name: 'apim-openai-apikey-named-value'
+resource openAiBackend 'Microsoft.ApiManagement/service/backends@2021-08-01' = {
+  name: openAiApiBackendId
   parent: apimService
   properties: {
-    displayName: openaiApiKeyNamedValue
+    description: openAiApiBackendId
+    url: openAiUri
+    protocol: 'http'
+    tls: {
+      validateCertificateChain: true
+      validateCertificateName: true
+    }
+  }
+}
+
+resource apimOpenaiApiKeyNamedValue 'Microsoft.ApiManagement/service/namedValues@2022-08-01' = {
+  name: openAiApiKeyNamedValue
+  parent: apimService
+  properties: {
+    displayName: openAiApiKeyNamedValue
     secret: true
     keyVault:{
-      secretIdentifier: '${keyVault.properties.vaultUri}secrets/${openaiKeyVaultSecretName}'
-      identityClientId: apimService.identity.userAssignedIdentities[userIdentity].clientId
+      secretIdentifier: '${keyVaultEndpoint}secrets/${openaiKeyVaultSecretName}'
+      identityClientId: apimService.identity.userAssignedIdentities[managedIdentity.id].clientId
     }
   }
 }
@@ -104,9 +118,13 @@ resource openaiApiPolicy 'Microsoft.ApiManagement/service/apis/policies@2022-08-
     value: loadTextContent('./policies/api_policy.xml')
     format: 'rawxml'
   }
+  dependsOn: [
+    openAiBackend
+    apimOpenaiApiKeyNamedValue
+  ]
 }
 
-resource apimLogger 'Microsoft.ApiManagement/service/loggers@2021-12-01-preview' = if (!empty(applicationInsightsName)) {
+resource apimLogger 'Microsoft.ApiManagement/service/loggers@2021-12-01-preview' = {
   name: 'appinsights-logger'
   parent: apimService
   properties: {
@@ -117,15 +135,6 @@ resource apimLogger 'Microsoft.ApiManagement/service/loggers@2021-12-01-preview'
     isBuffered: false
     loggerType: 'applicationInsights'
     resourceId: applicationInsights.id
-  }
-}
-
-resource apimDiagnostics 'Microsoft.ApiManagement/service/diagnostics@2022-08-01'={
-  name:'apimdiagnostics'
-  parent: apimService
-  properties:{
-    loggerId: apimLogger.id 
-    alwaysLog:'allErrors'
   }
 }
 

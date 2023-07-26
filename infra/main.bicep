@@ -15,25 +15,32 @@ param openAiServiceName string = ''
 param keyVaultName string = ''
 param identityName string = ''
 param apimServiceName string = ''
-param frontDoorName string = ''
-param frontDoorWafName string = ''
 param logAnalyticsName string = ''
 param applicationInsightsDashboardName string = ''
 param applicationInsightsName string = ''
 param vnetName string = ''
 param apimSubnetName string = ''
 param apimNsgName string = ''
-param openaiSubnetName string = ''
-param openaiNsgName string = ''
+param privateEndpointSubnetName string = ''
+param privateEndpointNsgName string = ''
 
 var abbrs = loadJsonContent('./abbreviations.json')
 var resourceToken = toLower(uniqueString(subscription().id, environmentName, location))
-var keyVaultSecretsUserRoleDefinitionId = '4633458b-17de-408a-b874-0445c86b69e6'
 var openAiSkuName = 'S0'
 var chatGptDeploymentName = 'chat'
 var chatGptModelName = 'gpt-35-turbo'
 var openaiApiKeySecretName = 'openai-apikey'
 var tags = { 'azd-env-name': environmentName }
+
+var openAiPrivateDnsZoneName = 'privatelink.openai.azure.com'
+var keyVaultPrivateDnsZoneName = 'privatelink.vaultcore.azure.net'
+var monitorPrivateDnsZoneName = 'privatelink.monitor.azure.com'
+
+var privateDnsZoneNames = [
+  openAiPrivateDnsZoneName
+  keyVaultPrivateDnsZoneName
+  monitorPrivateDnsZoneName
+]
 
 // Organize resources in a resource group
 resource resourceGroup 'Microsoft.Resources/resourceGroups@2021-04-01' = {
@@ -42,8 +49,16 @@ resource resourceGroup 'Microsoft.Resources/resourceGroups@2021-04-01' = {
   tags: tags
 }
 
-module userIdentity './modules/security/managed-identity.bicep' = {
-  name: 'userIdentity'
+module dnsDeployment './modules/networking/dns.bicep' = [for privateDnsZoneName in privateDnsZoneNames: {
+  name: 'dns-deployment-${privateDnsZoneName}'
+  scope: resourceGroup
+  params: {
+    name: privateDnsZoneName
+  }
+}]
+
+module managedIdentity './modules/security/managed-identity.bicep' = {
+  name: 'managed-identity'
   scope: resourceGroup
   params: {
     name: !empty(identityName) ? identityName : '${abbrs.managedIdentityUserAssignedIdentities}${resourceToken}'
@@ -52,32 +67,19 @@ module userIdentity './modules/security/managed-identity.bicep' = {
   }
 }
 
-module keyVault './modules/security/keyvault.bicep' = {
-  name: 'keyvault'
+module keyVault './modules/security/key-vault.bicep' = {
+  name: 'key-vault'
   scope: resourceGroup
   params: {
     name: !empty(keyVaultName) ? keyVaultName : '${abbrs.keyVaultVaults}${resourceToken}'
     location: location
     tags: tags
-  }
-}
-
-module keyVaultRoleAssignment './modules/security/role-assignment.bicep' = {
-  name: 'role-assignment'
-  scope: resourceGroup
-  params: {
-    name: guid(keyVaultSecretsUserRoleDefinitionId,userIdentity.outputs.id,keyVault.outputs.id)
-    userIdentityPrincipalId: userIdentity.outputs.principalId
-    keyVaultSecretsUserRoleDefinitionId: keyVaultSecretsUserRoleDefinitionId
-  }
-}
-
-module keyVaultAccess './modules/security/keyvault-access.bicep' = {
-  name: 'keyvault-access'
-  scope: resourceGroup
-  params: {
-    keyVaultName: keyVault.outputs.name
-    apimName: apim.outputs.name
+    keyVaultPrivateEndpointName: '${abbrs.keyVaultVaults}${abbrs.privateEndpoints}${resourceToken}'
+    vNetName: vnet.outputs.vnetName
+    privateEndpointSubnetName: vnet.outputs.privateEndpointSubnetName
+    logAnalyticsWorkspaceName: monitoring.outputs.logAnalyticsWorkspaceName
+    managedIdentityName: managedIdentity.outputs.managedIdentityName
+    keyVaultDnsZoneName: keyVaultPrivateDnsZoneName
   }
 }
 
@@ -85,9 +87,9 @@ module openaiKeyVaultSecret './modules/security/keyvault-secret.bicep' = {
   name: 'openai-keyvault-secret'
   scope: resourceGroup
   params: {
-    keyVaultName: keyVault.outputs.name
-    secret: openAi.outputs.key
+    keyVaultName: keyVault.outputs.keyVaultName
     secretName: openaiApiKeySecretName
+    openAiName: openAi.outputs.openAiName
   }
 }
 
@@ -96,12 +98,13 @@ module vnet './modules/networking/vnet.bicep' = {
   scope: resourceGroup
   params: {
     name: !empty(vnetName) ? vnetName : '${abbrs.networkVirtualNetworks}${resourceToken}'
-    apimSubnetName: !empty(apimSubnetName) ? apimSubnetName : '${abbrs.networkVirtualNetworksSubnets}${resourceToken}-apim'
-    apimNsgName: !empty(apimNsgName) ? apimNsgName : '${abbrs.networkNetworkSecurityGroups}${resourceToken}-apim'
-    openaiSubnetName: !empty(openaiSubnetName) ? openaiSubnetName : '${abbrs.networkVirtualNetworksSubnets}${resourceToken}-openai'
-    openaiNsgName: !empty(openaiNsgName) ? openaiNsgName : '${abbrs.networkNetworkSecurityGroups}${resourceToken}-openai'
+    apimSubnetName: !empty(apimSubnetName) ? apimSubnetName : '${abbrs.networkVirtualNetworksSubnets}${abbrs.apiManagementService}${resourceToken}'
+    apimNsgName: !empty(apimNsgName) ? apimNsgName : '${abbrs.networkNetworkSecurityGroups}${abbrs.apiManagementService}${resourceToken}'
+    privateEndpointSubnetName: !empty(privateEndpointSubnetName) ? privateEndpointSubnetName : '${abbrs.networkVirtualNetworksSubnets}${abbrs.privateEndpoints}${resourceToken}'
+    privateEndpointNsgName: !empty(privateEndpointNsgName) ? privateEndpointNsgName : '${abbrs.networkNetworkSecurityGroups}${abbrs.privateEndpoints}${resourceToken}'
     location: location
     tags: tags
+    privateDnsZoneNames: privateDnsZoneNames
   }
 }
 
@@ -114,6 +117,10 @@ module monitoring './modules/monitor/monitoring.bicep' = {
     logAnalyticsName: !empty(logAnalyticsName) ? logAnalyticsName : '${abbrs.operationalInsightsWorkspaces}${resourceToken}'
     applicationInsightsName: !empty(applicationInsightsName) ? applicationInsightsName : '${abbrs.insightsComponents}${resourceToken}'
     applicationInsightsDashboardName: !empty(applicationInsightsDashboardName) ? applicationInsightsDashboardName : '${abbrs.portalDashboards}${resourceToken}'
+    vNetName: vnet.outputs.vnetName
+    privateEndpointSubnetName: vnet.outputs.privateEndpointSubnetName
+    applicationInsightsDnsZoneName: monitorPrivateDnsZoneName
+    applicationInsightsPrivateEndpointName: '${abbrs.insightsComponents}${abbrs.privateEndpoints}${resourceToken}'
   }
 }
 
@@ -126,30 +133,10 @@ module apim './modules/apim/apim.bicep' = {
     tags: tags
     applicationInsightsName: monitoring.outputs.applicationInsightsName
     openaiKeyVaultSecretName: openaiKeyVaultSecret.outputs.keyVaultSecretName
-    keyVaultName: keyVault.outputs.name
-    openaiEndpoint: openAi.outputs.endpoint
-    userIdentity: userIdentity.outputs.id
+    keyVaultEndpoint: keyVault.outputs.keyVaultEndpoint
+    openAiUri: openAi.outputs.openAiEndpointUri
+    managedIdentityName: managedIdentity.outputs.managedIdentityName
     apimSubnetId: vnet.outputs.apimSubnetId
-  }
-}
-
-module frontDoor './modules/networking/frontdoor.bicep' = {
-  name: 'frontdoor'
-  scope: resourceGroup
-  params: {
-    name: !empty(frontDoorName) ? frontDoorName : '${abbrs.networkFrontDoors}${resourceToken}'
-    frontDoorWafName: !empty(frontDoorWafName) ? frontDoorWafName : '${abbrs.networkFirewallPoliciesWebApplication}${resourceToken}'
-    apimGwUrl: '${apim.outputs.name}.azure-api.net'
-  }
-}
-
-//Needed for recursive references
-module apimGlobal './modules/apim/apim_global.bicep' = {
-  name: 'apim-global'
-  scope: resourceGroup
-  params: {
-    apimName: apim.outputs.name
-    frontDoorId: frontDoor.outputs.id
   }
 }
 
@@ -160,6 +147,10 @@ module openAi 'modules/ai/cognitiveservices.bicep' = {
     name: !empty(openAiServiceName) ? openAiServiceName : '${abbrs.cognitiveServicesAccounts}${resourceToken}'
     location: location
     tags: tags
+    openAiPrivateEndpointName: '${abbrs.cognitiveServicesAccounts}${abbrs.privateEndpoints}${resourceToken}'
+    vNetName: vnet.outputs.vnetName
+    privateEndpointSubnetName: vnet.outputs.privateEndpointSubnetName
+    openAiDnsZoneName: openAiPrivateDnsZoneName
     sku: {
       name: openAiSkuName
     }
@@ -181,8 +172,7 @@ module openAi 'modules/ai/cognitiveservices.bicep' = {
 
 // App outputs
 output TENTANT_ID string = subscription().tenantId
-output AOI_NAME string = openAi.outputs.name
+output AOI_NAME string = openAi.outputs.openAiName
 output AOI_DEPLOYMENTID string = chatGptDeploymentName
-output AOI_APIKEY string = openAi.outputs.key //note: for production use, this should not be exposed
 output APIM_NAME string = apim.outputs.name
 output APIM_AOI_PATH string = apim.outputs.apimOpenaiApiPath

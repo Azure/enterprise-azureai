@@ -5,7 +5,7 @@
 
 | GitHub Action | Status |
 | ----------- | ----------- |
-| Deploy | [![Deploy](https://github.com/pascalvanderheiden/ais-apim-openai/actions/workflows/azure-dev.yml/badge.svg?branch=main)](https://github.com/pascalvanderheiden/ais-apim-openai/actions/workflows/azure-dev.yml) |
+| AZD Deploy | [![Deploy](https://github.com/pascalvanderheiden/ais-apim-openai/actions/workflows/azure-dev.yml/badge.svg?branch=main)](https://github.com/pascalvanderheiden/ais-apim-openai/actions/workflows/azure-dev.yml) |
 
 ## About
 Unleash the power of Azure OpenAI to your application developers in a secure & manageable way with Azure API Management.

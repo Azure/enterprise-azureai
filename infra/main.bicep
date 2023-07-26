@@ -170,9 +170,7 @@ module openAi 'modules/ai/cognitiveservices.bicep' = {
   }
 }
 
-// App outputs
 output TENTANT_ID string = subscription().tenantId
-output AOI_NAME string = openAi.outputs.openAiName
 output AOI_DEPLOYMENTID string = chatGptDeploymentName
-output APIM_NAME string = apim.outputs.name
+output APIM_NAME string = apim.outputs.apimName
 output APIM_AOI_PATH string = apim.outputs.apimOpenaiApiPath

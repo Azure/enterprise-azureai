@@ -124,6 +124,20 @@ resource openaiApiPolicy 'Microsoft.ApiManagement/service/apis/policies@2022-08-
   ]
 }
 
+resource apiOperationCompletions 'Microsoft.ApiManagement/service/apis/operations@2020-06-01-preview' existing = {
+  name: 'ChatCompletions_Create'
+  parent: apimOpenaiApi
+}
+
+resource chatCompletionsCreatePolicy 'Microsoft.ApiManagement/service/apis/operations/policies@2022-08-01' = {
+  name: 'policy'
+  parent: apiOperationCompletions
+  properties: {
+    value: loadTextContent('./policies/api_operation_policy.xml')
+    format: 'rawxml'
+  }
+}
+
 resource apimLogger 'Microsoft.ApiManagement/service/loggers@2021-12-01-preview' = {
   name: 'appinsights-logger'
   parent: apimService
@@ -138,5 +152,5 @@ resource apimLogger 'Microsoft.ApiManagement/service/loggers@2021-12-01-preview'
   }
 }
 
-output name string = apimService.name
+output apimName string = apimService.name
 output apimOpenaiApiPath string = apimOpenaiApi.properties.path

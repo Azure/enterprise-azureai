@@ -3,7 +3,7 @@
 @clientId = <app_id_consumer_app_registration>
 @clientSecret = <password_consumer_app_registration>
 @apimName = <api_management_name>
-@apiPath = <api_path>
+@apiPath = openai
 @azureOpenAIDeploymentId = chat
 @azureOpenAIApiVersion = 2023-03-15-preview
 @prompt = "You are a helpful assistant."

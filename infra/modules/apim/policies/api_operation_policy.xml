@@ -1,0 +1,19 @@
+<policies>
+    <inbound>
+        <base />
+    </inbound>
+    <backend>
+        <base />
+    </backend>
+    <outbound>
+        <base />
+        <set-body template="liquid">
+        {
+            "response": "{{body.choices[0].message.content}}"
+        }
+        </set-body>
+    </outbound>
+    <on-error>
+        <base />
+    </on-error>
+</policies>

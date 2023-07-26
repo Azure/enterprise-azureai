@@ -52,6 +52,8 @@ It will prompt you to login, pick a subscription, and provide a location (like "
 
 For more details on the deployed services, see [additional details](#additional-details) below.
 
+> Note. It will take about 45 minutes to deploy Azure API Management.
+
 ## CI/CD pipeline
 
 This project includes a Github workflow and a Azure DevOps Pipeline for deploying the resources to Azure on every push to main. That workflow requires several Azure-related authentication secrets to be stored as Github action secrets. To set that up, run:

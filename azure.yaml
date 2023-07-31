@@ -7,7 +7,7 @@
 # Name of the application.
 name: ais-apim-openai
 metadata:
-  template: azd-starter-bicep
+  template: ais-apim-openai@1.0.0
 # services:
 #   ## An example for a python API service.
 #   ## The service is named 'python-api'.

@@ -56,11 +56,15 @@ It will prompt you to provide a name that will later be used in the name of the 
 azd up
 ```
 
-It will prompt you to login, pick a subscription, and provide a location (like "westeurope"). Then it will provision the resources in your account and deploy the latest code.
+It will prompt you to login, pick a subscription, and provide a location (like "eastus"). Then it will provision the resources in your account and deploy the latest code.
 
 For more details on the deployed services, see [additional details](#additional-details) below.
 
+> Note. Because Azure OpenAI isn't available yet in all regions, you might get an error when you deploy the resources. You can find more information about the availability of Azure OpenAI [here](https://docs.microsoft.com/en-us/azure/openai/overview/regions).
+
 > Note. It will take about 45 minutes to deploy Azure API Management.
+
+> Note. Sometimes the dns zones for the private endpoints aren't created correctly / in time. If you get an error when you deploy the resources, you can try to deploy the resources again.
 
 ## CI/CD pipeline
 

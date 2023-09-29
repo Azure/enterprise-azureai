@@ -104,6 +104,9 @@ module openaiKeyVaultSecret './modules/security/keyvault-secret.bicep' = {
 module vnet './modules/networking/vnet.bicep' = {
   name: 'vnet'
   scope: resourceGroup
+  dependsOn: [
+    dnsDeployment
+  ]
   params: {
     name: !empty(vnetName) ? vnetName : '${abbrs.networkVirtualNetworks}${resourceToken}'
     apimSubnetName: !empty(apimSubnetName) ? apimSubnetName : '${abbrs.networkVirtualNetworksSubnets}${abbrs.apiManagementService}${resourceToken}'

@@ -9,6 +9,8 @@
 @prompt = "You are a helpful assistant."
 @subscriptionKey = <subscription_key>
 
+"stream":true
+
 ### Test Azure API Management endpoint, chat completion without OAuth2
 POST https://{{apimName}}.azure-api.net/{{apiPath}}/deployments/{{azureOpenAIDeploymentId}}/chat/completions?api-version={{azureOpenAIApiVersion}}
 Content-Type: application/json

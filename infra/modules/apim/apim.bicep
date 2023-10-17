@@ -10,17 +10,18 @@ param publisherName string = 'n/a'
 param sku string
 param skuCount int = 1
 param applicationInsightsName string
+param logAnalyticsWorkspaceId string
 param openAiUri string
 param apimManagedIdentityName string
-param eventHubNamespaceName string
-param eventHubName string
+//param eventHubNamespaceName string
+//param eventHubName string
 param redisCacheServiceName string = ''
 //Vnet Integration
-//param apimSubnetId string
-param virtualNetworkType string = ''
+param apimSubnetId string
+param virtualNetworkType string
 
 var openAiApiBackendId = 'openai-backend'
-var eventHubEndpoint = '${eventHubNamespaceName}.servicebus.windows.net'
+//var eventHubEndpoint = '${eventHubNamespaceName}.servicebus.windows.net'
 
 resource applicationInsights 'Microsoft.Insights/components@2020-02-02' existing = {
   name: applicationInsightsName
@@ -52,9 +53,9 @@ resource apimService 'Microsoft.ApiManagement/service@2023-03-01-preview' = {
     publisherEmail: publisherEmail
     publisherName: publisherName
     virtualNetworkType: virtualNetworkType
-    //virtualNetworkConfiguration: {
-    //  subnetResourceId: apimSubnetId
-    //}
+    virtualNetworkConfiguration: {
+      subnetResourceId: apimSubnetId
+    }
     // Custom properties are not supported for Consumption SKU
     customProperties: sku == 'Consumption' ? {} : {
       'Microsoft.WindowsAzure.ApiManagement.Gateway.Security.Ciphers.TLS_ECDHE_RSA_WITH_AES_256_CBC_SHA': 'false'
@@ -82,12 +83,14 @@ resource apimOpenaiApi 'Microsoft.ApiManagement/service/apis@2023-03-01-preview'
     path: 'openai'
     apiRevision: '1'
     displayName: 'Azure OpenAI Service API'
+    format: 'openapi-link'
+    protocols: [ 'https' ]
+    value: 'https://raw.githubusercontent.com/Azure/azure-rest-api-specs/main/specification/cognitiveservices/data-plane/AzureOpenAI/inference/stable/2023-05-15/inference.json'
     subscriptionRequired: true
-    format: 'openapi+json'
-    value: loadJsonContent('./openapi/openai-openapiv3.json')
-    protocols: [
-      'https'
-    ]
+    subscriptionKeyParameterNames: {
+      header: 'api-key'
+      query: 'api-key'
+    }
   }
 }
 
@@ -118,7 +121,7 @@ resource openaiApiPolicy 'Microsoft.ApiManagement/service/apis/policies@2023-03-
 }
 
 resource apiOperationCompletions 'Microsoft.ApiManagement/service/apis/operations@2023-03-01-preview' existing = {
-  name: 'ChatCompletions_Create'
+  name: 'chatcompletions-create'
   parent: apimOpenaiApi
 }
 
@@ -129,9 +132,16 @@ resource chatCompletionsCreatePolicy 'Microsoft.ApiManagement/service/apis/opera
     value: loadTextContent('./policies/api_operation_policy.xml')
     format: 'rawxml'
   }
-  dependsOn: [
-    eventHubLogger
-  ]
+}
+
+resource apiSubscription 'Microsoft.ApiManagement/service/subscriptions@2023-03-01-preview' = {
+  parent: apimService
+  name: 'openai-subscription'
+  properties: {
+    scope: apimOpenaiApi.id
+    displayName: 'OpenAI Subscription'
+    state: 'active'
+  }
 }
 
 resource apimCache 'Microsoft.ApiManagement/service/caches@2023-03-01-preview' = if (!empty(redisCacheServiceName)) {
@@ -158,6 +168,79 @@ resource apimLogger 'Microsoft.ApiManagement/service/loggers@2021-12-01-preview'
   }
 }
 
+resource apiDiagnostics 'Microsoft.ApiManagement/service/diagnostics@2023-03-01-preview' = {
+  name: 'appinsights-diagnostics'
+  parent: apimService
+  properties: {
+    logClientIp: false
+    alwaysLog: 'allErrors'
+    loggerId: apimLogger.id
+    sampling: {
+      samplingType: 'fixed'
+      percentage: 100
+    }
+    metrics: true
+    frontend: {
+      request: {
+        headers: [
+          'custom-headers'
+        ]
+        body: {
+          bytes: 8192
+        }
+      }
+      response: {
+        headers: [
+          'custom-headers'
+        ]
+        body: {
+          bytes: 8192
+        }
+      }
+    }
+    backend: {
+      request: {
+        headers: [
+          'custom-headers'
+        ]
+        body: {
+          bytes: 8192
+        }
+      }
+      response: {
+        headers: [
+          'custom-headers'
+        ]
+        body: {
+          bytes: 8192
+        }
+      }
+    }
+    verbosity: 'information'
+  }
+}
+
+resource diagnosticSettings 'Microsoft.Insights/diagnosticSettings@2021-05-01-preview' = {
+  name: 'LogToLogAnalytics'
+  scope: apimService
+  properties: {
+    workspaceId: logAnalyticsWorkspaceId
+    logs: [
+      {
+        category: 'AllLogs'
+        enabled: true
+      }
+    ]
+    metrics: [
+      {
+        category: 'AllMetrics'
+        enabled: true 
+      }
+    ]
+  }
+}
+
+/*
 resource eventHubLogger 'Microsoft.ApiManagement/service/loggers@2023-03-01-preview' = {
   name: 'eventhub-logger'
   parent: apimService
@@ -171,6 +254,7 @@ resource eventHubLogger 'Microsoft.ApiManagement/service/loggers@2023-03-01-prev
     }
   }
 }
-
+*/
 output apimName string = apimService.name
 output apimOpenaiApiPath string = apimOpenaiApi.properties.path
+output apimGatewayUrl string = apimService.properties.gatewayUrl

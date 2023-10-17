@@ -1,0 +1,514 @@
+{
+    "version": "Notebook/1.0",
+    "items": [
+        {
+            "type": 1,
+            "content": {
+                "json": "# OpenAI Request Logger\n---\n"
+            },
+            "name": "text - 2"
+        },
+        {
+            "type": 9,
+            "content": {
+                "version": "KqlParameterItem/1.0",
+                "parameters": [
+                    {
+                        "id": "ea8afed1-de48-4689-b8c9-331e75082645",
+                        "version": "KqlParameterItem/1.0",
+                        "name": "TimeRange",
+                        "type": 4,
+                        "isRequired": true,
+                        "typeSettings": {
+                            "selectableValues": [
+                                {
+                                    "durationMs": 900000
+                                },
+                                {
+                                    "durationMs": 1800000
+                                },
+                                {
+                                    "durationMs": 3600000
+                                },
+                                {
+                                    "durationMs": 14400000
+                                },
+                                {
+                                    "durationMs": 43200000
+                                },
+                                {
+                                    "durationMs": 86400000
+                                },
+                                {
+                                    "durationMs": 172800000
+                                },
+                                {
+                                    "durationMs": 259200000
+                                },
+                                {
+                                    "durationMs": 604800000
+                                },
+                                {
+                                    "durationMs": 1209600000
+                                },
+                                {
+                                    "durationMs": 2419200000
+                                },
+                                {
+                                    "durationMs": 2592000000
+                                }
+                            ]
+                        },
+                        "timeContext": {
+                            "durationMs": 86400000
+                        },
+                        "value": {
+                            "durationMs": 604800000
+                        },
+                        "label": "Time range"
+                    },
+                    {
+                        "id": "46ad48fc-6150-4717-9bb4-6bac5766dc76",
+                        "version": "KqlParameterItem/1.0",
+                        "name": "SelectedCustomParam",
+                        "label": "*WIP* Property dimension",
+                        "type": 2,
+                        "isGlobal": true,
+                        "query": "let noneRow = datatable(HeaderVal: string) [\"none\"];\n\nunion noneRow\n,(\nrequests\n| extend CustomHeaders = parse_json(tostring(customDimensions.[\"Request-custom-headers\"]))\n| mv-expand bagexpansion=array CustomHeaders\n| extend HeaderVal = tostring(CustomHeaders[0])\n| summarize by HeaderVal\n| where isnotempty(HeaderVal))",
+                        "typeSettings": {
+                            "additionalResourceOptions": [],
+                            "showDefault": false
+                        },
+                        "timeContext": {
+                            "durationMs": 0
+                        },
+                        "timeContextFromParameter": "TimeRange",
+                        "queryType": 0,
+                        "resourceType": "microsoft.insights/components",
+                        "value": null
+                    },
+                    {
+                        "id": "0de0af5c-301b-4541-bc4c-09c5f5e0cbab",
+                        "version": "KqlParameterItem/1.0",
+                        "name": "SelectedParamValue",
+                        "type": 1,
+                        "isGlobal": true,
+                        "isHiddenWhenLocked": true,
+                        "value": "none"
+                    }
+                ],
+                "style": "pills",
+                "queryType": 0,
+                "resourceType": "microsoft.insights/components"
+            },
+            "name": "parameters - 7"
+        },
+        {
+            "type": 3,
+            "content": {
+                "version": "KqlItem/1.0",
+                "query": "let selectedParam = '{SelectedCustomParam}';\nrequests\n| extend CustomHeaders = parse_json(tostring(customDimensions.[\"Request-custom-headers\"]))\n| extend SelectedParamValue = tostring(coalesce(CustomHeaders[selectedParam], \"no-value\"))\n| extend UsageData = parse_json(tostring(parse_json(tostring(customDimensions.[\"Response-Body\"])).usage))\n| extend Model = tostring(parse_json(tostring(parse_json(tostring(customDimensions.[\"Response-Body\"])).model)))\n| extend PromptTokens = toreal(UsageData[\"prompt_tokens\"])\n| extend CompletionTokens = toreal(UsageData[\"completion_tokens\"])\n| extend TotalTokens = toreal(UsageData[\"total_tokens\"])\n| extend Duration = round(duration,2)\n| extend PromptCost = iif(Model == \"gpt-35-turbo\", (PromptTokens/1000) * 0.0015, iif(Model == \"gpt-4\", (PromptTokens/1000) * 0.03, 0.0))\n| extend CompletionCost = iif(Model == \"gpt-35-turbo\", (CompletionTokens/1000) * 0.002, iif(Model == \"gpt-4\", (CompletionTokens/1000) * 0.06, 0.0))\n| extend TotalCost = PromptCost + CompletionCost\n| summarize RequestCount=count(), TotalTokens=sum(TotalTokens), TotalCost=round(sum(TotalCost),5), DurationPerRequest=round(avg(Duration),2), CostPerRequest=round(avg(TotalCost),5) by SelectedParamValue",
+                "size": 1,
+                "timeContextFromParameter": "TimeRange",
+                "exportFieldName": "SelectedParamValue",
+                "exportParameterName": "SelectedParamValue",
+                "exportDefaultValue": "none",
+                "queryType": 0,
+                "resourceType": "microsoft.insights/components",
+                "gridSettings": {
+                    "formatters": [
+                        {
+                            "columnMatch": "requestId",
+                            "formatter": 5
+                        },
+                        {
+                            "columnMatch": "Grouper",
+                            "formatter": 5,
+                            "formatOptions": {
+                                "customColumnWidthSetting": "12ch"
+                            }
+                        }
+                    ],
+                    "sortBy": [
+                        {
+                            "itemKey": "TotalTokens",
+                            "sortOrder": 2
+                        }
+                    ],
+                    "labelSettings": [
+                        {
+                            "columnId": "SelectedParamValue",
+                            "label": "Property value"
+                        },
+                        {
+                            "columnId": "RequestCount",
+                            "label": "Total requests"
+                        },
+                        {
+                            "columnId": "TotalTokens",
+                            "label": "Total Tokens"
+                        }
+                    ]
+                },
+                "sortBy": [
+                    {
+                        "itemKey": "TotalTokens",
+                        "sortOrder": 2
+                    }
+                ]
+            },
+            "conditionalVisibility": {
+                "parameterName": "SelectedCustomParam",
+                "comparison": "isNotEqualTo",
+                "value": ""
+            },
+            "name": "query - 9 - Copy"
+        },
+        {
+            "type": 3,
+            "content": {
+                "version": "KqlItem/1.0",
+                "query": "let summary = requests\n| extend UsageData = parse_json(tostring(parse_json(tostring(customDimensions.[\"Response-Body\"])).usage))\n| extend Model = tostring(parse_json(tostring(parse_json(tostring(customDimensions.[\"Response-Body\"])).model)))\n| extend TotalTokens = toreal(UsageData[\"total_tokens\"])\n| extend Duration = round(duration,2)\n| extend PromptTokens = toreal(UsageData[\"prompt_tokens\"])\n| extend CompletionTokens = toreal(UsageData[\"completion_tokens\"])\n| extend PromptCost = iif(Model == \"gpt-35-turbo\", (PromptTokens/1000) * 0.0015, iif(Model == \"gpt-4\", (PromptTokens/1000) * 0.03, 0.0))\n| extend CompletionCost = iif(Model == \"gpt-35-turbo\", (CompletionTokens/1000) * 0.002, iif(Model == \"gpt-4\", (CompletionTokens/1000) * 0.06, 0.0))\n| extend TotalCost = PromptCost + CompletionCost\n| extend Success = tobool(success)\n| summarize \n    RequestCount=toreal(count()), \n    FailedRequests=toreal(sumif(1, Success == false)),\n    TotalTokens=sum(TotalTokens), \n    TotalCost=round(sum(TotalCost),5), \n    DurationPerRequest=round(avg(Duration),2), \n    CostPerRequest=round(avg(TotalCost),5);\nsummary \n| project Metric = \"1. Total Requests\", Value = RequestCount\n| union (summary | project Metric = \"2. Failed Requests\", Value = FailedRequests)\n| union (summary | project Metric = \"3. Total Tokens\", Value = TotalTokens)\n| union (summary | project Metric = \"4. Total Cost\", Value = TotalCost)\n| union (summary | project Metric = \"5. Cost Per Request\", Value = CostPerRequest)\n| union (summary | project Metric = \"6. Duration Per Request\", Value = DurationPerRequest)",
+                "size": 3,
+                "title": "Totals by time range",
+                "timeContextFromParameter": "TimeRange",
+                "queryType": 0,
+                "resourceType": "microsoft.insights/components",
+                "visualization": "tiles",
+                "tileSettings": {
+                    "titleContent": {
+                        "columnMatch": "Metric",
+                        "formatter": 1
+                    },
+                    "leftContent": {
+                        "columnMatch": "Value",
+                        "formatter": 12,
+                        "formatOptions": {
+                            "palette": "auto"
+                        },
+                        "numberFormat": {
+                            "unit": 17,
+                            "options": {
+                                "style": "decimal",
+                                "maximumFractionDigits": 2,
+                                "maximumSignificantDigits": 3
+                            }
+                        }
+                    },
+                    "showBorder": false,
+                    "sortCriteriaField": "Metric",
+                    "sortOrderField": 1
+                }
+            },
+            "name": "query - 12"
+        },
+        {
+            "type": 3,
+            "content": {
+                "version": "KqlItem/1.0",
+                "query": "let series_moving_avg_fl = (y_series:dynamic, n:int, center:bool=false)\n{\n    series_fir(y_series, repeat(1, n), true, center)\n};\nrequests\n| extend totalTokens = todouble(parse_json(tostring(parse_json(tostring(parse_json(tostring(customDimensions.[\"Response-Body\"])).usage)).total_tokens)))\n| summarize sumTotalTokens=sum(totalTokens) by bin(timestamp, 1h)\n| extend dummy = 1 // Dummy column to align time series\n| make-series sumTotalTokens_series=sum(sumTotalTokens) on timestamp step 1h by dummy\n| extend sumTotalTokens_moving_avg = series_moving_avg_fl(sumTotalTokens_series, 12, true)\n| mv-expand timestamp to typeof(datetime), sumTotalTokens_series to typeof(double), sumTotalTokens_moving_avg to typeof(double)\n| project timestamp, sumTotalTokens_series, sumTotalTokens_moving_avg\n| render timechart\n",
+                "size": 0,
+                "showAnalytics": true,
+                "title": "Token usage over time",
+                "color": "amethyst",
+                "timeContextFromParameter": "TimeRange",
+                "queryType": 0,
+                "resourceType": "microsoft.insights/components",
+                "chartSettings": {
+                    "seriesLabelSettings": [
+                        {
+                            "seriesName": "sumTotalTokens",
+                            "color": "amethyst"
+                        }
+                    ]
+                }
+            },
+            "customWidth": "50",
+            "name": "Token usage over time"
+        },
+        {
+            "type": 3,
+            "content": {
+                "version": "KqlItem/1.0",
+                "query": "requests\n| extend Model = tostring(parse_json(tostring(parse_json(tostring(customDimensions.[\"Response-Body\"])).model)))\n| extend UsageData = parse_json(tostring(parse_json(tostring(customDimensions.[\"Response-Body\"])).usage))\n| extend PromptTokens = toreal(UsageData[\"prompt_tokens\"]), CompletionTokens = toreal(UsageData[\"completion_tokens\"])\n| extend PromptCost = iif(Model == \"gpt-35-turbo\", (PromptTokens/1000)*0.0015, iif(Model == \"gpt-4\", (PromptTokens/1000)*0.03, 0.0))\n| extend CompletionCost = iif(Model == \"gpt-35-turbo\", (CompletionTokens/1000)*0.002, iif(Model == \"gpt-4\", (CompletionTokens/1000)*0.06, 0.0))\n| extend TotalCost = PromptCost + CompletionCost\n| summarize totalCost=sum(TotalCost), promptCost=sum(PromptCost), completionCost=sum(CompletionCost) by bin(timestamp, 1h)\n| project timestamp, totalCost, promptCost, completionCost\n| render timechart\n",
+                "size": 0,
+                "showAnalytics": true,
+                "title": "Total cost over time",
+                "color": "green",
+                "timeContextFromParameter": "TimeRange",
+                "queryType": 0,
+                "resourceType": "microsoft.insights/components",
+                "chartSettings": {
+                    "seriesLabelSettings": [
+                        {
+                            "seriesName": "ResponseDuration",
+                            "label": "",
+                            "color": "blue"
+                        }
+                    ],
+                    "ySettings": {
+                        "numberFormatSettings": {
+                            "unit": 0,
+                            "options": {
+                                "currency": "USD",
+                                "style": "currency",
+                                "useGrouping": true,
+                                "maximumSignificantDigits": 4
+                            }
+                        }
+                    }
+                }
+            },
+            "customWidth": "50",
+            "name": "Total cost over time"
+        },
+        {
+            "type": 3,
+            "content": {
+                "version": "KqlItem/1.0",
+                "query": "requests\n| summarize ResponseDuration = avg(duration) by bin(timestamp, 1h)\n| render timechart\n",
+                "size": 0,
+                "aggregation": 3,
+                "showAnalytics": true,
+                "title": "Average response time",
+                "color": "blue",
+                "timeContextFromParameter": "TimeRange",
+                "queryType": 0,
+                "resourceType": "microsoft.insights/components",
+                "chartSettings": {
+                    "seriesLabelSettings": [
+                        {
+                            "seriesName": "ResponseDuration",
+                            "label": "",
+                            "color": "blue"
+                        }
+                    ],
+                    "ySettings": {
+                        "numberFormatSettings": {
+                            "unit": 23,
+                            "options": {
+                                "style": "decimal",
+                                "useGrouping": true
+                            }
+                        }
+                    }
+                }
+            },
+            "customWidth": "50",
+            "name": "Average response time"
+        },
+        {
+            "type": 3,
+            "content": {
+                "version": "KqlItem/1.0",
+                "query": "requests\n| summarize Count=count() by bin(timestamp, 1d), performanceBucket\n| extend BucketOrder = case(\n    performanceBucket == \"<250ms\", 1,\n    performanceBucket == \"250ms-500ms\", 2,\n    performanceBucket == \"500ms-1sec\", 3,\n    performanceBucket == \"1sec-3sec\", 4,\n    performanceBucket == \"3sec-7sec\", 5,\n    performanceBucket == \"7sec-15sec\", 6,\n    performanceBucket == \"15sec-30sec\", 7,\n    performanceBucket == \">30sec\", 8,\n    0\n)\n| project performanceBucket, Count, BucketOrder\n| order by BucketOrder asc\n",
+                "size": 0,
+                "showAnalytics": true,
+                "title": "Performance buckets",
+                "timeContextFromParameter": "TimeRange",
+                "exportFieldName": "x",
+                "exportParameterName": "PerformanceBucketFilter",
+                "exportDefaultValue": "All",
+                "queryType": 0,
+                "resourceType": "microsoft.insights/components",
+                "visualization": "barchart",
+                "gridSettings": {
+                    "formatters": [
+                        {
+                            "columnMatch": "Count",
+                            "formatter": 8,
+                            "formatOptions": {
+                                "palette": "hotCold"
+                            }
+                        }
+                    ]
+                },
+                "tileSettings": {
+                    "showBorder": false,
+                    "titleContent": {
+                        "columnMatch": "performanceBucket",
+                        "formatter": 1
+                    },
+                    "leftContent": {
+                        "columnMatch": "Count",
+                        "formatter": 12,
+                        "formatOptions": {
+                            "palette": "auto"
+                        },
+                        "numberFormat": {
+                            "unit": 17,
+                            "options": {
+                                "maximumSignificantDigits": 3,
+                                "maximumFractionDigits": 2
+                            }
+                        }
+                    }
+                },
+                "chartSettings": {
+                    "xAxis": "performanceBucket",
+                    "yAxis": [
+                        "Count"
+                    ],
+                    "showLegend": true,
+                    "seriesLabelSettings": [
+                        {
+                            "seriesName": "<250ms",
+                            "color": "amethyst"
+                        },
+                        {
+                            "seriesName": "250ms-500ms",
+                            "color": "blue"
+                        },
+                        {
+                            "seriesName": "500ms-1sec",
+                            "color": "green"
+                        },
+                        {
+                            "seriesName": "1sec-3sec",
+                            "color": "turquoise"
+                        },
+                        {
+                            "seriesName": "3sec-7sec",
+                            "color": "orange"
+                        },
+                        {
+                            "seriesName": "7sec-15sec",
+                            "color": "redBright"
+                        }
+                    ]
+                }
+            },
+            "customWidth": "50",
+            "name": "Performance buckets"
+        },
+        {
+            "type": 1,
+            "content": {
+                "json": "# Usage\n### Click on a performance bucket above to filter requests by bucket.\n### Click on a row below to view the details of that request.\n",
+                "style": "info"
+            },
+            "name": "text - 6"
+        },
+        {
+            "type": 3,
+            "content": {
+                "version": "KqlItem/1.0",
+                "query": "let PerformanceBucketFilter = '{PerformanceBucketFilter}';\nlet SelectedCustomParam = '{SelectedCustomParam}';\nlet SelectedParamValue = '{SelectedParamValue}';\n\nrequests\n| where operation_Name == \"OpenAIProxy;rev=1 - Completions_Create\" or operation_Name == \"OpenAIProxy;rev=1 - ChatCompletions_Create\"\n| where PerformanceBucketFilter == \"All\" or performanceBucket == PerformanceBucketFilter\n| extend requestId = customDimensions.[\"Request Id\"]\n| extend Prompt = parse_json(tostring(parse_json(tostring(parse_json(tostring(customDimensions.[\"Request-Body\"])).messages[-1].content))))\n| extend Generation = parse_json(tostring(parse_json(tostring(parse_json(tostring(customDimensions.[\"Response-Body\"])).choices))[0].message)).content\n| extend promptTokens = parse_json(tostring(parse_json(tostring(customDimensions.[\"Response-Body\"])).usage)).prompt_tokens\n| extend completionTokens = parse_json(tostring(parse_json(tostring(customDimensions.[\"Response-Body\"])).usage)).completion_tokens\n| extend totalTokens = parse_json(tostring(parse_json(tostring(customDimensions.[\"Response-Body\"])).usage)).total_tokens\n| extend CustomHeaders = parse_json(tostring(customDimensions.[\"Request-custom-headers\"]))\n| extend status = parse_json(tostring(customDimensions.[\"Response-Body\"])).statusCode\n| extend errorMessage = parse_json(tostring(customDimensions.[\"Response-Body\"])).message\n| where (SelectedCustomParam == \"\" or SelectedParamValue == \"none\") or (CustomHeaders.[SelectedCustomParam] == SelectedParamValue)\n| project timestamp, status, Prompt, Generation, round(duration,2), totalTokens, promptTokens, completionTokens, success, CustomHeaders, requestId,  errorMessage\n| order by timestamp desc",
+                "size": 0,
+                "title": "Requests table",
+                "timeContextFromParameter": "TimeRange",
+                "showRefreshButton": true,
+                "exportFieldName": "requestId",
+                "exportParameterName": "SelectedRequest",
+                "exportDefaultValue": "none",
+                "exportToExcelOptions": "all",
+                "queryType": 0,
+                "resourceType": "microsoft.insights/components",
+                "gridSettings": {
+                    "formatters": [
+                        {
+                            "columnMatch": "timestamp",
+                            "formatter": 0,
+                            "formatOptions": {
+                                "customColumnWidthSetting": "26ch"
+                            }
+                        },
+                        {
+                            "columnMatch": "status",
+                            "formatter": 8,
+                            "formatOptions": {
+                                "palette": "greenRed",
+                                "customColumnWidthSetting": "12ch"
+                            }
+                        }
+                    ],
+                    "filter": true,
+                    "sortBy": [
+                        {
+                            "itemKey": "timestamp",
+                            "sortOrder": 2
+                        }
+                    ]
+                },
+                "sortBy": [
+                    {
+                        "itemKey": "timestamp",
+                        "sortOrder": 2
+                    }
+                ]
+            },
+            "name": "Requests table",
+            "styleSettings": {
+                "showBorder": true
+            }
+        },
+        {
+            "type": 3,
+            "content": {
+                "version": "KqlItem/1.0",
+                "query": "let SelectedRequest = '{SelectedRequest}';\nlet MetaData = requests\n| where tostring(customDimensions.[\"Request Id\"]) == SelectedRequest or SelectedRequest == 'ALL'\n| extend requestId = customDimensions.[\"Request Id\"]\n| extend Duration = tostring(round(duration,2)), Success = tostring(success), PerformanceBucket = tostring(performanceBucket)\n| extend ErrorMessage = tostring(parse_json(tostring(customDimensions.[\"Response-Body\"])).message)\n| extend RequestSize = tostring(customMeasurements[\"Request Size\"]), ResponseSize = tostring(customMeasurements[\"Response Size\"])\n| extend Model = tostring(parse_json(tostring(parse_json(tostring(customDimensions.[\"Response-Body\"])).model)))\n| extend OperationName = tostring(customDimensions[\"Operation Name\"])\n| extend UsageData = parse_json(tostring(parse_json(tostring(customDimensions.[\"Response-Body\"])).usage))\n| extend TotalTokens = toreal(UsageData[\"total_tokens\"]), CompletionTokens = toreal(UsageData[\"completion_tokens\"]), PromptTokens = toreal(UsageData[\"prompt_tokens\"])\n| extend PromptCost = iif(Model == \"gpt-35-turbo\", (PromptTokens/1000) * 0.0015, iif(Model == \"gpt-4\", (PromptTokens/1000) * 0.03, 0.0))\n| extend CompletionCost = iif(Model == \"gpt-35-turbo\", (CompletionTokens/1000) * 0.002, iif(Model == \"gpt-4\", (CompletionTokens/1000) * 0.06, 0.0))\n| extend EstimatedCost = PromptCost + CompletionCost\n| project Metadata=strcat(\"|&nbsp;|&nbsp;|\\n|--:|--|\\n\", \"| **Request ID** |\", requestId, \"|\\n\",   \"| **Duration** | \", Duration, \" ms |\\n| **Success** | \", Success, \" \", ErrorMessage, \" |\\n| **Request Size** | \", RequestSize, \" bytes |\\n| **Response Size** | \", ResponseSize, \" bytes |\\n| **Total Tokens** | \", tostring(TotalTokens), \" |\\n| **Completion Tokens** | \", tostring(CompletionTokens), \" |\\n| **Prompt Tokens** | \", tostring(PromptTokens), \"|\\n| **Performance Bucket** | \", PerformanceBucket, \"|\\n| **Model** | \", Model, \"|\\n| **Operation Name** | \", OperationName, \" |\\n| **Estimated Cost** <br><small>assumes gpt-35-turbo <br>or gpt-4, no discounts</small> | $\", tostring(round(EstimatedCost, 4)), \" |\");\n\nMetaData\n",
+                "size": 3,
+                "title": "Request Metadata",
+                "noDataMessage": "Select a request in the table above to see details.",
+                "timeContextFromParameter": "TimeRange",
+                "queryType": 0,
+                "resourceType": "microsoft.insights/components",
+                "visualization": "card",
+                "textSettings": {
+                    "style": "markdown"
+                }
+            },
+            "conditionalVisibility": {
+                "parameterName": "SelectedRequest",
+                "comparison": "isNotEqualTo",
+                "value": "none"
+            },
+            "customWidth": "0",
+            "name": "Request Metadata",
+            "styleSettings": {
+                "margin": "0",
+                "maxWidth": "35%"
+            }
+        },
+        {
+            "type": 3,
+            "content": {
+                "version": "KqlItem/1.0",
+                "query": "let SelectedRequest = '{SelectedRequest}';\nlet SystemMessages = requests\n| where customDimensions.[\"Request Id\"] == SelectedRequest or 'ALL' == SelectedRequest\n| extend MessagesArray = parse_json(tostring(parse_json(tostring(customDimensions.[\"Request-Body\"])).messages))\n| mv-expand MessagesArray\n| where tostring(MessagesArray[\"role\"]) == \"system\"\n| project ChatHistoryRow=strcat(\"🔔 **System**: \", tostring(MessagesArray[\"content\"]), \"\\n\"), Order=1;\n\nlet UserAndAssistantMessages = requests\n| where customDimensions.[\"Request Id\"] == SelectedRequest or 'ALL' == SelectedRequest\n| extend MessagesArray = parse_json(tostring(parse_json(tostring(customDimensions.[\"Request-Body\"])).messages))\n| mv-expand MessagesArray\n| where tostring(MessagesArray[\"role\"]) != \"system\"\n| extend Role = tostring(MessagesArray[\"role\"]), Content = tostring(MessagesArray[\"content\"])\n| extend Symbol = iif(Role == \"assistant\", \"🤖 \", \"👤 \")\n| project ChatHistoryRow=strcat(Symbol, \"**\", iif(Role == \"assistant\", \"Assistant\", \"User\"), \"**: \", Content, \"<hr>\\n\"), Order=2;\n\nlet FinalResponse = requests\n| where customDimensions.[\"Request Id\"] == SelectedRequest or 'ALL' == SelectedRequest\n| extend Generation = parse_json(tostring(parse_json(tostring(parse_json(tostring(customDimensions.[\"Response-Body\"])).choices))[0].message)).content\n| project ChatHistoryRow=strcat(\"🤖 **Assistant**: \", Generation, \"\\n\"), Order=3;\n\nSystemMessages\n| union UserAndAssistantMessages, FinalResponse\n| order by Order asc\n| summarize ChatHistory=strcat_array(makelist(ChatHistoryRow), \"\\n\")\n",
+                "size": 0,
+                "title": "Request History",
+                "noDataMessage": "Select a request in the table above to see details.",
+                "timeContextFromParameter": "TimeRange",
+                "queryType": 0,
+                "resourceType": "microsoft.insights/components",
+                "visualization": "card",
+                "textSettings": {
+                    "style": "markdown"
+                }
+            },
+            "conditionalVisibility": {
+                "parameterName": "SelectedRequest",
+                "comparison": "isNotEqualTo",
+                "value": "none"
+            },
+            "customWidth": "65",
+            "name": "Request History",
+            "styleSettings": {
+                "margin": "0",
+                "padding": "12px",
+                "showBorder": true
+            }
+        },
+        {
+            "type": 1,
+            "content": {
+                "json": "&nbsp;\n\n&nbsp;\n\n&nbsp;\n\n🚀 Thanks for using this tool! Please drop any feedback or suggestions in the [GitHub repo](https://github.com/aavetis/azure-openai-logger).\n\n\nWant to collaborate? Find me on [Twitter](https://twitter.com/albfresco) or [LinkedIn](https://www.linkedin.com/in/albert-avetisian).\n\n– albs\n\n"
+            },
+            "name": "text - 10",
+            "styleSettings": {
+                "padding": "24px"
+            }
+        }
+    ],
+    "$schema": "https://github.com/Microsoft/Application-Insights-Workbooks/blob/master/schema/workbook.json"
+}

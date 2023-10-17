@@ -10,14 +10,14 @@ param sku string = 'Basic'
 @minValue(0)
 @maxValue(6)
 param capacity int = 1
-param publicNetworkAccess string = 'Enabled'
+param publicNetworkAccess string = 'Disabled'
+
 //Private Endpoint settings
-/*
 param redisCachePrivateEndpointName string
 param vNetName string
 param privateEndpointSubnetName string
 param redisCacheDnsZoneName string
-*/
+
 var skuFamily = (sku == 'Premium') ? 'P' : 'C'
 
 resource redisCache 'Microsoft.Cache/redis@2022-06-01' = {
@@ -35,7 +35,7 @@ resource redisCache 'Microsoft.Cache/redis@2022-06-01' = {
     }
   }
 }
-/*
+
 module privateEndpoint '../networking/private-endpoint.bicep' = {
   name: '${redisCache.name}-privateEndpoint-deployment'
   params: {
@@ -50,6 +50,6 @@ module privateEndpoint '../networking/private-endpoint.bicep' = {
     location: location
   }
 }
-*/
+
 output cacheName string = redisCache.name
 output hostName string = redisCache.properties.hostName

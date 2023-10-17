@@ -7,14 +7,13 @@ param kind string = 'StorageV2'
 param minimumTlsVersion string = 'TLS1_2'
 param sku object = { name: 'Standard_LRS' }
 //Private Endpoint settings
-/*
 param storageAccountPrivateEndpointName string
 param vNetName string
 param privateEndpointSubnetName string
 param storageAccountDnsZoneName string
-*/
-param allowBlobPublicAccess bool = true
-param publicNetworkAccess string = 'Enabled'
+
+param allowBlobPublicAccess bool = false
+param publicNetworkAccess string = 'Disabled'
 
 resource storage 'Microsoft.Storage/storageAccounts@2022-05-01' = {
   name: name
@@ -43,7 +42,6 @@ resource storage 'Microsoft.Storage/storageAccounts@2022-05-01' = {
   }
 }
 //Private Endpoint 
-/*
 module privateEndpoint '../networking/private-endpoint.bicep' = {
   name: '${storage.name}-privateEndpoint-deployment-blob'
   params: {
@@ -58,6 +56,6 @@ module privateEndpoint '../networking/private-endpoint.bicep' = {
     location: location
   }
 }
-*/
+
 output storageAccountName string = storage.name
 output storagePrimaryEndpoints object = storage.properties.primaryEndpoints

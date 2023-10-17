@@ -10,13 +10,14 @@ param sku object = {
   name: 'S0'
 }
 param apimManagedIdentityName string
+param logAnalyticsWorkspaceId string
+
 //Private Endpoint settings
-/*
 param openAiPrivateEndpointName string
 param vNetName string
 param privateEndpointSubnetName string
 param openAiDnsZoneName string
-*/
+
 // Cognitive Services OpenAI User
 var roleDefinitionResourceId = '/providers/Microsoft.Authorization/roleDefinitions/5e0bd9bd-7b93-4f28-af87-19fc36ad61bd'
 
@@ -52,7 +53,7 @@ resource deployment 'Microsoft.CognitiveServices/accounts/deployments@2023-05-01
     capacity: 20
   }
 }]
-/*
+
 module privateEndpoint '../networking/private-endpoint.bicep' = {
   name: '${account.name}-privateEndpoint-deployment'
   params: {
@@ -67,7 +68,7 @@ module privateEndpoint '../networking/private-endpoint.bicep' = {
     location: location
   }
 }
-*/
+
 resource roleAssignment 'Microsoft.Authorization/roleAssignments@2022-04-01' = {
   scope: account
   name: guid(account.id, roleDefinitionResourceId)
@@ -75,6 +76,26 @@ resource roleAssignment 'Microsoft.Authorization/roleAssignments@2022-04-01' = {
     roleDefinitionId: roleDefinitionResourceId
     principalId: managedIdentityApim.properties.principalId
     principalType: 'ServicePrincipal'
+  }
+}
+
+resource diagnosticSettings 'Microsoft.Insights/diagnosticSettings@2021-05-01-preview' = {
+  name: 'LogToLogAnalytics'
+  scope: account
+  properties: {
+    workspaceId: logAnalyticsWorkspaceId
+    logs: [
+      {
+        category: 'AllLogs'
+        enabled: true
+      }
+    ]
+    metrics: [
+      {
+        category: 'AllMetrics'
+        enabled: true 
+      }
+    ]
   }
 }
 

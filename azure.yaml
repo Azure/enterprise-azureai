@@ -8,11 +8,11 @@
 name: ais-apim-openai
 metadata:
   template: ais-apim-openai@1.0.0
-services:
-  api:
-    project: ./api
-    language: dotnet
-    host: function
+#services:
+#  api:
+#    project: ./api
+#    language: dotnet
+#    host: function
 # services:
 #   ## An example for a python API service.
 #   ## The service is named 'python-api'.

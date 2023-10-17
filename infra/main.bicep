@@ -14,16 +14,24 @@ param location string
 param resourceGroupName string = ''
 param openAiServiceName string = ''
 param keyVaultName string = ''
-param identityName string = ''
+param apimIdentityName string = ''
+param funcIdentityName string = ''
 param apimServiceName string = ''
 param logAnalyticsName string = ''
 param applicationInsightsDashboardName string = ''
 param applicationInsightsName string = ''
+param eventHubNamespaceName string = ''
+param storageAccountName string = ''
+param functionAppName string = ''
+param appServicePlanName string = ''
 param vnetName string = ''
 param apimSubnetName string = ''
 param apimNsgName string = ''
+param appServiceSubnetName string = ''
+param appServiceNsgName string = ''
 param privateEndpointSubnetName string = ''
 param privateEndpointNsgName string = ''
+param redisCacheServiceName string = ''
 
 //Determine the version of the chat model to deploy
 param arrayVersion0301Locations array = [
@@ -37,19 +45,30 @@ var resourceToken = toLower(uniqueString(subscription().id, environmentName, loc
 var openAiSkuName = 'S0'
 var chatGptDeploymentName = 'chat'
 var chatGptModelName = 'gpt-35-turbo'
-var openaiApiKeySecretName = 'openai-apikey'
+var eventHubListenPolicyName = 'listen'
+var eventHubSendPolicyName = 'send'
+var eventHubName = 'openai-chargeback-hub'
 var tags = { 'azd-env-name': environmentName }
 
+/*
 var openAiPrivateDnsZoneName = 'privatelink.openai.azure.com'
 var keyVaultPrivateDnsZoneName = 'privatelink.vaultcore.azure.net'
 var monitorPrivateDnsZoneName = 'privatelink.monitor.azure.com'
+var eventHubPrivateDnsZoneName = 'privatelink.servicebus.windows.net'
+var redisCachePrivateDnsZoneName = 'privatelink.redis.cache.windows.net'
+var storageAccountPrivateDnsZoneName = 'privatelink.blob.${az.environment().suffixes.storage}'
+var appServicePrivateDnsZoneName = 'privatelink.azurewebsites.net'
 
 var privateDnsZoneNames = [
   openAiPrivateDnsZoneName
   keyVaultPrivateDnsZoneName
   monitorPrivateDnsZoneName
+  eventHubPrivateDnsZoneName
+  redisCachePrivateDnsZoneName
+  storageAccountPrivateDnsZoneName
+  appServicePrivateDnsZoneName
 ]
-
+*/
 // Organize resources in a resource group
 resource resourceGroup 'Microsoft.Resources/resourceGroups@2021-04-01' = {
   name: !empty(resourceGroupName) ? resourceGroupName : '${abbrs.resourcesResourceGroups}${environmentName}'
@@ -57,6 +76,7 @@ resource resourceGroup 'Microsoft.Resources/resourceGroups@2021-04-01' = {
   tags: tags
 }
 
+/*
 module dnsDeployment './modules/networking/dns.bicep' = [for privateDnsZoneName in privateDnsZoneNames: {
   name: 'dns-deployment-${privateDnsZoneName}'
   scope: resourceGroup
@@ -64,17 +84,28 @@ module dnsDeployment './modules/networking/dns.bicep' = [for privateDnsZoneName 
     name: privateDnsZoneName
   }
 }]
+*/
 
-module managedIdentity './modules/security/managed-identity.bicep' = {
-  name: 'managed-identity'
+module managedIdentityApim './modules/security/managed-identity.bicep' = {
+  name: 'managed-identity-apim'
   scope: resourceGroup
   params: {
-    name: !empty(identityName) ? identityName : '${abbrs.managedIdentityUserAssignedIdentities}${resourceToken}'
+    name: !empty(apimIdentityName) ? apimIdentityName : '${abbrs.managedIdentityUserAssignedIdentities}${resourceToken}-apim'
     location: location
     tags: tags
   }
 }
 
+module managedIdentityFunction './modules/security/managed-identity.bicep' = {
+  name: 'managed-identity-func'
+  scope: resourceGroup
+  params: {
+    name: !empty(funcIdentityName) ? funcIdentityName : '${abbrs.managedIdentityUserAssignedIdentities}${resourceToken}-func'
+    location: location
+    tags: tags
+  }
+}
+/*
 module keyVault './modules/security/key-vault.bicep' = {
   name: 'key-vault'
   scope: resourceGroup
@@ -86,21 +117,27 @@ module keyVault './modules/security/key-vault.bicep' = {
     vNetName: vnet.outputs.vnetName
     privateEndpointSubnetName: vnet.outputs.privateEndpointSubnetName
     logAnalyticsWorkspaceName: monitoring.outputs.logAnalyticsWorkspaceName
-    managedIdentityName: managedIdentity.outputs.managedIdentityName
+    managedIdentityName: managedIdentityApim.outputs.managedIdentityName
     keyVaultDnsZoneName: keyVaultPrivateDnsZoneName
   }
 }
-
-module openaiKeyVaultSecret './modules/security/keyvault-secret.bicep' = {
-  name: 'openai-keyvault-secret'
+*/
+module redisCache './modules/cache/redis.bicep' = {
+  name: 'redis-cache'
   scope: resourceGroup
   params: {
-    keyVaultName: keyVault.outputs.keyVaultName
-    secretName: openaiApiKeySecretName
-    openAiName: openAi.outputs.openAiName
+    name: !empty(redisCacheServiceName) ? redisCacheServiceName : '${abbrs.cacheRedis}${resourceToken}'
+    location: location
+    tags: tags
+    sku: 'Basic'
+    capacity: 1
+    //redisCachePrivateEndpointName: '${abbrs.cacheRedis}${abbrs.privateEndpoints}${resourceToken}'
+    //vNetName: vnet.outputs.vnetName
+    //privateEndpointSubnetName: vnet.outputs.privateEndpointSubnetName
+    //redisCacheDnsZoneName: redisCachePrivateDnsZoneName
   }
 }
-
+/*
 module vnet './modules/networking/vnet.bicep' = {
   name: 'vnet'
   scope: resourceGroup
@@ -111,6 +148,8 @@ module vnet './modules/networking/vnet.bicep' = {
     name: !empty(vnetName) ? vnetName : '${abbrs.networkVirtualNetworks}${resourceToken}'
     apimSubnetName: !empty(apimSubnetName) ? apimSubnetName : '${abbrs.networkVirtualNetworksSubnets}${abbrs.apiManagementService}${resourceToken}'
     apimNsgName: !empty(apimNsgName) ? apimNsgName : '${abbrs.networkNetworkSecurityGroups}${abbrs.apiManagementService}${resourceToken}'
+    appServiceSubnetName: !empty(appServiceSubnetName) ? appServiceSubnetName : '${abbrs.networkVirtualNetworksSubnets}${abbrs.webSitesFunctions}${resourceToken}'
+    appServiceNsgName: !empty(appServiceNsgName) ? appServiceNsgName : '${abbrs.networkNetworkSecurityGroups}${abbrs.webSitesFunctions}${resourceToken}'
     privateEndpointSubnetName: !empty(privateEndpointSubnetName) ? privateEndpointSubnetName : '${abbrs.networkVirtualNetworksSubnets}${abbrs.privateEndpoints}${resourceToken}'
     privateEndpointNsgName: !empty(privateEndpointNsgName) ? privateEndpointNsgName : '${abbrs.networkNetworkSecurityGroups}${abbrs.privateEndpoints}${resourceToken}'
     location: location
@@ -118,7 +157,7 @@ module vnet './modules/networking/vnet.bicep' = {
     privateDnsZoneNames: privateDnsZoneNames
   }
 }
-
+*/
 module monitoring './modules/monitor/monitoring.bicep' = {
   name: 'monitoring'
   scope: resourceGroup
@@ -128,10 +167,82 @@ module monitoring './modules/monitor/monitoring.bicep' = {
     logAnalyticsName: !empty(logAnalyticsName) ? logAnalyticsName : '${abbrs.operationalInsightsWorkspaces}${resourceToken}'
     applicationInsightsName: !empty(applicationInsightsName) ? applicationInsightsName : '${abbrs.insightsComponents}${resourceToken}'
     applicationInsightsDashboardName: !empty(applicationInsightsDashboardName) ? applicationInsightsDashboardName : '${abbrs.portalDashboards}${resourceToken}'
-    vNetName: vnet.outputs.vnetName
-    privateEndpointSubnetName: vnet.outputs.privateEndpointSubnetName
-    applicationInsightsDnsZoneName: monitorPrivateDnsZoneName
-    applicationInsightsPrivateEndpointName: '${abbrs.insightsComponents}${abbrs.privateEndpoints}${resourceToken}'
+    //vNetName: vnet.outputs.vnetName
+    //privateEndpointSubnetName: vnet.outputs.privateEndpointSubnetName
+    //applicationInsightsDnsZoneName: monitorPrivateDnsZoneName
+    //applicationInsightsPrivateEndpointName: '${abbrs.insightsComponents}${abbrs.privateEndpoints}${resourceToken}'
+  }
+}
+
+module storage './modules/storage/storage-account.bicep' = {
+  name: 'storage'
+  scope: resourceGroup
+  params: {
+    name: !empty(storageAccountName) ? storageAccountName : '${abbrs.storageStorageAccounts}${resourceToken}'
+    location: location
+    tags: tags
+    //storageAccountPrivateEndpointName: '${abbrs.storageStorageAccounts}-${abbrs.privateEndpoints}${resourceToken}'
+    //vNetName: vnet.outputs.vnetName
+    //privateEndpointSubnetName: vnet.outputs.privateEndpointSubnetName
+    //storageAccountDnsZoneName: storageAccountPrivateDnsZoneName
+  }
+}
+
+module appServicePlan './modules/host/appserviceplan.bicep' = {
+  name: 'appserviceplan'
+  scope: resourceGroup
+  params: {
+    name: !empty(appServicePlanName) ? appServicePlanName : '${abbrs.webServerFarms}${resourceToken}'
+    location: location
+    tags: tags
+    sku: {
+      name: 'B1'
+      tier: 'Basic'
+    }
+  }
+}
+
+module functionApp './modules/host/function.bicep' = {
+  name: 'function-app'
+  scope: resourceGroup
+  params: {
+    name: !empty(functionAppName) ? functionAppName : '${abbrs.webSitesFunctions}${resourceToken}'
+    location: location
+    tags: tags
+    runtimeName: 'dotnet'
+    runtimeVersion: '7.0'
+    appInsightsName: monitoring.outputs.applicationInsightsName
+    appServicePlanName: appServicePlan.outputs.appServicePlanName
+    functionAppStorageAccountName: storage.outputs.storageAccountName
+    logAnalyticsWorkspaceName: monitoring.outputs.logAnalyticsWorkspaceName
+    managedIdentityName: managedIdentityFunction.outputs.managedIdentityName
+    //functionAppPrivateEndpointName: '${abbrs.webSitesFunctions}${abbrs.privateEndpoints}${resourceToken}'
+    //appServicePrivateDnsZoneName: appServicePrivateDnsZoneName
+    //privateEndpointSubnetName: vnet.outputs.privateEndpointSubnetName
+    //vNetName: vnet.outputs.vnetName
+    //appServiceSubnetName: vnet.outputs.appServiceSubnetName
+    eventHubNamespaceName: eventHub.outputs.eventHubNamespaceName
+    eventHubName: eventHub.outputs.eventHubName
+    eventHubListenPolicyName: eventHubListenPolicyName
+  }
+}
+
+module eventHub './modules/monitor/eventhub.bicep' = {
+  name: 'event-hub'
+  scope: resourceGroup
+  params: {
+    name: !empty(eventHubNamespaceName) ? eventHubNamespaceName : '${abbrs.eventHubNamespaces}${resourceToken}'
+    location: location
+    tags: tags
+    eventHubListenPolicyName: eventHubListenPolicyName
+    eventHubSendPolicyName: eventHubSendPolicyName
+    apimManagedIdentityName: managedIdentityApim.outputs.managedIdentityName
+    eventHubName: !empty(eventHubName) ? eventHubName : '${abbrs.eventHubNamespacesEventHubs}${resourceToken}'
+    //eventHubPrivateEndpointName: '${abbrs.eventHubNamespaces}${abbrs.privateEndpoints}${resourceToken}'
+    //vNetName: vnet.outputs.vnetName
+    //privateEndpointSubnetName: vnet.outputs.privateEndpointSubnetName
+    //eventHubDnsZoneName: eventHubPrivateDnsZoneName
+
   }
 }
 
@@ -142,12 +253,15 @@ module apim './modules/apim/apim.bicep' = {
     name: !empty(apimServiceName) ? apimServiceName : '${abbrs.apiManagementService}${resourceToken}'
     location: location
     tags: tags
+    sku: 'StandardV2'
+    virtualNetworkType: 'none'
     applicationInsightsName: monitoring.outputs.applicationInsightsName
-    openaiKeyVaultSecretName: openaiKeyVaultSecret.outputs.keyVaultSecretName
-    keyVaultEndpoint: keyVault.outputs.keyVaultEndpoint
     openAiUri: openAi.outputs.openAiEndpointUri
-    managedIdentityName: managedIdentity.outputs.managedIdentityName
-    apimSubnetId: vnet.outputs.apimSubnetId
+    apimManagedIdentityName: managedIdentityApim.outputs.managedIdentityName
+    eventHubName: eventHub.outputs.eventHubName
+    eventHubNamespaceName: eventHub.outputs.eventHubNamespaceName
+    redisCacheServiceName: redisCache.outputs.cacheName
+    //apimSubnetId: vnet.outputs.apimSubnetId
   }
 }
 
@@ -158,10 +272,7 @@ module openAi 'modules/ai/cognitiveservices.bicep' = {
     name: !empty(openAiServiceName) ? openAiServiceName : '${abbrs.cognitiveServicesAccounts}${resourceToken}'
     location: location
     tags: tags
-    openAiPrivateEndpointName: '${abbrs.cognitiveServicesAccounts}${abbrs.privateEndpoints}${resourceToken}'
-    vNetName: vnet.outputs.vnetName
-    privateEndpointSubnetName: vnet.outputs.privateEndpointSubnetName
-    openAiDnsZoneName: openAiPrivateDnsZoneName
+    apimManagedIdentityName: managedIdentityApim.outputs.managedIdentityName
     sku: {
       name: openAiSkuName
     }
@@ -178,6 +289,10 @@ module openAi 'modules/ai/cognitiveservices.bicep' = {
         }
       }
     ]
+    //openAiPrivateEndpointName: '${abbrs.cognitiveServicesAccounts}${abbrs.privateEndpoints}${resourceToken}'
+    //vNetName: vnet.outputs.vnetName
+    //privateEndpointSubnetName: vnet.outputs.privateEndpointSubnetName
+    //openAiDnsZoneName: openAiPrivateDnsZoneName
   }
 }
 

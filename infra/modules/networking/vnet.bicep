@@ -2,6 +2,8 @@ param name string
 param location string = resourceGroup().location
 param apimSubnetName string
 param apimNsgName string
+param appServiceSubnetName string
+param appServiceNsgName string
 param privateEndpointSubnetName string
 param privateEndpointNsgName string
 param privateDnsZoneNames array
@@ -56,6 +58,14 @@ resource apimNsg 'Microsoft.Network/networkSecurityGroups@2020-07-01' = {
   }
 }
 
+resource appServiceNsg 'Microsoft.Network/networkSecurityGroups@2022-09-01' = {
+  name: appServiceNsgName
+  location: location
+  properties: {
+    securityRules: []
+  }
+}
+
 resource privateEndpointNsg 'Microsoft.Network/networkSecurityGroups@2020-07-01' = {
   name: privateEndpointNsgName
   location: location
@@ -89,12 +99,37 @@ resource virtualNetwork 'Microsoft.Network/virtualNetworks@2019-11-01' = {
           networkSecurityGroup: apimNsg.id == '' ? null : {
             id: apimNsg.id 
           }
+          delegations: [
+            {
+              name: 'Microsoft.Web/serverFarms'
+              properties: {
+                serviceName: 'Microsoft.Web/serverFarms'
+              }
+            }
+          ]
+        }
+      }
+      {
+        name: appServiceSubnetName
+        properties: {
+          addressPrefix: '10.0.2.0/24'
+          networkSecurityGroup: appServiceNsg.id == '' ? null : {
+            id: appServiceNsg.id
+          }
+          delegations: [
+            {
+              name: 'Microsoft.Web/serverFarms'
+              properties: {
+                serviceName: 'Microsoft.Web/serverFarms'
+              }
+            }
+          ]
         }
       }
       {
         name: privateEndpointSubnetName
         properties: {
-          addressPrefix: '10.0.2.0/24'
+          addressPrefix: '10.0.3.0/24'
           networkSecurityGroup: privateEndpointNsg.id == '' ? null : {
             id: privateEndpointNsg.id
           }
@@ -109,6 +144,10 @@ resource virtualNetwork 'Microsoft.Network/virtualNetworks@2019-11-01' = {
 
   resource apimSubnet 'subnets' existing = {
     name: apimSubnetName
+  }
+
+  resource appServiceSubnet 'subnets' existing = {
+    name: appServiceSubnetName
   }
 
   resource privateEndpointSubnet 'subnets' existing = {
@@ -131,5 +170,7 @@ output virtualNetworkId string = virtualNetwork.id
 output vnetName string = virtualNetwork.name
 output apimSubnetName string = virtualNetwork::apimSubnet.name
 output apimSubnetId string = virtualNetwork::apimSubnet.id
+output appServiceSubnetName string = virtualNetwork::appServiceSubnet.name
+output appServiceSubnetId string = virtualNetwork::appServiceSubnet.id
 output privateEndpointSubnetName string = virtualNetwork::privateEndpointSubnet.name
 output privateEndpointSubnetId string = virtualNetwork::privateEndpointSubnet.id

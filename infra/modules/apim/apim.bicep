@@ -7,27 +7,34 @@ param publisherEmail string = 'noreply@microsoft.com'
 
 @minLength(1)
 param publisherName string = 'n/a'
-param sku string = 'Developer'
+param sku string
 param skuCount int = 1
 param applicationInsightsName string
 param openAiUri string
-param openaiKeyVaultSecretName string
-param keyVaultEndpoint string
-param managedIdentityName string
-param apimSubnetId string
+param apimManagedIdentityName string
+param eventHubNamespaceName string
+param eventHubName string
+param redisCacheServiceName string = ''
+//Vnet Integration
+//param apimSubnetId string
+param virtualNetworkType string = ''
 
-var openAiApiKeyNamedValue = 'openai-apikey'
 var openAiApiBackendId = 'openai-backend'
+var eventHubEndpoint = '${eventHubNamespaceName}.servicebus.windows.net'
 
 resource applicationInsights 'Microsoft.Insights/components@2020-02-02' existing = {
   name: applicationInsightsName
 }
 
-resource managedIdentity 'Microsoft.ManagedIdentity/userAssignedIdentities@2018-11-30' existing = {
-  name: managedIdentityName
+resource managedIdentityApim 'Microsoft.ManagedIdentity/userAssignedIdentities@2018-11-30' existing = {
+  name: apimManagedIdentityName
 }
 
-resource apimService 'Microsoft.ApiManagement/service@2021-08-01' = {
+resource redisCache 'Microsoft.Cache/redis@2022-06-01' existing = if (!empty(redisCacheServiceName)) {
+  name: redisCacheServiceName
+}
+
+resource apimService 'Microsoft.ApiManagement/service@2023-03-01-preview' = {
   name: name
   location: location
   tags: union(tags, { 'azd-service-name': name })
@@ -38,16 +45,16 @@ resource apimService 'Microsoft.ApiManagement/service@2021-08-01' = {
   identity: {
     type: 'UserAssigned'
     userAssignedIdentities: {
-      '${managedIdentity.id}': {}
+      '${managedIdentityApim.id}': {}
     }
   }
   properties: {
     publisherEmail: publisherEmail
     publisherName: publisherName
-    virtualNetworkType: 'External'
-    virtualNetworkConfiguration: {
-      subnetResourceId: apimSubnetId
-    }
+    virtualNetworkType: virtualNetworkType
+    //virtualNetworkConfiguration: {
+    //  subnetResourceId: apimSubnetId
+    //}
     // Custom properties are not supported for Consumption SKU
     customProperties: sku == 'Consumption' ? {} : {
       'Microsoft.WindowsAzure.ApiManagement.Gateway.Security.Ciphers.TLS_ECDHE_RSA_WITH_AES_256_CBC_SHA': 'false'
@@ -68,7 +75,7 @@ resource apimService 'Microsoft.ApiManagement/service@2021-08-01' = {
   }
 }
 
-resource apimOpenaiApi 'Microsoft.ApiManagement/service/apis@2022-08-01' = {
+resource apimOpenaiApi 'Microsoft.ApiManagement/service/apis@2023-03-01-preview' = {
   name: 'azure-openai-service-api'
   parent: apimService
   properties: {
@@ -84,7 +91,7 @@ resource apimOpenaiApi 'Microsoft.ApiManagement/service/apis@2022-08-01' = {
   }
 }
 
-resource openAiBackend 'Microsoft.ApiManagement/service/backends@2021-08-01' = {
+resource openAiBackend 'Microsoft.ApiManagement/service/backends@2023-03-01-preview' = {
   name: openAiApiBackendId
   parent: apimService
   properties: {
@@ -98,20 +105,7 @@ resource openAiBackend 'Microsoft.ApiManagement/service/backends@2021-08-01' = {
   }
 }
 
-resource apimOpenaiApiKeyNamedValue 'Microsoft.ApiManagement/service/namedValues@2022-08-01' = {
-  name: openAiApiKeyNamedValue
-  parent: apimService
-  properties: {
-    displayName: openAiApiKeyNamedValue
-    secret: true
-    keyVault:{
-      secretIdentifier: '${keyVaultEndpoint}secrets/${openaiKeyVaultSecretName}'
-      identityClientId: apimService.identity.userAssignedIdentities[managedIdentity.id].clientId
-    }
-  }
-}
-
-resource openaiApiPolicy 'Microsoft.ApiManagement/service/apis/policies@2022-08-01' = {
+resource openaiApiPolicy 'Microsoft.ApiManagement/service/apis/policies@2023-03-01-preview' = {
   name: 'policy'
   parent: apimOpenaiApi
   properties: {
@@ -120,21 +114,33 @@ resource openaiApiPolicy 'Microsoft.ApiManagement/service/apis/policies@2022-08-
   }
   dependsOn: [
     openAiBackend
-    apimOpenaiApiKeyNamedValue
   ]
 }
 
-resource apiOperationCompletions 'Microsoft.ApiManagement/service/apis/operations@2020-06-01-preview' existing = {
+resource apiOperationCompletions 'Microsoft.ApiManagement/service/apis/operations@2023-03-01-preview' existing = {
   name: 'ChatCompletions_Create'
   parent: apimOpenaiApi
 }
 
-resource chatCompletionsCreatePolicy 'Microsoft.ApiManagement/service/apis/operations/policies@2022-08-01' = {
+resource chatCompletionsCreatePolicy 'Microsoft.ApiManagement/service/apis/operations/policies@2023-03-01-preview' = {
   name: 'policy'
   parent: apiOperationCompletions
   properties: {
     value: loadTextContent('./policies/api_operation_policy.xml')
     format: 'rawxml'
+  }
+  dependsOn: [
+    eventHubLogger
+  ]
+}
+
+resource apimCache 'Microsoft.ApiManagement/service/caches@2023-03-01-preview' = if (!empty(redisCacheServiceName)) {
+  name: 'redis-cache'
+  parent: apimService
+  properties: {
+    connectionString: '${redisCache.properties.hostName},password=${redisCache.listKeys().primaryKey},ssl=True,abortConnect=False'
+    useFromLocation: 'default'
+    description: redisCache.properties.hostName
   }
 }
 
@@ -149,6 +155,20 @@ resource apimLogger 'Microsoft.ApiManagement/service/loggers@2021-12-01-preview'
     isBuffered: false
     loggerType: 'applicationInsights'
     resourceId: applicationInsights.id
+  }
+}
+
+resource eventHubLogger 'Microsoft.ApiManagement/service/loggers@2023-03-01-preview' = {
+  name: 'eventhub-logger'
+  parent: apimService
+  properties: {
+    loggerType: 'azureEventHub'
+    description: 'Event hub logger with user-assigned managed identity'
+    credentials: {
+      endpointAddress: eventHubEndpoint
+      identityClientId: managedIdentityApim.properties.clientId
+      name: eventHubName
+    }
   }
 }
 

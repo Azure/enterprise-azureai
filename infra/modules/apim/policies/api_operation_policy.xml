@@ -12,6 +12,23 @@
             "response": "{{body.choices[0].message.content}}"
         }
         </set-body>
+        <choose>
+            <when condition="@(context.Response.StatusCode == 200)">
+                <log-to-eventhub logger-id="eventhub-logger">@{
+
+                var responseBody = context.Response.Body?.As<JObject>(true);
+                return new JObject(
+                    new JProperty("timestamp", DateTime.UtcNow.ToString()),
+                    new JProperty("appId", context.Request.Headers.GetValueOrDefault("Authorization",string.Empty).Split(' ').Last().AsJwt().Claims.GetValueOrDefault("appid", string.Empty)),
+                    new JProperty("appSubscriptionKey", context.Request.Headers.GetValueOrDefault("Ocp-Apim-Subscription-Key",string.Empty)),
+                    new JProperty("promptTokens", responseBody["promptTokens"].ToString()),
+                    new JProperty("responseTokens", responseBody["responseTokens"].ToString()),
+                    new JProperty("totalTokens", responseBody["totalTokens"].ToString())                    
+                ).ToString();
+        }
+        </log-to-eventhub>
+            </when>
+        </choose>
     </outbound>
     <on-error>
         <base />

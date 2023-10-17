@@ -3,6 +3,8 @@ param applicationInsightsName string
 param applicationInsightsDashboardName string
 param location string = resourceGroup().location
 param tags object = {}
+//Private Endpoint settings
+/*
 param vNetName string
 param privateEndpointSubnetName string
 param applicationInsightsDnsZoneName string
@@ -20,14 +22,14 @@ resource privateLinkScope 'microsoft.insights/privateLinkScopes@2021-07-01-previ
     }
   }
 }
-
+*/
 module logAnalytics 'loganalytics.bicep' = {
   name: 'log-analytics'
   params: {
     name: logAnalyticsName
     location: location
     tags: tags
-    privateLinkScopeName: privateLinkScopeName
+    //privateLinkScopeName: privateLinkScopeName
   }
 }
 
@@ -39,11 +41,14 @@ module applicationInsights 'applicationinsights.bicep' = {
     tags: tags
     dashboardName: applicationInsightsDashboardName
     logAnalyticsWorkspaceId: logAnalytics.outputs.id
+    //Private Endpoint settings
+    /*
     privateLinkScopeName: privateLinkScopeName
     vNetName: vNetName
     privateEndpointSubnetName: privateEndpointSubnetName
     dnsZoneName: applicationInsightsDnsZoneName
     privateEndpointName: applicationInsightsPrivateEndpointName
+    */
   }
 }
 

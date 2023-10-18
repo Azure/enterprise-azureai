@@ -84,12 +84,7 @@ resource diagnosticSettings 'Microsoft.Insights/diagnosticSettings@2021-05-01-pr
   scope: account
   properties: {
     workspaceId: logAnalyticsWorkspaceId
-    logs: [
-      {
-        category: 'AllLogs'
-        enabled: true
-      }
-    ]
+    logs: []
     metrics: [
       {
         category: 'AllMetrics'

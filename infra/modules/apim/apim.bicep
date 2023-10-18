@@ -167,10 +167,9 @@ resource apimLogger 'Microsoft.ApiManagement/service/loggers@2021-12-01-preview'
     resourceId: applicationInsights.id
   }
 }
-
-resource apiDiagnostics 'Microsoft.ApiManagement/service/diagnostics@2023-03-01-preview' = {
-  name: 'appinsights-diagnostics'
-  parent: apimService
+/*
+resource apiDiagnostics 'Microsoft.ApiManagement/service/apis/diagnostics@2023-03-01-preview' = {
+  name: '${apimOpenaiApi.name}/applicationinsights'
   properties: {
     logClientIp: false
     alwaysLog: 'allErrors'
@@ -219,18 +218,13 @@ resource apiDiagnostics 'Microsoft.ApiManagement/service/diagnostics@2023-03-01-
     verbosity: 'information'
   }
 }
-
+*/
 resource diagnosticSettings 'Microsoft.Insights/diagnosticSettings@2021-05-01-preview' = {
   name: 'LogToLogAnalytics'
   scope: apimService
   properties: {
     workspaceId: logAnalyticsWorkspaceId
-    logs: [
-      {
-        category: 'AllLogs'
-        enabled: true
-      }
-    ]
+    logs: []
     metrics: [
       {
         category: 'AllMetrics'

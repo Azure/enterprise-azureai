@@ -178,5 +178,92 @@ resource apimLogger 'Microsoft.ApiManagement/service/loggers@2021-12-01-preview'
   }
 }
 
+resource apiDiagnostics 'Microsoft.ApiManagement/service/diagnostics@2023-03-01-preview' = {
+  name: 'appinsights-diagnostics'
+  parent: apimService
+  properties: {
+    logClientIp: false
+    alwaysLog: 'allErrors'
+    loggerId: apimLogger.id
+    sampling: {
+      samplingType: 'fixed'
+      percentage: 100
+    }
+    metrics: true
+    frontend: {
+      request: {
+        headers: [
+          'custom-headers'
+        ]
+        body: {
+          bytes: 8192
+        }
+      }
+      response: {
+        headers: [
+          'custom-headers'
+        ]
+        body: {
+          bytes: 8192
+        }
+      }
+    }
+    backend: {
+      request: {
+        headers: [
+          'custom-headers'
+        ]
+        body: {
+          bytes: 8192
+        }
+      }
+      response: {
+        headers: [
+          'custom-headers'
+        ]
+        body: {
+          bytes: 8192
+        }
+      }
+    }
+    verbosity: 'information'
+  }
+}
+
+resource diagnosticSettings 'Microsoft.Insights/diagnosticSettings@2021-05-01-preview' = {
+  name: 'LogToLogAnalytics'
+  scope: apimService
+  properties: {
+    workspaceId: logAnalyticsWorkspaceId
+    logs: [
+      {
+        category: 'AllLogs'
+        enabled: true
+      }
+    ]
+    metrics: [
+      {
+        category: 'AllMetrics'
+        enabled: true 
+      }
+    ]
+  }
+}
+
+/*
+resource eventHubLogger 'Microsoft.ApiManagement/service/loggers@2023-03-01-preview' = {
+  name: 'eventhub-logger'
+  parent: apimService
+  properties: {
+    loggerType: 'azureEventHub'
+    description: 'Event hub logger with user-assigned managed identity'
+    credentials: {
+      endpointAddress: eventHubEndpoint
+      identityClientId: managedIdentityApim.properties.clientId
+      name: eventHubName
+    }
+  }
+}
+*/
 output apimName string = apimService.name
 output apimOpenaiApiPath string = apimOpenaiApi.properties.path

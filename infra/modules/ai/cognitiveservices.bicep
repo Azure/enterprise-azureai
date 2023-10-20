@@ -10,6 +10,7 @@ param sku object = {
   name: 'S0'
 }
 param apimManagedIdentityName string
+param funcManagedIdentityName string
 param logAnalyticsWorkspaceId string
 
 //Private Endpoint settings
@@ -23,6 +24,10 @@ var roleDefinitionResourceId = '/providers/Microsoft.Authorization/roleDefinitio
 
 resource managedIdentityApim 'Microsoft.ManagedIdentity/userAssignedIdentities@2018-11-30' existing = {
   name: apimManagedIdentityName
+}
+
+resource managedIdentityFunc 'Microsoft.ManagedIdentity/userAssignedIdentities@2018-11-30' existing = {
+  name: funcManagedIdentityName
 }
 
 resource account 'Microsoft.CognitiveServices/accounts@2023-05-01' = {
@@ -69,12 +74,22 @@ module privateEndpoint '../networking/private-endpoint.bicep' = {
   }
 }
 
-resource roleAssignment 'Microsoft.Authorization/roleAssignments@2022-04-01' = {
+resource roleAssignmentApim 'Microsoft.Authorization/roleAssignments@2022-04-01' = {
   scope: account
-  name: guid(account.id, roleDefinitionResourceId)
+  name: guid(managedIdentityApim.id, roleDefinitionResourceId)
   properties: {
     roleDefinitionId: roleDefinitionResourceId
     principalId: managedIdentityApim.properties.principalId
+    principalType: 'ServicePrincipal'
+  }
+}
+
+resource roleAssignmentFunc 'Microsoft.Authorization/roleAssignments@2022-04-01' = {
+  scope: account
+  name: guid(managedIdentityFunc.id, roleDefinitionResourceId)
+  properties: {
+    roleDefinitionId: roleDefinitionResourceId
+    principalId: managedIdentityFunc.properties.principalId
     principalType: 'ServicePrincipal'
   }
 }
@@ -84,12 +99,7 @@ resource diagnosticSettings 'Microsoft.Insights/diagnosticSettings@2021-05-01-pr
   scope: account
   properties: {
     workspaceId: logAnalyticsWorkspaceId
-    logs: [
-      {
-        category: 'AllLogs'
-        enabled: true
-      }
-    ]
+    logs: []
     metrics: [
       {
         category: 'AllMetrics'

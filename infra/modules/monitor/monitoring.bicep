@@ -2,12 +2,12 @@ param logAnalyticsName string
 param applicationInsightsName string
 param location string = resourceGroup().location
 param tags object = {}
-param wbData object
 //Private Endpoint settings
 param vNetName string
 param privateEndpointSubnetName string
 param applicationInsightsDnsZoneName string
 param applicationInsightsPrivateEndpointName string
+param applicationInsightsDashboardName string
 
 var privateLinkScopeName = 'private-link-scope'
 
@@ -39,13 +39,21 @@ module applicationInsights 'applicationinsights.bicep' = {
     location: location
     tags: tags
     logAnalyticsWorkspaceId: logAnalytics.outputs.id
-    wbSerializedData: wbData
     //Private Endpoint settings
     privateLinkScopeName: privateLinkScopeName
     vNetName: vNetName
     privateEndpointSubnetName: privateEndpointSubnetName
     dnsZoneName: applicationInsightsDnsZoneName
     privateEndpointName: applicationInsightsPrivateEndpointName
+  }
+}
+
+module dashboard 'dashboard.bicep' = {
+  name: 'application-insights-dashboard'
+  params: {
+    name: applicationInsightsDashboardName
+    location: location
+    applicationInsightsName: applicationInsights.outputs.name
   }
 }
 

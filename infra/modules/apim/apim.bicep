@@ -10,18 +10,19 @@ param publisherName string = 'n/a'
 param sku string
 param skuCount int = 1
 param applicationInsightsName string
-param logAnalyticsWorkspaceId string
+param logAnalyticsWorkspaceId string // optional for Diagnostic Settings
 param openAiUri string
+param functionAppUri string
+param openaiKeyVaultSecretName string
+param keyVaultEndpoint string
 param apimManagedIdentityName string
-//param eventHubNamespaceName string
-//param eventHubName string
 param redisCacheServiceName string = ''
 //Vnet Integration
 param apimSubnetId string
 param virtualNetworkType string
 
+var openAiApiKeyNamedValue = 'openai-apikey'
 var openAiApiBackendId = 'openai-backend'
-//var eventHubEndpoint = '${eventHubNamespaceName}.servicebus.windows.net'
 
 resource applicationInsights 'Microsoft.Insights/components@2020-02-02' existing = {
   name: applicationInsightsName
@@ -87,10 +88,6 @@ resource apimOpenaiApi 'Microsoft.ApiManagement/service/apis@2023-03-01-preview'
     protocols: [ 'https' ]
     value: 'https://raw.githubusercontent.com/Azure/azure-rest-api-specs/main/specification/cognitiveservices/data-plane/AzureOpenAI/inference/stable/2023-05-15/inference.json'
     subscriptionRequired: true
-    subscriptionKeyParameterNames: {
-      header: 'api-key'
-      query: 'api-key'
-    }
   }
 }
 
@@ -100,10 +97,23 @@ resource openAiBackend 'Microsoft.ApiManagement/service/backends@2023-03-01-prev
   properties: {
     description: openAiApiBackendId
     url: openAiUri
-    protocol: 'http'
+    protocol: 'https'
     tls: {
       validateCertificateChain: true
       validateCertificateName: true
+    }
+  }
+}
+
+resource apimOpenaiApiKeyNamedValue 'Microsoft.ApiManagement/service/namedValues@2022-08-01' = {
+  name: openAiApiKeyNamedValue
+  parent: apimService
+  properties: {
+    displayName: openAiApiKeyNamedValue
+    secret: true
+    keyVault:{
+      secretIdentifier: '${keyVaultEndpoint}secrets/${openaiKeyVaultSecretName}'
+      identityClientId: apimService.identity.userAssignedIdentities[managedIdentityApim.id].clientId
     }
   }
 }
@@ -168,93 +178,5 @@ resource apimLogger 'Microsoft.ApiManagement/service/loggers@2021-12-01-preview'
   }
 }
 
-resource apiDiagnostics 'Microsoft.ApiManagement/service/diagnostics@2023-03-01-preview' = {
-  name: 'appinsights-diagnostics'
-  parent: apimService
-  properties: {
-    logClientIp: false
-    alwaysLog: 'allErrors'
-    loggerId: apimLogger.id
-    sampling: {
-      samplingType: 'fixed'
-      percentage: 100
-    }
-    metrics: true
-    frontend: {
-      request: {
-        headers: [
-          'custom-headers'
-        ]
-        body: {
-          bytes: 8192
-        }
-      }
-      response: {
-        headers: [
-          'custom-headers'
-        ]
-        body: {
-          bytes: 8192
-        }
-      }
-    }
-    backend: {
-      request: {
-        headers: [
-          'custom-headers'
-        ]
-        body: {
-          bytes: 8192
-        }
-      }
-      response: {
-        headers: [
-          'custom-headers'
-        ]
-        body: {
-          bytes: 8192
-        }
-      }
-    }
-    verbosity: 'information'
-  }
-}
-
-resource diagnosticSettings 'Microsoft.Insights/diagnosticSettings@2021-05-01-preview' = {
-  name: 'LogToLogAnalytics'
-  scope: apimService
-  properties: {
-    workspaceId: logAnalyticsWorkspaceId
-    logs: [
-      {
-        category: 'AllLogs'
-        enabled: true
-      }
-    ]
-    metrics: [
-      {
-        category: 'AllMetrics'
-        enabled: true 
-      }
-    ]
-  }
-}
-
-/*
-resource eventHubLogger 'Microsoft.ApiManagement/service/loggers@2023-03-01-preview' = {
-  name: 'eventhub-logger'
-  parent: apimService
-  properties: {
-    loggerType: 'azureEventHub'
-    description: 'Event hub logger with user-assigned managed identity'
-    credentials: {
-      endpointAddress: eventHubEndpoint
-      identityClientId: managedIdentityApim.properties.clientId
-      name: eventHubName
-    }
-  }
-}
-*/
 output apimName string = apimService.name
 output apimOpenaiApiPath string = apimOpenaiApi.properties.path
-output apimGatewayUrl string = apimService.properties.gatewayUrl

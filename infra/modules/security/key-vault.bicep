@@ -1,7 +1,8 @@
 param name string
 param location string
 param logAnalyticsWorkspaceName string
-param managedIdentityName string
+param managedIdentityApimName string
+param managedIdentityFuncName string
 param keyVaultPrivateEndpointName string
 param vNetName string
 param privateEndpointSubnetName string
@@ -9,8 +10,12 @@ param keyVaultDnsZoneName string
 param publicNetworkAccess string = 'Disabled'
 param tags object = {}
 
-resource managedIdentity 'Microsoft.ManagedIdentity/userAssignedIdentities@2018-11-30' existing = {
-  name: managedIdentityName
+resource managedIdentityApim 'Microsoft.ManagedIdentity/userAssignedIdentities@2018-11-30' existing = {
+  name: managedIdentityApimName
+}
+
+resource managedIdentityFunc 'Microsoft.ManagedIdentity/userAssignedIdentities@2018-11-30' existing = {
+  name: managedIdentityFuncName
 }
 
 resource keyVault 'Microsoft.KeyVault/vaults@2022-07-01' = {
@@ -28,8 +33,18 @@ resource keyVault 'Microsoft.KeyVault/vaults@2022-07-01' = {
     publicNetworkAccess: publicNetworkAccess
     accessPolicies: [
       {
-        objectId: managedIdentity.properties.principalId
-        tenantId: managedIdentity.properties.tenantId
+        objectId: managedIdentityApim.properties.principalId
+        tenantId: managedIdentityApim.properties.tenantId
+        permissions: {
+          secrets: [
+            'get'
+            'list'
+          ]
+        }
+      }
+      {
+        objectId: managedIdentityFunc.properties.principalId
+        tenantId: managedIdentityFunc.properties.tenantId
         permissions: {
           secrets: [
             'get'

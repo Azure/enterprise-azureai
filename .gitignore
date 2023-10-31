@@ -1,3 +1,4 @@
 .azure
 local.tests.http
 local.softdelete.ps1
+local.del-soft-delete-apim.ps1

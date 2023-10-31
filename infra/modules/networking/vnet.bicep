@@ -99,8 +99,7 @@ resource virtualNetwork 'Microsoft.Network/virtualNetworks@2019-11-01' = {
           networkSecurityGroup: apimNsg.id == '' ? null : {
             id: apimNsg.id 
           }
-          // Needed when using APIM StandardV2 SKU
-          /*
+          // Needed when using APIM StandardV2 SKU         
           delegations: [
             {
               name: 'Microsoft.Web/serverFarms'
@@ -109,7 +108,6 @@ resource virtualNetwork 'Microsoft.Network/virtualNetworks@2019-11-01' = {
               }
             }
           ]
-          */
         }
       }
       {

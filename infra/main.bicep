@@ -45,13 +45,15 @@ var openAiSkuName = 'S0'
 var chatGptDeploymentName = 'chat'
 var chatGptModelName = 'gpt-35-turbo'
 var openaiApiKeySecretName = 'openai-apikey'
+var functionContentShareName = 'function-content-share'
 var tags = { 'azd-env-name': environmentName }
 
 var openAiPrivateDnsZoneName = 'privatelink.openai.azure.com'
 var keyVaultPrivateDnsZoneName = 'privatelink.vaultcore.azure.net'
 var monitorPrivateDnsZoneName = 'privatelink.monitor.azure.com'
 var redisCachePrivateDnsZoneName = 'privatelink.redis.cache.windows.net'
-var storageAccountPrivateDnsZoneName = 'privatelink.blob.${az.environment().suffixes.storage}'
+var storageAccountBlobPrivateDnsZoneName = 'privatelink.blob.core.windows.net'
+var storageAccountFilePrivateDnsZoneName = 'privatelink.file.core.windows.net'
 var appServicePrivateDnsZoneName = 'privatelink.azurewebsites.net'
 
 var privateDnsZoneNames = [
@@ -59,7 +61,8 @@ var privateDnsZoneNames = [
   keyVaultPrivateDnsZoneName
   monitorPrivateDnsZoneName
   redisCachePrivateDnsZoneName
-  storageAccountPrivateDnsZoneName
+  storageAccountBlobPrivateDnsZoneName
+  storageAccountFilePrivateDnsZoneName
   appServicePrivateDnsZoneName
 ]
 
@@ -184,10 +187,13 @@ module storage './modules/storage/storage-account.bicep' = {
     name: !empty(storageAccountName) ? storageAccountName : '${abbrs.storageStorageAccounts}${resourceToken}'
     location: location
     tags: tags
-    storageAccountPrivateEndpointName: '${abbrs.storageStorageAccounts}-${abbrs.privateEndpoints}${resourceToken}'
+    storageAccountBlobPrivateEndpointName: '${abbrs.storageStorageAccounts}-${abbrs.privateEndpoints}blob-${resourceToken}'
+    storageAccountFilePrivateEndpointName: '${abbrs.storageStorageAccounts}-${abbrs.privateEndpoints}file-${resourceToken}'
     vNetName: vnet.outputs.vnetName
     privateEndpointSubnetName: vnet.outputs.privateEndpointSubnetName
-    storageAccountDnsZoneName: storageAccountPrivateDnsZoneName
+    storageAccountBlobDnsZoneName: storageAccountBlobPrivateDnsZoneName
+    storageAccountFileDnsZoneName: storageAccountFilePrivateDnsZoneName
+    functionContentShareName: functionContentShareName
   }
 }
 
@@ -226,6 +232,7 @@ module functionApp './modules/host/function.bicep' = {
     openAiUri: openAi.outputs.openAiEndpointUri
     keyVaultName: keyVault.outputs.keyVaultName
     openaiApiKeySecretName: openaiKeyVaultSecret.outputs.keyVaultSecretName
+    functionContentShareName: functionContentShareName
   }
 }
 

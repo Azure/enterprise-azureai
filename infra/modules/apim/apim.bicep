@@ -21,8 +21,16 @@ param redisCacheServiceName string = ''
 param apimSubnetId string
 param virtualNetworkType string
 
+@description('The number of bytes of the request/response body to record for diagnostic purposes')
+param logBytes int = 8192
+
 var openAiApiKeyNamedValue = 'openai-apikey'
 var openAiApiBackendId = 'openai-backend'
+
+var logSettings = {
+  headers: [ 'Content-type', 'User-agent' ]
+  body: { bytes: logBytes }
+}
 
 resource applicationInsights 'Microsoft.Insights/components@2020-02-02' existing = {
   name: applicationInsightsName
@@ -178,92 +186,30 @@ resource apimLogger 'Microsoft.ApiManagement/service/loggers@2021-12-01-preview'
   }
 }
 
-resource apiDiagnostics 'Microsoft.ApiManagement/service/diagnostics@2023-03-01-preview' = {
-  name: 'appinsights-diagnostics'
-  parent: apimService
+resource diagnosticsPolicy 'Microsoft.ApiManagement/service/apis/diagnostics@2022-08-01' = {
+  name: 'applicationinsights'
+  parent: apimOpenaiApi
   properties: {
-    logClientIp: false
     alwaysLog: 'allErrors'
+    httpCorrelationProtocol: 'W3C'
+    logClientIp: true
     loggerId: apimLogger.id
+    metrics: true
+    verbosity: 'verbose'
     sampling: {
       samplingType: 'fixed'
       percentage: 100
     }
-    metrics: true
     frontend: {
-      request: {
-        headers: [
-          'custom-headers'
-        ]
-        body: {
-          bytes: 8192
-        }
-      }
-      response: {
-        headers: [
-          'custom-headers'
-        ]
-        body: {
-          bytes: 8192
-        }
-      }
+      request: logSettings
+      response: logSettings
     }
     backend: {
-      request: {
-        headers: [
-          'custom-headers'
-        ]
-        body: {
-          bytes: 8192
-        }
-      }
-      response: {
-        headers: [
-          'custom-headers'
-        ]
-        body: {
-          bytes: 8192
-        }
-      }
-    }
-    verbosity: 'information'
-  }
-}
-
-resource diagnosticSettings 'Microsoft.Insights/diagnosticSettings@2021-05-01-preview' = {
-  name: 'LogToLogAnalytics'
-  scope: apimService
-  properties: {
-    workspaceId: logAnalyticsWorkspaceId
-    logs: [
-      {
-        category: 'AllLogs'
-        enabled: true
-      }
-    ]
-    metrics: [
-      {
-        category: 'AllMetrics'
-        enabled: true 
-      }
-    ]
-  }
-}
-
-/*
-resource eventHubLogger 'Microsoft.ApiManagement/service/loggers@2023-03-01-preview' = {
-  name: 'eventhub-logger'
-  parent: apimService
-  properties: {
-    loggerType: 'azureEventHub'
-    description: 'Event hub logger with user-assigned managed identity'
-    credentials: {
-      endpointAddress: eventHubEndpoint
-      identityClientId: managedIdentityApim.properties.clientId
-      name: eventHubName
+      request: logSettings
+      response: logSettings
     }
   }
 }
-*/
+
 output apimName string = apimService.name
 output apimOpenaiApiPath string = apimOpenaiApi.properties.path

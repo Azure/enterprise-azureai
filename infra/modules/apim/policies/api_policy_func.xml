@@ -1,0 +1,20 @@
+<policies>
+    <inbound>
+        <base/>
+        <!-- Uncomment the following to use Managed Identity to authenticate to the backend -->
+        <authentication-managed-identity resource="{{clientId}}" ignore-error="false" output-token-variable-name="msi-access-token" />
+        <set-header name="Authorization" exists-action="override">
+            <value>@("Bearer " + (string)context.Variables["msi-access-token"])</value>
+        </set-header>
+        <set-backend-service backend-id="function-backend" />
+    </inbound>
+    <backend>
+        <base/>
+    </backend>
+    <outbound>
+        <base/>
+    </outbound>
+    <on-error>
+        <base/>
+    </on-error>
+</policies>

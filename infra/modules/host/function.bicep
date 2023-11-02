@@ -13,6 +13,7 @@ param vNetName string
 param privateEndpointSubnetName string
 param appServiceSubnetName string
 param openAiUri string
+param openAiKey string = ''
 param functionContentShareName string
 
 resource storageAccount 'Microsoft.Storage/storageAccounts@2022-09-01' existing = {
@@ -114,6 +115,10 @@ resource functionApp 'Microsoft.Web/sites@2021-02-01' = {
         {
           name: 'OpenAiUri'
           value: openAiUri
+        }
+        {
+          name: 'OpenAiKey'
+          value: openAiKey
         }
       ]
     }

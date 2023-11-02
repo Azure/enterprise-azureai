@@ -23,6 +23,7 @@ param virtualNetworkType string
 param logBytes int = 8192
 
 var openAiApiBackendId = 'openai-backend'
+var funcApiBackendId = 'function-backend'
 
 var logSettings = {
   headers: [ 'Content-type', 'User-agent' ]
@@ -96,6 +97,20 @@ resource apimOpenaiApi 'Microsoft.ApiManagement/service/apis@2023-03-01-preview'
   }
 }
 
+resource apimFuncApi 'Microsoft.ApiManagement/service/apis@2023-03-01-preview' = {
+  name: 'azure-func-api'
+  parent: apimService
+  properties: {
+    path: 'ai'
+    apiRevision: '1'
+    displayName: 'Azure AI Function API'
+    format: 'openapi-link'
+    protocols: [ 'https' ]
+    value: 'https://raw.githubusercontent.com/Azure/azure-rest-api-specs/main/specification/cognitiveservices/data-plane/AzureOpenAI/inference/stable/2023-05-15/inference.json'
+    subscriptionRequired: true
+  }
+}
+
 resource openAiBackend 'Microsoft.ApiManagement/service/backends@2023-03-01-preview' = {
   name: openAiApiBackendId
   parent: apimService
@@ -110,32 +125,43 @@ resource openAiBackend 'Microsoft.ApiManagement/service/backends@2023-03-01-prev
   }
 }
 
+resource funcBackend 'Microsoft.ApiManagement/service/backends@2023-03-01-preview' = {
+  name: funcApiBackendId
+  parent: apimService
+  properties: {
+    description: funcApiBackendId
+    url: functionAppUri
+    protocol: 'http'
+    tls: {
+      validateCertificateChain: true
+      validateCertificateName: true
+    }
+  }
+}
+
 resource openaiApiPolicy 'Microsoft.ApiManagement/service/apis/policies@2023-03-01-preview' = {
-  name: 'policy'
+  name: 'openai-policy'
   parent: apimOpenaiApi
   properties: {
-    value: loadTextContent('./policies/api_policy.xml')
+    value: loadTextContent('./policies/api_policy_openai.xml')
     format: 'rawxml'
   }
   dependsOn: [
     openAiBackend
   ]
 }
-/*
-resource apiOperationCompletions 'Microsoft.ApiManagement/service/apis/operations@2023-03-01-preview' existing = {
-  name: 'chatcompletions-create'
-  parent: apimOpenaiApi
-}
 
-resource chatCompletionsCreatePolicy 'Microsoft.ApiManagement/service/apis/operations/policies@2023-03-01-preview' = {
-  name: 'policy'
-  parent: apiOperationCompletions
+resource funcApiPolicy 'Microsoft.ApiManagement/service/apis/policies@2023-03-01-preview' = {
+  name: 'func-policy'
+  parent: apimFuncApi
   properties: {
-    value: loadTextContent('./policies/api_operation_policy.xml')
+    value: loadTextContent('./policies/api_policy_func.xml')
     format: 'rawxml'
   }
+  dependsOn: [
+    funcBackend
+  ]
 }
-*/
 
 resource apiSubscription 'Microsoft.ApiManagement/service/subscriptions@2023-03-01-preview' = {
   parent: apimService

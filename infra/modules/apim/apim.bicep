@@ -13,8 +13,6 @@ param applicationInsightsName string
 param logAnalyticsWorkspaceId string // optional for Diagnostic Settings
 param openAiUri string
 param functionAppUri string
-param openaiKeyVaultSecretName string
-param keyVaultEndpoint string
 param apimManagedIdentityName string
 param redisCacheServiceName string = ''
 //Vnet Integration
@@ -24,7 +22,6 @@ param virtualNetworkType string
 @description('The number of bytes of the request/response body to record for diagnostic purposes')
 param logBytes int = 8192
 
-var openAiApiKeyNamedValue = 'openai-apikey'
 var openAiApiBackendId = 'openai-backend'
 
 var logSettings = {
@@ -105,23 +102,10 @@ resource openAiBackend 'Microsoft.ApiManagement/service/backends@2023-03-01-prev
   properties: {
     description: openAiApiBackendId
     url: openAiUri
-    protocol: 'https'
+    protocol: 'http'
     tls: {
       validateCertificateChain: true
       validateCertificateName: true
-    }
-  }
-}
-
-resource apimOpenaiApiKeyNamedValue 'Microsoft.ApiManagement/service/namedValues@2022-08-01' = {
-  name: openAiApiKeyNamedValue
-  parent: apimService
-  properties: {
-    displayName: openAiApiKeyNamedValue
-    secret: true
-    keyVault:{
-      secretIdentifier: '${keyVaultEndpoint}secrets/${openaiKeyVaultSecretName}'
-      identityClientId: apimService.identity.userAssignedIdentities[managedIdentityApim.id].clientId
     }
   }
 }
@@ -137,7 +121,7 @@ resource openaiApiPolicy 'Microsoft.ApiManagement/service/apis/policies@2023-03-
     openAiBackend
   ]
 }
-
+/*
 resource apiOperationCompletions 'Microsoft.ApiManagement/service/apis/operations@2023-03-01-preview' existing = {
   name: 'chatcompletions-create'
   parent: apimOpenaiApi
@@ -151,6 +135,7 @@ resource chatCompletionsCreatePolicy 'Microsoft.ApiManagement/service/apis/opera
     format: 'rawxml'
   }
 }
+*/
 
 resource apiSubscription 'Microsoft.ApiManagement/service/subscriptions@2023-03-01-preview' = {
   parent: apimService

@@ -13,7 +13,6 @@ param location string
 //Leave blank to use default naming conventions
 param resourceGroupName string = ''
 param openAiServiceName string = ''
-param keyVaultName string = ''
 param apimIdentityName string = ''
 param funcIdentityName string = ''
 param apimServiceName string = ''
@@ -44,12 +43,10 @@ var resourceToken = toLower(uniqueString(subscription().id, environmentName, loc
 var openAiSkuName = 'S0'
 var chatGptDeploymentName = 'chat'
 var chatGptModelName = 'gpt-35-turbo'
-var openaiApiKeySecretName = 'openai-apikey'
 var functionContentShareName = 'function-content-share'
 var tags = { 'azd-env-name': environmentName }
 
 var openAiPrivateDnsZoneName = 'privatelink.openai.azure.com'
-var keyVaultPrivateDnsZoneName = 'privatelink.vaultcore.azure.net'
 var monitorPrivateDnsZoneName = 'privatelink.monitor.azure.com'
 var redisCachePrivateDnsZoneName = 'privatelink.redis.cache.windows.net'
 var storageAccountBlobPrivateDnsZoneName = 'privatelink.blob.core.windows.net'
@@ -58,7 +55,6 @@ var appServicePrivateDnsZoneName = 'privatelink.azurewebsites.net'
 
 var privateDnsZoneNames = [
   openAiPrivateDnsZoneName
-  keyVaultPrivateDnsZoneName
   monitorPrivateDnsZoneName
   redisCachePrivateDnsZoneName
   storageAccountBlobPrivateDnsZoneName
@@ -98,33 +94,6 @@ module managedIdentityFunc './modules/security/managed-identity.bicep' = {
     name: !empty(funcIdentityName) ? funcIdentityName : '${abbrs.managedIdentityUserAssignedIdentities}${resourceToken}-func'
     location: location
     tags: tags
-  }
-}
-
-module keyVault './modules/security/key-vault.bicep' = {
-  name: 'key-vault'
-  scope: resourceGroup
-  params: {
-    name: !empty(keyVaultName) ? keyVaultName : '${abbrs.keyVaultVaults}${resourceToken}'
-    location: location
-    tags: tags
-    keyVaultPrivateEndpointName: '${abbrs.keyVaultVaults}${abbrs.privateEndpoints}${resourceToken}'
-    vNetName: vnet.outputs.vnetName
-    privateEndpointSubnetName: vnet.outputs.privateEndpointSubnetName
-    logAnalyticsWorkspaceName: monitoring.outputs.logAnalyticsWorkspaceName
-    managedIdentityApimName: managedIdentityApim.outputs.managedIdentityName
-    managedIdentityFuncName: managedIdentityFunc.outputs.managedIdentityName
-    keyVaultDnsZoneName: keyVaultPrivateDnsZoneName
-  }
-}
-
-module openaiKeyVaultSecret './modules/security/keyvault-secret.bicep' = {
-  name: 'openai-keyvault-secret'
-  scope: resourceGroup
-  params: {
-    keyVaultName: keyVault.outputs.keyVaultName
-    secretName: openaiApiKeySecretName
-    openAiName: openAi.outputs.openAiName
   }
 }
 
@@ -230,8 +199,6 @@ module functionApp './modules/host/function.bicep' = {
     vNetName: vnet.outputs.vnetName
     appServiceSubnetName: vnet.outputs.appServiceSubnetName
     openAiUri: openAi.outputs.openAiEndpointUri
-    keyVaultName: keyVault.outputs.keyVaultName
-    openaiApiKeySecretName: openaiKeyVaultSecret.outputs.keyVaultSecretName
     functionContentShareName: functionContentShareName
   }
 }
@@ -243,12 +210,10 @@ module apim './modules/apim/apim.bicep' = {
     name: !empty(apimServiceName) ? apimServiceName : '${abbrs.apiManagementService}${resourceToken}'
     location: location
     tags: tags
-    sku: 'StandardV2'
+    sku: 'StandardV2' //StandardV2
     virtualNetworkType: 'External'
     applicationInsightsName: monitoring.outputs.applicationInsightsName
     logAnalyticsWorkspaceId: monitoring.outputs.logAnalyticsWorkspaceId
-    openaiKeyVaultSecretName: openaiKeyVaultSecret.outputs.keyVaultSecretName
-    keyVaultEndpoint: keyVault.outputs.keyVaultEndpoint
     openAiUri: openAi.outputs.openAiEndpointUri
     apimManagedIdentityName: managedIdentityApim.outputs.managedIdentityName
     redisCacheServiceName: redisCache.outputs.cacheName

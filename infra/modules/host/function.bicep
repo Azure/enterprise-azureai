@@ -13,11 +13,16 @@ param vNetName string
 param privateEndpointSubnetName string
 param appServiceSubnetName string
 param openAiUri string
-param openAiKey string = ''
 param functionContentShareName string
+param keyVaultName string
+param openaiKeyVaultSecretName string
 
 resource storageAccount 'Microsoft.Storage/storageAccounts@2022-09-01' existing = {
   name: storageAccountName
+}
+
+resource keyVault 'Microsoft.KeyVault/vaults@2022-07-01' existing = {
+  name: keyVaultName
 }
 
 resource managedIdentity 'Microsoft.ManagedIdentity/userAssignedIdentities@2021-09-30-preview' existing = {
@@ -118,7 +123,7 @@ resource functionApp 'Microsoft.Web/sites@2021-02-01' = {
         }
         {
           name: 'OpenAiKey'
-          value: openAiKey
+          value: '@Microsoft.KeyVault(VaultName=${keyVault.name};SecretName=${openaiKeyVaultSecretName})'
         }
       ]
     }

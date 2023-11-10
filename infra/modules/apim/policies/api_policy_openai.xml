@@ -1,9 +1,10 @@
 <policies>
     <inbound>
         <base/>
-        <!-- Uncomment the following to use Managed Identity to authenticate to the backend -->
-        <authentication-managed-identity resource="https://cognitiveservices.azure.com" output-token-variable-name="msi-access-token" ignore-error="false" />
         <set-backend-service backend-id="openai-backend" />
+        <set-header name="api-key" exists-action="override">
+            <value>{{openai-apikey}}</value>
+        </set-header>
     </inbound>
     <backend>
         <base/>

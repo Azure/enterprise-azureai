@@ -10,9 +10,13 @@ param environmentName string
 @allowed(['westeurope','southcentralus','australiaeast', 'canadaeast', 'eastus', 'eastus2', 'francecentral', 'japaneast', 'northcentralus', 'swedencentral', 'switzerlandnorth', 'uksouth'])
 param location string
 
+@description('IP address of the machine running the deployment.')
+param myIpAddress string
+
 //Leave blank to use default naming conventions
 param resourceGroupName string = ''
 param openAiServiceName string = ''
+param keyVaultName string = ''
 param apimIdentityName string = ''
 param funcIdentityName string = ''
 param apimServiceName string = ''
@@ -43,10 +47,12 @@ var resourceToken = toLower(uniqueString(subscription().id, environmentName, loc
 var openAiSkuName = 'S0'
 var chatGptDeploymentName = 'chat'
 var chatGptModelName = 'gpt-35-turbo'
+var openaiApiKeySecretName = 'openai-apikey'
 var functionContentShareName = 'function-content-share'
 var tags = { 'azd-env-name': environmentName }
 
 var openAiPrivateDnsZoneName = 'privatelink.openai.azure.com'
+var keyVaultPrivateDnsZoneName = 'privatelink.vaultcore.azure.net'
 var monitorPrivateDnsZoneName = 'privatelink.monitor.azure.com'
 var redisCachePrivateDnsZoneName = 'privatelink.redis.cache.windows.net'
 var storageAccountBlobPrivateDnsZoneName = 'privatelink.blob.core.windows.net'
@@ -55,6 +61,7 @@ var appServicePrivateDnsZoneName = 'privatelink.azurewebsites.net'
 
 var privateDnsZoneNames = [
   openAiPrivateDnsZoneName
+  keyVaultPrivateDnsZoneName
   monitorPrivateDnsZoneName
   redisCachePrivateDnsZoneName
   storageAccountBlobPrivateDnsZoneName
@@ -97,6 +104,33 @@ module managedIdentityFunc './modules/security/managed-identity.bicep' = {
   }
 }
 
+module keyVault './modules/security/key-vault.bicep' = {
+  name: 'key-vault'
+  scope: resourceGroup
+  params: {
+    name: !empty(keyVaultName) ? keyVaultName : '${abbrs.keyVaultVaults}${resourceToken}'
+    location: location
+    tags: tags
+    keyVaultPrivateEndpointName: '${abbrs.keyVaultVaults}${abbrs.privateEndpoints}${resourceToken}'
+    vNetName: vnet.outputs.vnetName
+    privateEndpointSubnetName: vnet.outputs.privateEndpointSubnetName
+    logAnalyticsWorkspaceName: monitoring.outputs.logAnalyticsWorkspaceName
+    managedIdentityNameApim: managedIdentityApim.outputs.managedIdentityName
+    managedIdentityNameFunc: managedIdentityFunc.outputs.managedIdentityName
+    keyVaultDnsZoneName: keyVaultPrivateDnsZoneName
+  }
+}
+
+module openaiKeyVaultSecret './modules/security/keyvault-secret.bicep' = {
+  name: 'openai-keyvault-secret'
+  scope: resourceGroup
+  params: {
+    keyVaultName: keyVault.outputs.keyVaultName
+    secretName: openaiApiKeySecretName
+    openAiName: openAi.outputs.openAiName
+  }
+}
+
 module redisCache './modules/cache/redis.bicep' = {
   name: 'redis-cache'
   scope: resourceGroup
@@ -130,6 +164,7 @@ module vnet './modules/networking/vnet.bicep' = {
     location: location
     tags: tags
     privateDnsZoneNames: privateDnsZoneNames
+    myIpAddress: myIpAddress
   }
 }
 
@@ -200,6 +235,8 @@ module functionApp './modules/host/function.bicep' = {
     appServiceSubnetName: vnet.outputs.appServiceSubnetName
     openAiUri: openAi.outputs.openAiEndpointUri
     functionContentShareName: functionContentShareName
+    openaiKeyVaultSecretName: openaiKeyVaultSecret.outputs.keyVaultSecretName
+    keyVaultName: keyVault.outputs.keyVaultName
   }
 }
 
@@ -210,11 +247,13 @@ module apim './modules/apim/apim.bicep' = {
     name: !empty(apimServiceName) ? apimServiceName : '${abbrs.apiManagementService}${resourceToken}'
     location: location
     tags: tags
-    sku: 'StandardV2' //StandardV2
+    sku: 'Developer' //StandardV2
     virtualNetworkType: 'External'
     applicationInsightsName: monitoring.outputs.applicationInsightsName
     logAnalyticsWorkspaceId: monitoring.outputs.logAnalyticsWorkspaceId
     openAiUri: openAi.outputs.openAiEndpointUri
+    openaiKeyVaultSecretName: openaiKeyVaultSecret.outputs.keyVaultSecretName
+    keyVaultEndpoint: keyVault.outputs.keyVaultEndpoint
     apimManagedIdentityName: managedIdentityApim.outputs.managedIdentityName
     redisCacheServiceName: redisCache.outputs.cacheName
     apimSubnetId: vnet.outputs.apimSubnetId

@@ -21,10 +21,10 @@ def main(req: func.HttpRequest) -> func.HttpResponse:
         # OpenAI API URL
         url = os.getenv('OpenAiUri')
 
-        # OpenAI API Key
+        # Request headers
         headers = {
             "Content-Type": "application/json",
-            "api-key": "OpenAiKey"
+            "api-key": os.getenv('OpenAiKey')
         }
 
         # Data to be sent to OpenAI API

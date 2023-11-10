@@ -7,6 +7,7 @@ param appServiceNsgName string
 param privateEndpointSubnetName string
 param privateEndpointNsgName string
 param privateDnsZoneNames array
+param myIpAddress string
 param tags object = {}
 
 resource apimNsg 'Microsoft.Network/networkSecurityGroups@2020-07-01' = {
@@ -62,7 +63,21 @@ resource appServiceNsg 'Microsoft.Network/networkSecurityGroups@2022-09-01' = {
   name: appServiceNsgName
   location: location
   properties: {
-    securityRules: []
+    securityRules: [
+      {
+        name: 'AllowIptoKudo'
+        properties: {
+            protocol: '*'
+            sourcePortRange: '443'
+            destinationPortRange: '443'
+            sourceAddressPrefix: '${myIpAddress}'
+            destinationAddressPrefix: 'VirtualNetwork'
+            access: 'Allow'
+            priority: 100
+            direction: 'Inbound'
+        }
+      }
+    ]
   }
 }
 
@@ -100,6 +115,7 @@ resource virtualNetwork 'Microsoft.Network/virtualNetworks@2019-11-01' = {
             id: apimNsg.id 
           }
           // Needed when using APIM StandardV2 SKU
+          /*
           delegations: [
             {
               name: 'Microsoft.Web/serverFarms'
@@ -108,6 +124,7 @@ resource virtualNetwork 'Microsoft.Network/virtualNetworks@2019-11-01' = {
               }
             }
           ]
+          */
         }
       }
       {

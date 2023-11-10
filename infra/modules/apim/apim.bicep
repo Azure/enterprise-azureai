@@ -13,6 +13,8 @@ param applicationInsightsName string
 param logAnalyticsWorkspaceId string // optional for Diagnostic Settings
 param openAiUri string
 param functionAppUri string
+param openaiKeyVaultSecretName string
+param keyVaultEndpoint string
 param apimManagedIdentityName string
 param redisCacheServiceName string = ''
 //Vnet Integration
@@ -24,6 +26,7 @@ param logBytes int = 8192
 
 var openAiApiBackendId = 'openai-backend'
 var funcApiBackendId = 'function-backend'
+var openAiApiKeyNamedValue = 'openai-apikey'
 
 var logSettings = {
   headers: [ 'Content-type', 'User-agent' ]
@@ -130,7 +133,7 @@ resource funcBackend 'Microsoft.ApiManagement/service/backends@2023-03-01-previe
   parent: apimService
   properties: {
     description: funcApiBackendId
-    url: functionAppUri
+    url: 'https://${functionAppUri}'
     protocol: 'http'
     tls: {
       validateCertificateChain: true
@@ -139,8 +142,21 @@ resource funcBackend 'Microsoft.ApiManagement/service/backends@2023-03-01-previe
   }
 }
 
+resource apimOpenaiApiKeyNamedValue 'Microsoft.ApiManagement/service/namedValues@2022-08-01' = {
+  name: openAiApiKeyNamedValue
+  parent: apimService
+  properties: {
+    displayName: openAiApiKeyNamedValue
+    secret: true
+    keyVault:{
+      secretIdentifier: '${keyVaultEndpoint}secrets/${openaiKeyVaultSecretName}'
+      identityClientId: apimService.identity.userAssignedIdentities[managedIdentityApim.id].clientId
+    }
+  }
+}
+
 resource openaiApiPolicy 'Microsoft.ApiManagement/service/apis/policies@2023-03-01-preview' = {
-  name: 'openai-policy'
+  name: 'policy'
   parent: apimOpenaiApi
   properties: {
     value: loadTextContent('./policies/api_policy_openai.xml')
@@ -152,7 +168,7 @@ resource openaiApiPolicy 'Microsoft.ApiManagement/service/apis/policies@2023-03-
 }
 
 resource funcApiPolicy 'Microsoft.ApiManagement/service/apis/policies@2023-03-01-preview' = {
-  name: 'func-policy'
+  name: 'policy'
   parent: apimFuncApi
   properties: {
     value: loadTextContent('./policies/api_policy_func.xml')
@@ -167,9 +183,10 @@ resource apiSubscription 'Microsoft.ApiManagement/service/subscriptions@2023-03-
   parent: apimService
   name: 'openai-subscription'
   properties: {
-    scope: apimOpenaiApi.id
+    scope: '/apis'
     displayName: 'OpenAI Subscription'
     state: 'active'
+    allowTracing: true
   }
 }
 

@@ -50,7 +50,13 @@ azd init
 
 It will prompt you to provide a name that will later be used in the name of the deployed resources.
 
-### Step 2: Provision and deploy all the resources
+### Step 2: Set your IP address for deployment (only when you are deploying from your local machine)
+
+```shell
+azd env set MY_IP_ADDRESS '<your-ip-address>'
+```
+
+### Step 3: Provision and deploy all the resources
 
 ```shell
 azd up

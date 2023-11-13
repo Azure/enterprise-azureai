@@ -164,7 +164,6 @@ module vnet './modules/networking/vnet.bicep' = {
     location: location
     tags: tags
     privateDnsZoneNames: privateDnsZoneNames
-    myIpAddress: myIpAddress
   }
 }
 
@@ -237,6 +236,7 @@ module functionApp './modules/host/function.bicep' = {
     functionContentShareName: functionContentShareName
     openaiKeyVaultSecretName: openaiKeyVaultSecret.outputs.keyVaultSecretName
     keyVaultName: keyVault.outputs.keyVaultName
+    myIpAddress: myIpAddress
   }
 }
 

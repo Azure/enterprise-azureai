@@ -133,7 +133,7 @@ resource funcBackend 'Microsoft.ApiManagement/service/backends@2023-03-01-previe
   parent: apimService
   properties: {
     description: funcApiBackendId
-    url: 'https://${functionAppUri}'
+    url: 'https://${functionAppUri}/api/HttpTrigger/openai/'
     protocol: 'http'
     tls: {
       validateCertificateChain: true

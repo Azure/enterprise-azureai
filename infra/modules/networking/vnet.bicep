@@ -7,7 +7,6 @@ param appServiceNsgName string
 param privateEndpointSubnetName string
 param privateEndpointNsgName string
 param privateDnsZoneNames array
-param myIpAddress string
 param tags object = {}
 
 resource apimNsg 'Microsoft.Network/networkSecurityGroups@2020-07-01' = {
@@ -63,21 +62,7 @@ resource appServiceNsg 'Microsoft.Network/networkSecurityGroups@2022-09-01' = {
   name: appServiceNsgName
   location: location
   properties: {
-    securityRules: [
-      {
-        name: 'AllowIptoKudo'
-        properties: {
-            protocol: '*'
-            sourcePortRange: '443'
-            destinationPortRange: '443'
-            sourceAddressPrefix: '${myIpAddress}'
-            destinationAddressPrefix: 'VirtualNetwork'
-            access: 'Allow'
-            priority: 100
-            direction: 'Inbound'
-        }
-      }
-    ]
+    securityRules: []
   }
 }
 

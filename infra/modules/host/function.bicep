@@ -16,6 +16,7 @@ param openAiUri string
 param functionContentShareName string
 param keyVaultName string
 param openaiKeyVaultSecretName string
+param myIpAddress string
 
 resource storageAccount 'Microsoft.Storage/storageAccounts@2022-09-01' existing = {
   name: storageAccountName
@@ -45,7 +46,7 @@ resource appServiceSubnet 'Microsoft.Network/virtualNetworks/subnets@2022-09-01'
   name: '${vNetName}/${appServiceSubnetName}'
 }
 
-resource functionApp 'Microsoft.Web/sites@2021-02-01' = {
+resource functionApp 'Microsoft.Web/sites@2022-09-01' = {
   name: name
   location: location
   tags: union(tags, { 'azd-service-name': 'api' })
@@ -61,7 +62,22 @@ resource functionApp 'Microsoft.Web/sites@2021-02-01' = {
     keyVaultReferenceIdentity: managedIdentity.id
     httpsOnly: true
     virtualNetworkSubnetId: appServiceSubnet.id
+    publicNetworkAccess: 'Enabled'
     siteConfig: {
+      alwaysOn: true
+      ipSecurityRestrictionsDefaultAction: 'Deny'
+      scmIpSecurityRestrictionsDefaultAction: 'Deny'
+      //Allow deployment from my IP address
+      scmIpSecurityRestrictions: [
+        {
+          action: 'Allow'
+          description: 'AllowMyIptoScm'
+          headers: {}
+          ipAddress: '${myIpAddress}/32'
+          name: 'AllowMyIptoScm'
+          priority: 100
+        }
+      ]
       pythonVersion: '3.9'
       linuxFxVersion: 'python|3.9'
       appSettings: [

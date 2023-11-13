@@ -14,6 +14,7 @@ param logAnalyticsWorkspaceId string // optional for Diagnostic Settings
 param openAiUri string
 param functionAppUri string
 param openaiKeyVaultSecretName string
+param functionKeyVaultSecretName string
 param keyVaultEndpoint string
 param apimManagedIdentityName string
 param redisCacheServiceName string = ''
@@ -27,6 +28,7 @@ param logBytes int = 8192
 var openAiApiBackendId = 'openai-backend'
 var funcApiBackendId = 'function-backend'
 var openAiApiKeyNamedValue = 'openai-apikey'
+var functionKeyNamedValue = 'function-key'
 
 var logSettings = {
   headers: [ 'Content-type', 'User-agent' ]
@@ -133,8 +135,15 @@ resource funcBackend 'Microsoft.ApiManagement/service/backends@2023-03-01-previe
   parent: apimService
   properties: {
     description: funcApiBackendId
-    url: 'https://${functionAppUri}/api/HttpTrigger/openai/'
+    url: 'https://${functionAppUri}/api/HttpTrigger/'
     protocol: 'http'
+    credentials: {
+      header: {
+        'x-functions-key': [
+          '{{${functionKeyNamedValue}}}'
+        ]
+      }
+    }
     tls: {
       validateCertificateChain: true
       validateCertificateName: true
@@ -150,6 +159,19 @@ resource apimOpenaiApiKeyNamedValue 'Microsoft.ApiManagement/service/namedValues
     secret: true
     keyVault:{
       secretIdentifier: '${keyVaultEndpoint}secrets/${openaiKeyVaultSecretName}'
+      identityClientId: apimService.identity.userAssignedIdentities[managedIdentityApim.id].clientId
+    }
+  }
+}
+
+resource funcKeyNamedValue 'Microsoft.ApiManagement/service/namedValues@2022-08-01' = {
+  name: functionKeyNamedValue
+  parent: apimService
+  properties: {
+    displayName: functionKeyNamedValue
+    secret: true
+    keyVault:{
+      secretIdentifier: '${keyVaultEndpoint}secrets/${functionKeyVaultSecretName}'
       identityClientId: apimService.identity.userAssignedIdentities[managedIdentityApim.id].clientId
     }
   }

@@ -48,6 +48,7 @@ var openAiSkuName = 'S0'
 var chatGptDeploymentName = 'chat'
 var chatGptModelName = 'gpt-35-turbo'
 var openaiApiKeySecretName = 'openai-apikey'
+var functionKeySecretName = 'function-key'
 var functionContentShareName = 'function-content-share'
 var tags = { 'azd-env-name': environmentName }
 
@@ -121,13 +122,23 @@ module keyVault './modules/security/key-vault.bicep' = {
   }
 }
 
-module openaiKeyVaultSecret './modules/security/keyvault-secret.bicep' = {
+module openAiKeyVaultSecret './modules/security/keyvault-secret.bicep' = {
   name: 'openai-keyvault-secret'
   scope: resourceGroup
   params: {
     keyVaultName: keyVault.outputs.keyVaultName
-    secretName: openaiApiKeySecretName
+    openAiKeySecretName: openaiApiKeySecretName
     openAiName: openAi.outputs.openAiName
+  }
+}
+
+module functionKeyVaultSecret './modules/security/keyvault-secret.bicep' = {
+  name: 'function-keyvault-secret'
+  scope: resourceGroup
+  params: {
+    keyVaultName: keyVault.outputs.keyVaultName
+    functionKeySecretName: functionKeySecretName
+    functionAppName: functionApp.outputs.functionAppName
   }
 }
 
@@ -234,7 +245,7 @@ module functionApp './modules/host/function.bicep' = {
     appServiceSubnetName: vnet.outputs.appServiceSubnetName
     openAiUri: openAi.outputs.openAiEndpointUri
     functionContentShareName: functionContentShareName
-    openaiKeyVaultSecretName: openaiKeyVaultSecret.outputs.keyVaultSecretName
+    openaiKeyVaultSecretName: openAiKeyVaultSecret.outputs.openAiKeyVaultSecretName
     keyVaultName: keyVault.outputs.keyVaultName
     myIpAddress: myIpAddress
   }
@@ -252,12 +263,13 @@ module apim './modules/apim/apim.bicep' = {
     applicationInsightsName: monitoring.outputs.applicationInsightsName
     logAnalyticsWorkspaceId: monitoring.outputs.logAnalyticsWorkspaceId
     openAiUri: openAi.outputs.openAiEndpointUri
-    openaiKeyVaultSecretName: openaiKeyVaultSecret.outputs.keyVaultSecretName
+    openaiKeyVaultSecretName: openAiKeyVaultSecret.outputs.openAiKeyVaultSecretName
     keyVaultEndpoint: keyVault.outputs.keyVaultEndpoint
     apimManagedIdentityName: managedIdentityApim.outputs.managedIdentityName
     redisCacheServiceName: redisCache.outputs.cacheName
     apimSubnetId: vnet.outputs.apimSubnetId
     functionAppUri: functionApp.outputs.functionAppUri
+    functionKeyVaultSecretName: functionKeyVaultSecret.outputs.functionKeyVaultSecretName
   }
 }
 

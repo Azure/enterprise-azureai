@@ -3,4 +3,6 @@
 # Manually managing azure-functions-worker may cause unexpected issues
 
 azure-functions
-requests==2.22.0
+azure-eventhub
+azure-identity
+tiktoken

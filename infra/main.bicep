@@ -34,6 +34,7 @@ param appServiceNsgName string = ''
 param privateEndpointSubnetName string = ''
 param privateEndpointNsgName string = ''
 param redisCacheServiceName string = ''
+param eventHubNamespaceName string = ''
 
 //Determine the version of the chat model to deploy
 param arrayVersion0301Locations array = [
@@ -50,6 +51,9 @@ var chatGptModelName = 'gpt-35-turbo'
 var openaiApiKeySecretName = 'openai-apikey'
 var functionKeySecretName = 'function-key'
 var functionContentShareName = 'function-content-share'
+var eventHubListenPolicyName = 'listen'
+var eventHubSendPolicyName = 'send'
+var eventHubName = 'openai-chargeback-hub'
 var tags = { 'azd-env-name': environmentName }
 
 var openAiPrivateDnsZoneName = 'privatelink.openai.azure.com'
@@ -59,6 +63,7 @@ var redisCachePrivateDnsZoneName = 'privatelink.redis.cache.windows.net'
 var storageAccountBlobPrivateDnsZoneName = 'privatelink.blob.core.windows.net'
 var storageAccountFilePrivateDnsZoneName = 'privatelink.file.core.windows.net'
 var appServicePrivateDnsZoneName = 'privatelink.azurewebsites.net'
+var eventHubPrivateDnsZoneName = 'privatelink.servicebus.windows.net'
 
 var privateDnsZoneNames = [
   openAiPrivateDnsZoneName
@@ -68,6 +73,7 @@ var privateDnsZoneNames = [
   storageAccountBlobPrivateDnsZoneName
   storageAccountFilePrivateDnsZoneName
   appServicePrivateDnsZoneName
+  eventHubPrivateDnsZoneName
 ]
 
 // Organize resources in a resource group
@@ -122,7 +128,7 @@ module keyVault './modules/security/key-vault.bicep' = {
   }
 }
 
-module openAiKeyVaultSecret './modules/security/keyvault-secret.bicep' = {
+module openAiKeyVaultSecret './modules/security/keyvault-secret-openai.bicep' = {
   name: 'openai-keyvault-secret'
   scope: resourceGroup
   params: {
@@ -132,7 +138,7 @@ module openAiKeyVaultSecret './modules/security/keyvault-secret.bicep' = {
   }
 }
 
-module functionKeyVaultSecret './modules/security/keyvault-secret.bicep' = {
+module functionKeyVaultSecret './modules/security/keyvault-secret-function.bicep' = {
   name: 'function-keyvault-secret'
   scope: resourceGroup
   params: {
@@ -248,6 +254,27 @@ module functionApp './modules/host/function.bicep' = {
     openaiKeyVaultSecretName: openAiKeyVaultSecret.outputs.openAiKeyVaultSecretName
     keyVaultName: keyVault.outputs.keyVaultName
     myIpAddress: myIpAddress
+    eventHubName: eventHub.outputs.eventHubName
+    eventHubSendPolicyName: eventHub.outputs.eventHubSendPolicyName
+  }
+}
+
+module eventHub './modules/monitor/eventhub.bicep' = {
+  name: 'event-hub'
+  scope: resourceGroup
+  params: {
+    name: !empty(eventHubNamespaceName) ? eventHubNamespaceName : '${abbrs.eventHubNamespaces}${resourceToken}'
+    location: location
+    tags: tags
+    eventHubListenPolicyName: eventHubListenPolicyName
+    eventHubSendPolicyName: eventHubSendPolicyName
+    apimManagedIdentityName: managedIdentityApim.outputs.managedIdentityName
+    funcManagedIdentityName: managedIdentityFunc.outputs.managedIdentityName
+    eventHubName: !empty(eventHubName) ? eventHubName : '${abbrs.eventHubNamespacesEventHubs}${resourceToken}'
+    eventHubPrivateEndpointName: '${abbrs.eventHubNamespaces}${abbrs.privateEndpoints}${resourceToken}'
+    vNetName: vnet.outputs.vnetName
+    privateEndpointSubnetName: vnet.outputs.privateEndpointSubnetName
+    eventHubDnsZoneName: eventHubPrivateDnsZoneName
   }
 }
 
@@ -270,6 +297,8 @@ module apim './modules/apim/apim.bicep' = {
     apimSubnetId: vnet.outputs.apimSubnetId
     functionAppUri: functionApp.outputs.functionAppUri
     functionKeyVaultSecretName: functionKeyVaultSecret.outputs.functionKeyVaultSecretName
+    eventHubName: eventHub.outputs.eventHubName
+    eventHubNamespaceName: eventHub.outputs.eventHubNamespaceName
   }
 }
 

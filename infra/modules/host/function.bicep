@@ -17,6 +17,10 @@ param functionContentShareName string
 param keyVaultName string
 param openaiKeyVaultSecretName string
 param myIpAddress string
+param eventHubSendPolicyName string
+param eventHubName string
+
+var eventHubNamespaceConnectionString = listKeys(eventHubSend.id, eventHubSend.apiVersion).primaryConnectionString
 
 resource storageAccount 'Microsoft.Storage/storageAccounts@2022-09-01' existing = {
   name: storageAccountName
@@ -44,6 +48,10 @@ resource appServicePlan 'Microsoft.Web/serverfarms@2021-03-01' existing = {
 //Vnet Integration
 resource appServiceSubnet 'Microsoft.Network/virtualNetworks/subnets@2022-09-01' existing = {
   name: '${vNetName}/${appServiceSubnetName}'
+}
+
+resource eventHubSend 'Microsoft.EventHub/namespaces/eventhubs/authorizationRules@2022-01-01-preview' existing = {
+  name: eventHubSendPolicyName
 }
 
 resource functionApp 'Microsoft.Web/sites@2022-09-01' = {
@@ -140,6 +148,14 @@ resource functionApp 'Microsoft.Web/sites@2022-09-01' = {
         {
           name: 'OpenAiKey'
           value: '@Microsoft.KeyVault(VaultName=${keyVault.name};SecretName=${openaiKeyVaultSecretName})'
+        }
+        {
+          name: 'EVENT_HUB_CONNECTION_STR'
+          value: eventHubNamespaceConnectionString
+        }
+        {
+          name: 'EVENT_HUB_NAME'
+          value: eventHubName 
         }
       ]
     }

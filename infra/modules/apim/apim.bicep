@@ -21,6 +21,8 @@ param redisCacheServiceName string = ''
 //Vnet Integration
 param apimSubnetId string
 param virtualNetworkType string
+param eventHubNamespaceName string
+param eventHubName string
 
 @description('The number of bytes of the request/response body to record for diagnostic purposes')
 param logBytes int = 8192
@@ -29,6 +31,7 @@ var openAiApiBackendId = 'openai-backend'
 var funcApiBackendId = 'function-backend'
 var openAiApiKeyNamedValue = 'openai-apikey'
 var functionKeyNamedValue = 'function-key'
+var eventHubEndpoint = '${eventHubNamespaceName}.servicebus.windows.net'
 
 var logSettings = {
   headers: [ 'Content-type', 'User-agent' ]
@@ -127,6 +130,13 @@ resource openAiBackend 'Microsoft.ApiManagement/service/backends@2023-03-01-prev
       validateCertificateChain: true
       validateCertificateName: true
     }
+    credentials: {
+      header: {
+        'api-key': [
+          '{{${openAiApiKeyNamedValue}}}'
+        ]
+      }
+    }
   }
 }
 
@@ -149,6 +159,9 @@ resource funcBackend 'Microsoft.ApiManagement/service/backends@2023-03-01-previe
       validateCertificateName: true
     }
   }
+  dependsOn: [
+    funcKeyNamedValue
+  ]
 }
 
 resource apimOpenaiApiKeyNamedValue 'Microsoft.ApiManagement/service/namedValues@2022-08-01' = {
@@ -186,6 +199,7 @@ resource openaiApiPolicy 'Microsoft.ApiManagement/service/apis/policies@2023-03-
   }
   dependsOn: [
     openAiBackend
+    eventHubLogger
   ]
 }
 
@@ -233,6 +247,20 @@ resource apimLogger 'Microsoft.ApiManagement/service/loggers@2021-12-01-preview'
     isBuffered: false
     loggerType: 'applicationInsights'
     resourceId: applicationInsights.id
+  }
+}
+
+resource eventHubLogger 'Microsoft.ApiManagement/service/loggers@2023-03-01-preview' = {
+  name: 'eventhub-logger'
+  parent: apimService
+  properties: {
+    loggerType: 'azureEventHub'
+    description: 'Event hub logger with user-assigned managed identity'
+    credentials: {
+      endpointAddress: eventHubEndpoint
+      identityClientId: managedIdentityApim.properties.clientId
+      name: eventHubName
+    }
   }
 }
 

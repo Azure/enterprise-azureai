@@ -10,7 +10,7 @@ metadata:
   template: ais-apim-openai@1.0.0
 services:
   api:
-    project: ./api
+    project: ./openai
     language: python
     host: function
 # services:

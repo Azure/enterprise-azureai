@@ -2,3 +2,7 @@
 local.tests.http
 local.softdelete.ps1
 local.del-soft-delete-apim.ps1
+bin
+obj
+appsettings.json
+local.settings.json

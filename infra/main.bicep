@@ -254,6 +254,7 @@ module functionApp './modules/host/function.bicep' = {
     openaiKeyVaultSecretName: openAiKeyVaultSecret.outputs.openAiKeyVaultSecretName
     keyVaultName: keyVault.outputs.keyVaultName
     myIpAddress: myIpAddress
+    eventHubNamespaceName: eventHub.outputs.eventHubNamespaceName
     eventHubName: eventHub.outputs.eventHubName
     eventHubSendPolicyName: eventHub.outputs.eventHubSendPolicyName
   }

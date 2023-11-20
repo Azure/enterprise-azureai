@@ -18,6 +18,7 @@ param keyVaultName string
 param openaiKeyVaultSecretName string
 param myIpAddress string
 param eventHubSendPolicyName string
+param eventHubNamespaceName string
 param eventHubName string
 
 var eventHubNamespaceConnectionString = listKeys(eventHubSend.id, eventHubSend.apiVersion).primaryConnectionString
@@ -50,7 +51,17 @@ resource appServiceSubnet 'Microsoft.Network/virtualNetworks/subnets@2022-09-01'
   name: '${vNetName}/${appServiceSubnetName}'
 }
 
+resource eventHubNamespace 'Microsoft.EventHub/namespaces@2022-10-01-preview' existing = {
+  name: eventHubNamespaceName
+}
+
+resource eventHub 'Microsoft.EventHub/namespaces/eventhubs@2022-10-01-preview' existing = {
+  parent: eventHubNamespace
+  name: eventHubName
+}
+
 resource eventHubSend 'Microsoft.EventHub/namespaces/eventhubs/authorizationRules@2022-01-01-preview' existing = {
+  parent: eventHub
   name: eventHubSendPolicyName
 }
 
@@ -88,6 +99,12 @@ resource functionApp 'Microsoft.Web/sites@2022-09-01' = {
       ]
       pythonVersion: '3.9'
       linuxFxVersion: 'python|3.9'
+      cors: {
+        allowedOrigins: [
+          'https://portal.azure.com'
+        ]
+        supportCredentials: true
+      }
       appSettings: [
         {
           name: 'APPINSIGHTS_INSTRUMENTATIONKEY'
@@ -155,7 +172,7 @@ resource functionApp 'Microsoft.Web/sites@2022-09-01' = {
         }
         {
           name: 'EVENT_HUB_NAME'
-          value: eventHubName 
+          value: eventHub.name 
         }
       ]
     }

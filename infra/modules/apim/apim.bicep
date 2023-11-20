@@ -32,6 +32,8 @@ var funcApiBackendId = 'function-backend'
 var openAiApiKeyNamedValue = 'openai-apikey'
 var functionKeyNamedValue = 'function-key'
 var eventHubEndpoint = '${eventHubNamespaceName}.servicebus.windows.net'
+var diagnosticsNameOpenAi = 'diag-openai'
+var diagnosticsNameFunc = 'diag-func'
 
 var logSettings = {
   headers: [ 'Content-type', 'User-agent' ]
@@ -145,7 +147,7 @@ resource funcBackend 'Microsoft.ApiManagement/service/backends@2023-03-01-previe
   parent: apimService
   properties: {
     description: funcApiBackendId
-    url: 'https://${functionAppUri}/api/HttpTrigger/'
+    url: 'https://${functionAppUri}/openai/'
     protocol: 'http'
     credentials: {
       header: {
@@ -263,9 +265,9 @@ resource eventHubLogger 'Microsoft.ApiManagement/service/loggers@2023-03-01-prev
     }
   }
 }
-
-resource diagnosticsPolicy 'Microsoft.ApiManagement/service/apis/diagnostics@2022-08-01' = {
-  name: 'applicationinsights'
+/*
+resource diagnosticsPolicyOpenAi 'Microsoft.ApiManagement/service/apis/diagnostics@2022-08-01' = {
+  name: diagnosticsNameOpenAi
   parent: apimOpenaiApi
   properties: {
     alwaysLog: 'allErrors'
@@ -289,5 +291,30 @@ resource diagnosticsPolicy 'Microsoft.ApiManagement/service/apis/diagnostics@202
   }
 }
 
+resource diagnosticsPolicyFunc 'Microsoft.ApiManagement/service/apis/diagnostics@2022-08-01' = {
+  name: diagnosticsNameFunc
+  parent: apimFuncApi
+  properties: {
+    alwaysLog: 'allErrors'
+    httpCorrelationProtocol: 'W3C'
+    logClientIp: true
+    loggerId: apimLogger.id
+    metrics: true
+    verbosity: 'verbose'
+    sampling: {
+      samplingType: 'fixed'
+      percentage: 100
+    }
+    frontend: {
+      request: logSettings
+      response: logSettings
+    }
+    backend: {
+      request: logSettings
+      response: logSettings
+    }
+  }
+}
+*/
 output apimName string = apimService.name
 output apimOpenaiApiPath string = apimOpenaiApi.properties.path

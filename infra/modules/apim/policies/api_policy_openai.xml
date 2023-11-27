@@ -30,6 +30,7 @@
     </backend>
     <outbound>
         <base/>
+        <!--
         <choose>
             <when condition="@(context.Response.StatusCode == 200)">
                 <log-to-eventhub logger-id="eventhub-logger">@{
@@ -46,6 +47,7 @@
                 </log-to-eventhub>
             </when>
         </choose>
+        -->
     </outbound>
     <on-error>
         <base/>

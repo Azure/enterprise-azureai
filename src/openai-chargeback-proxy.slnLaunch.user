@@ -1,0 +1,16 @@
+[
+  {
+    "Name": "New Profile",
+    "Projects": [
+      {
+        "Name": "Azure.OpenAI.ChargebackProxy.Client\\Azure.OpenAI.ChargebackProxy.Client.csproj",
+        "Action": "Start",
+        "DebugTarget": ""
+      },
+      {
+        "Name": "Azure.OpenAI.ChargebackProxy\\Azure.OpenAI.ChargebackProxy.csproj",
+        "Action": "Start"
+      }
+    ]
+  }
+]

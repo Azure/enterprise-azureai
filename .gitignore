@@ -1,4 +1,5 @@
 .azure
+.vs
 local.tests.http
 local.softdelete.ps1
 local.del-soft-delete-apim.ps1
@@ -7,6 +8,4 @@ obj
 appsettings.json
 local.settings.json
 /src/Azure.OpenAI.ChargebackProxy/appsettings.Development.json
-/src/Azure.OpenAI.ChargebackProxy/appsettings.Development.json
-/src/Azure.OpenAI.ChargebackProxy.Client/appsetting.Development.json
 /src/Azure.OpenAI.ChargebackProxy.Client/appsettings.Development.json

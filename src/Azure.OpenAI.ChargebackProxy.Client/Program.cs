@@ -12,7 +12,7 @@ var apiKey = config["APIKey"];
 
 OpenAIClient client = new OpenAIClient(
         new Uri(proxyEndpoint),
-        new AzureKeyCredential(apiKey)
+        new AzureKeyCredential("pascal")
     );
 
 var deploymentName = "gpt-4";

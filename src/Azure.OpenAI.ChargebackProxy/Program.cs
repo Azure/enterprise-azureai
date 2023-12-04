@@ -6,10 +6,27 @@ using TiktokenSharp;
 using Azure.OpenAI.ChargebackProxy;
 using System.Text.Json.Serialization.Metadata;
 using AsyncAwaitBestPractices;
+using Azure.Core;
+using Azure.Identity;
+using System.Runtime.CompilerServices;
+
+
+string accessToken = "";
 
 var builder = WebApplication.CreateBuilder(args);
 
 var config = builder.Configuration;
+
+
+DefaultAzureCredentialOptions defaultAzureCredentialOptions = new()
+{
+    TenantId = config["TenantId"]
+};
+
+
+TokenCredential managedIdentityCredential = new DefaultAzureCredential(defaultAzureCredentialOptions);
+accessToken = await OpenAIAccessToken.GetAccessTokenAsync(managedIdentityCredential, CancellationToken.None);
+
 
 builder.Services.AddReverseProxy()
     .LoadFromConfig(builder.Configuration.GetSection("ReverseProxy"))
@@ -18,13 +35,24 @@ builder.Services.AddReverseProxy()
         //decompress the Response so we can read it
         options.AutomaticDecompression = System.Net.DecompressionMethods.All;
 
+       
+
     })
     .AddTransforms(context =>
     {
-        context.AddRequestTransform(requestContext => {
+        context.AddRequestTransform(async requestContext => {
             //enable buffering allows us to read the requestbody twice (one for forwarding, one for analysis)
             requestContext.HttpContext.Request.EnableBuffering();
-            return ValueTask.CompletedTask;
+            
+            //check accessToken before replacing the Auth Header
+            if (OpenAIAccessToken.IsTokenExpired(accessToken, config["TenantId"]))
+            {
+                accessToken = await OpenAIAccessToken.GetAccessTokenAsync(managedIdentityCredential, CancellationToken.None);
+            }
+
+            //replace auth header with the accesstoken of the managed indentity of the proxy
+            requestContext.ProxyRequest.Headers.Remove("api-key");
+            requestContext.ProxyRequest.Headers.Add("Authorization", $"Bearer {accessToken}"); 
         });
         context.AddResponseTransform(async responseContext =>
         {
@@ -99,7 +127,7 @@ builder.Services.AddReverseProxy()
             }
 
             //do not await, performance
-            EventHub.SendAsync(msg, config).SafeFireAndForget();
+            EventHub.SendAsync(msg, config, managedIdentityCredential).SafeFireAndForget();
             
             //return;
 

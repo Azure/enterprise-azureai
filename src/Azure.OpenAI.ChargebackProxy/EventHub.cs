@@ -1,6 +1,8 @@
 ﻿using Azure.Messaging.EventHubs.Producer;
 
 namespace Azure.OpenAI.ChargebackProxy;
+
+using Azure.Core;
 using Azure.Identity;
 using Azure.Messaging.EventHubs;
 using System.Text;
@@ -11,7 +13,7 @@ public static class EventHub
 {
  
 
-    public async static Task SendAsync(LoggingOutputMessage msgBody, IConfiguration config)
+    public async static Task SendAsync(LoggingOutputMessage msgBody, IConfiguration config, TokenCredential managedIdentitityCredential)
     {
         DefaultAzureCredentialOptions options = new DefaultAzureCredentialOptions();
         options.TenantId = "16b3c013-d300-468d-ac64-7eda0820b6d3";
@@ -19,7 +21,7 @@ public static class EventHub
         EventHubProducerClient producerClient = new EventHubProducerClient(
         config["EventhubNameSpace"],
         config["EventhubName"],
-        new DefaultAzureCredential());
+        managedIdentitityCredential);
 
         EventDataBatch eventBatch = await producerClient.CreateBatchAsync();
 

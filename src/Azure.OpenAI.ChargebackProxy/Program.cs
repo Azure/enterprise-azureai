@@ -1,15 +1,14 @@
+using Azure;
+using Azure.Core;
+using Azure.Identity;
+using Azure.Monitor.Ingestion;
+using Azure.OpenAI.ChargebackProxy;
 using System.Text;
 using System.Text.Json;
 using System.Text.Json.Nodes;
-using Yarp.ReverseProxy.Transforms;
-using TiktokenSharp;
-using Azure.OpenAI.ChargebackProxy;
 using System.Text.Json.Serialization.Metadata;
-using AsyncAwaitBestPractices;
-using Azure.Core;
-using Azure.Identity;
-using System.Runtime.CompilerServices;
-
+using TiktokenSharp;
+using Yarp.ReverseProxy.Transforms;
 
 string accessToken = "";
 
@@ -20,12 +19,18 @@ var config = builder.Configuration;
 
 DefaultAzureCredentialOptions defaultAzureCredentialOptions = new()
 {
+    
     TenantId = config["TenantId"]
 };
 
 
 TokenCredential managedIdentityCredential = new DefaultAzureCredential(defaultAzureCredentialOptions);
 accessToken = await OpenAIAccessToken.GetAccessTokenAsync(managedIdentityCredential, CancellationToken.None);
+
+var endpoint = new Uri(config.GetSection("AzureMonitor")["DataCollectionEndpoint"].ToString());
+var logsIngestionClient = new LogsIngestionClient(endpoint, managedIdentityCredential);
+
+
 
 
 builder.Services.AddReverseProxy()
@@ -43,7 +48,7 @@ builder.Services.AddReverseProxy()
         context.AddRequestTransform(async requestContext => {
             //enable buffering allows us to read the requestbody twice (one for forwarding, one for analysis)
             requestContext.HttpContext.Request.EnableBuffering();
-            
+
             //check accessToken before replacing the Auth Header
             if (OpenAIAccessToken.IsTokenExpired(accessToken, config["TenantId"]))
             {
@@ -52,7 +57,11 @@ builder.Services.AddReverseProxy()
 
             //replace auth header with the accesstoken of the managed indentity of the proxy
             requestContext.ProxyRequest.Headers.Remove("api-key");
-            requestContext.ProxyRequest.Headers.Add("Authorization", $"Bearer {accessToken}"); 
+            requestContext.ProxyRequest.Headers.Add("Authorization", $"Bearer {accessToken}");
+
+
+            
+            
         });
         context.AddResponseTransform(async responseContext =>
         {
@@ -87,10 +96,9 @@ builder.Services.AddReverseProxy()
             {
                 msg.RequestHeaders.Add(header.Key, header.Value);
             }
+            Console.WriteLine($"RESPONSE: {responseContext.ProxyResponse.StatusCode}");
 
-            //calculate token from the request
-            msg = await CalculateInputTokens(responseContext.HttpContext.Request, msg).ConfigureAwait(false);
-            //calculate token from the response
+            bool firstChunck = true;
             var chunks = capturedBody.Split("data:");
             foreach (var chunk in chunks)
             {
@@ -107,7 +115,7 @@ builder.Services.AddReverseProxy()
                     {
                         string objectValue = jsonNode["object"].ToString();
 
-
+                        Console.WriteLine(objectValue);
                         msg.Type = objectValue;
 
                         switch (objectValue)
@@ -116,7 +124,19 @@ builder.Services.AddReverseProxy()
                                 HandleChatCompletion(jsonNode, ref msg);
                                 break;
                             case "chat.completion.chunk":
+                                if (firstChunck)
+                                {
+                                    msg = await CalculateChatInputTokens(responseContext.HttpContext.Request, msg).ConfigureAwait(false);
+                                    firstChunck = false;
+                                }
                                 HandleChatCompletionChunck(jsonNode, ref msg);
+                                break;
+                            case "list":
+                                if (jsonNode["data"][0]["object"].ToString() == "embedding")
+                                {
+                                    //it's an embedding
+                                    HandleEmbedding(jsonNode, ref msg);
+                                }
                                 break;
                             default:
                                 break;
@@ -127,8 +147,32 @@ builder.Services.AddReverseProxy()
             }
 
             //do not await, performance
-            EventHub.SendAsync(msg, config, managedIdentityCredential).SafeFireAndForget();
-            
+            //EventHub.SendAsync(msg, config, managedIdentityCredential).SafeFireAndForget();
+
+            var record = new LogAnalyticsRecord();
+            record.TimeGenerated = DateTime.UtcNow;
+            record.ApiKey = "apikey";
+            record.Consumer = "testconsumer";
+            record.ModelDeploymentName = "gpt-4";
+            record.ObjectType = msg.Type;
+            record.InputTokens = 10;
+            record.OutputTokens = 10;
+            record.TotalTokens = msg.Tokens;
+
+            //RBAC Monitoring Metrics Publisher needed
+            var data = Encoding.UTF8.GetBytes(JsonSerializer.Serialize(record, LogAnalyticsRecordSourceGenerationContext.Default.LogAnalyticsRecord));
+            try
+            {
+                Console.WriteLine("Writing logs....");
+                var ruleId = config.GetSection("AzureMonitor")["DataCollectionRuleImmutableId"].ToString();
+                var stream = config.GetSection("AzureMonitor")["DataCollectionRuleStream"].ToString();
+                Response response = await logsIngestionClient.UploadAsync(ruleId, stream, RequestContent.Create(data)).ConfigureAwait(false);
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Writing to LogAnalytics Failed: {ex.Message}");
+            }
+
             //return;
 
 
@@ -163,10 +207,9 @@ static void HandleChatCompletionChunck(JsonNode jsonNode, ref LoggingOutputMessa
     var choices = jsonNode["choices"];
     var delta = choices[0]["delta"];
     var content = delta["content"];
-    //for now every response is one token
+    //calculate tokens used
     if (content != null)
     {
-
         msg.Tokens += GetTokensFromString(content.ToString(), modelName);
         msg.BodyContent.Add(jsonNode);
     }
@@ -174,17 +217,27 @@ static void HandleChatCompletionChunck(JsonNode jsonNode, ref LoggingOutputMessa
 
 static void HandleError(JsonNode jsonNode)
 {
-    //do nothing
+    //do nothing yet....figure out later
 }
 
-static async Task<LoggingOutputMessage> CalculateInputTokens(HttpRequest request, LoggingOutputMessage msg)
+static void HandleEmbedding(JsonNode jsonNode, ref LoggingOutputMessage msg)
+{
+    //read tokens from responsebody - not streaming, so data is just there
+    var usage = jsonNode["usage"];
+    var tokens = int.Parse(usage["total_tokens"].ToString());
+    msg.Tokens = tokens;
+    msg.BodyContent.Add(jsonNode);
+
+}
+
+static async Task<LoggingOutputMessage> CalculateChatInputTokens(HttpRequest request, LoggingOutputMessage msg)
 {
     //Rewind to first position to read the stream again
     request.Body.Position = 0;
 
     StreamReader reader = new StreamReader(request.Body, true);
     string bodyText = reader.ReadToEnd();
-    Console.WriteLine(bodyText);
+    //Console.WriteLine(bodyText);
 
     JsonNode jsonNode = JsonSerializer.Deserialize<JsonNode>(bodyText, CreateDefaultOptions());
     var modelName = jsonNode["model"].ToString();
@@ -192,7 +245,7 @@ static async Task<LoggingOutputMessage> CalculateInputTokens(HttpRequest request
     foreach (var message in messages)
     {
         var content = message["content"].ToString();
-        //calculate tokens here using a tokenizer....use length for now....
+        //calculate tokens using a tokenizer.
         msg.Tokens += GetTokensFromString(content, modelName);
     }
 

@@ -12,8 +12,9 @@ var apiKey = config["APIKey"];
 
 OpenAIClient client = new OpenAIClient(
         new Uri(proxyEndpoint),
-        new AzureKeyCredential("pascal")
+        new AzureKeyCredential(apiKey)
     );
+
 
 var deploymentName = "gpt-4";
 var chatMessages = new List<ChatMessage>();
@@ -63,6 +64,34 @@ Console.WriteLine($"Using endpoint: {proxyEndpoint}");
 
 //}
 //end loop
+
+
+//embedding
+string embeddingDeploymentName = "text-embedding-ada-002";
+List<string> embeddingText = new List<string>();
+embeddingText.Add("When was Microsoft Founded?");
+
+var embeddingsOptions = new EmbeddingsOptions();
+embeddingsOptions.DeploymentName = embeddingDeploymentName;
+embeddingsOptions.Input = embeddingText;
+var embeddings = await client.GetEmbeddingsAsync(embeddingsOptions);
+Console.WriteLine("Get Embeddings Result");
+foreach (float item in embeddings.Value.Data[0].Embedding.ToArray())
+{
+    Console.WriteLine(item);
+}
+
+//Image Generation - proxy not done yet
+//ImageGenerationOptions imageGenerationOptions = new ImageGenerationOptions();
+//imageGenerationOptions.Prompt = "Logo of Microsoft projected on a map of the Netherlands";
+//imageGenerationOptions.ImageCount = 2;
+
+//Console.WriteLine("Get ImageGeneration Result");
+//var images = await client.GetImageGenerationsAsync(imageGenerationOptions);
+
+
+
+
 Console.ReadLine();
 
 

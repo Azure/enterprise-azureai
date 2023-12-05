@@ -1,0 +1,10 @@
+{
+    "TimeGenerated": "2021-09-30T12:00:00Z",
+    "ApiKey":"12345",
+    "Consumer" : "CSU Netherlands",
+    "ModelDeploymentName":"gpt-4",
+    "ObjectType": "chat.completion",
+    "InputTokens": 10,
+    "OutputTokens": 10,
+    "TotalTokens": 20
+}

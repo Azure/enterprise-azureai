@@ -1,0 +1,6 @@
+@NoAOT_HostAddress = http://localhost:5182
+
+GET {{NoAOT_HostAddress}}/weatherforecast/
+Accept: application/json
+
+###

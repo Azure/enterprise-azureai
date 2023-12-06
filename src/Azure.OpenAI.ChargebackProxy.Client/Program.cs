@@ -67,7 +67,7 @@ Console.WriteLine($"Using endpoint: {proxyEndpoint}");
 
 
 //embedding
-string embeddingDeploymentName = "text-embedding-ada-002";
+string embeddingDeploymentName = "ada-002";
 List<string> embeddingText = new List<string>();
 embeddingText.Add("When was Microsoft Founded?");
 

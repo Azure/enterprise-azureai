@@ -1,8 +1,10 @@
+using AsyncAwaitBestPractices;
 using Azure;
 using Azure.Core;
 using Azure.Identity;
 using Azure.Monitor.Ingestion;
 using Azure.OpenAI.ChargebackProxy;
+using System.Diagnostics.CodeAnalysis;
 using System.Text;
 using System.Text.Json;
 using System.Text.Json.Nodes;
@@ -59,9 +61,6 @@ builder.Services.AddReverseProxy()
             requestContext.ProxyRequest.Headers.Remove("api-key");
             requestContext.ProxyRequest.Headers.Add("Authorization", $"Bearer {accessToken}");
 
-
-            
-            
         });
         context.AddResponseTransform(async responseContext =>
         {
@@ -86,18 +85,21 @@ builder.Services.AddReverseProxy()
             }
 
 
-            //now perform the analysis and create a message for eventhub
-            LoggingOutputMessage msg = new LoggingOutputMessage();
-            foreach (var header in responseContext.HttpContext.Response.Headers)
+            //now perform the analysis and create a log record
+            var record = new LogAnalyticsRecord();
+            record.TimeGenerated = DateTime.UtcNow;
+            record.ApiKey = responseContext.HttpContext.Request.Headers["api-key"].ToString();
+            if (responseContext.HttpContext.Request.Headers["X-Consumer"].ToString() != "")
             {
-                msg.ResponseHeaders.Add(header.Key, header.Value);
+                record.Consumer = responseContext.HttpContext.Request.Headers["X-Consumer"].ToString();
             }
-            foreach (var header in responseContext.HttpContext.Request.Headers)
+            else
             {
-                msg.RequestHeaders.Add(header.Key, header.Value);
+                record.Consumer = "Unknown";
             }
-            Console.WriteLine($"RESPONSE: {responseContext.ProxyResponse.StatusCode}");
 
+
+            
             bool firstChunck = true;
             var chunks = capturedBody.Split("data:");
             foreach (var chunk in chunks)
@@ -115,27 +117,29 @@ builder.Services.AddReverseProxy()
                     {
                         string objectValue = jsonNode["object"].ToString();
 
-                        Console.WriteLine(objectValue);
-                        msg.Type = objectValue;
+                       
 
                         switch (objectValue)
                         {
                             case "chat.completion":
-                                HandleChatCompletion(jsonNode, ref msg);
+                                HandleUsage(jsonNode, ref record);
+                                record.ObjectType = objectValue;
                                 break;
                             case "chat.completion.chunk":
                                 if (firstChunck)
                                 {
-                                    msg = await CalculateChatInputTokens(responseContext.HttpContext.Request, msg).ConfigureAwait(false);
+                                    record = await CalculateChatInputTokens(responseContext.HttpContext.Request, record).ConfigureAwait(false);
+                                    record.ObjectType = objectValue;
                                     firstChunck = false;
                                 }
-                                HandleChatCompletionChunck(jsonNode, ref msg);
+                                HandleChatCompletionChunck(jsonNode, ref record);
                                 break;
                             case "list":
                                 if (jsonNode["data"][0]["object"].ToString() == "embedding")
                                 {
+                                    record.ObjectType = jsonNode["data"][0]["object"].ToString();
                                     //it's an embedding
-                                    HandleEmbedding(jsonNode, ref msg);
+                                    HandleUsage(jsonNode, ref record);
                                 }
                                 break;
                             default:
@@ -146,38 +150,16 @@ builder.Services.AddReverseProxy()
 
             }
 
-            //do not await, performance
-            //EventHub.SendAsync(msg, config, managedIdentityCredential).SafeFireAndForget();
+            record.TotalTokens = record.InputTokens + record.OutputTokens;
 
-            var record = new LogAnalyticsRecord();
-            record.TimeGenerated = DateTime.UtcNow;
-            record.ApiKey = "apikey";
-            record.Consumer = "testconsumer";
-            record.ModelDeploymentName = "gpt-4";
-            record.ObjectType = msg.Type;
-            record.InputTokens = 10;
-            record.OutputTokens = 10;
-            record.TotalTokens = msg.Tokens;
-
-            //RBAC Monitoring Metrics Publisher needed
-            var data = Encoding.UTF8.GetBytes(JsonSerializer.Serialize(record, LogAnalyticsRecordSourceGenerationContext.Default.LogAnalyticsRecord));
-            try
+            if (bool.Parse(config["OutputToEventHub"].ToString()))
             {
-                Console.WriteLine("Writing logs....");
-                var ruleId = config.GetSection("AzureMonitor")["DataCollectionRuleImmutableId"].ToString();
-                var stream = config.GetSection("AzureMonitor")["DataCollectionRuleStream"].ToString();
-                Response response = await logsIngestionClient.UploadAsync(ruleId, stream, RequestContent.Create(data)).ConfigureAwait(false);
+                EventHub.SendAsync(record, config, managedIdentityCredential).SafeFireAndForget();
             }
-            catch (Exception ex)
-            {
-                Console.WriteLine($"Writing to LogAnalytics Failed: {ex.Message}");
-            }
-
-            //return;
-
-
-
-        });
+            
+           
+            LogAnalytics.LogAsync(record, logsIngestionClient, config).SafeFireAndForget();
+         });
     });
 
 
@@ -190,28 +172,39 @@ app.Run();
 
 
 
-static void HandleChatCompletion(JsonNode jsonNode, ref LoggingOutputMessage msg)
+static void HandleUsage(JsonNode jsonNode, ref LogAnalyticsRecord record)
 {
     //read tokens from responsebody - not streaming, so data is just there
+    var modelName = jsonNode["model"].ToString();
+    record.Model = modelName;
     var usage = jsonNode["usage"];
-    var tokens = int.Parse(usage["total_tokens"].ToString());
-    msg.Tokens = tokens;
-    msg.BodyContent.Add(jsonNode);
+    if (usage["completion_tokens"] != null)
+    {
+        record.OutputTokens = int.Parse(usage["completion_tokens"].ToString());
+    }
+    else
+    {
+        record.OutputTokens = 0;
+    }
+    record.InputTokens = int.Parse(usage["prompt_tokens"].ToString());
+
+
 
 }
 
-static void HandleChatCompletionChunck(JsonNode jsonNode, ref LoggingOutputMessage msg)
+static void HandleChatCompletionChunck(JsonNode jsonNode, ref LogAnalyticsRecord record)
 {
     //calculate tokens based on the content...we need a tokenizer to calculate
     var modelName = jsonNode["model"].ToString();
+    record.Model = modelName;
     var choices = jsonNode["choices"];
     var delta = choices[0]["delta"];
     var content = delta["content"];
     //calculate tokens used
     if (content != null)
     {
-        msg.Tokens += GetTokensFromString(content.ToString(), modelName);
-        msg.BodyContent.Add(jsonNode);
+        record.OutputTokens += GetTokensFromString(content.ToString(), modelName);
+       
     }
 }
 
@@ -220,17 +213,7 @@ static void HandleError(JsonNode jsonNode)
     //do nothing yet....figure out later
 }
 
-static void HandleEmbedding(JsonNode jsonNode, ref LoggingOutputMessage msg)
-{
-    //read tokens from responsebody - not streaming, so data is just there
-    var usage = jsonNode["usage"];
-    var tokens = int.Parse(usage["total_tokens"].ToString());
-    msg.Tokens = tokens;
-    msg.BodyContent.Add(jsonNode);
-
-}
-
-static async Task<LoggingOutputMessage> CalculateChatInputTokens(HttpRequest request, LoggingOutputMessage msg)
+static async Task<LogAnalyticsRecord> CalculateChatInputTokens(HttpRequest request, LogAnalyticsRecord record)
 {
     //Rewind to first position to read the stream again
     request.Body.Position = 0;
@@ -241,17 +224,20 @@ static async Task<LoggingOutputMessage> CalculateChatInputTokens(HttpRequest req
 
     JsonNode jsonNode = JsonSerializer.Deserialize<JsonNode>(bodyText, CreateDefaultOptions());
     var modelName = jsonNode["model"].ToString();
+
+    record.Model = modelName;
+
     var messages = jsonNode["messages"].AsArray();
     foreach (var message in messages)
     {
         var content = message["content"].ToString();
         //calculate tokens using a tokenizer.
-        msg.Tokens += GetTokensFromString(content, modelName);
+        record.InputTokens += GetTokensFromString(content, modelName);
     }
 
 
 
-    return msg;
+    return record;
 
 
 }

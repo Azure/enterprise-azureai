@@ -13,7 +13,7 @@ public static class EventHub
 {
  
 
-    public async static Task SendAsync(LoggingOutputMessage msgBody, IConfiguration config, TokenCredential managedIdentitityCredential)
+    public async static Task SendAsync(LogAnalyticsRecord record, IConfiguration config, TokenCredential managedIdentitityCredential)
     {
         DefaultAzureCredentialOptions options = new DefaultAzureCredentialOptions();
         options.TenantId = "16b3c013-d300-468d-ac64-7eda0820b6d3";
@@ -25,7 +25,7 @@ public static class EventHub
 
         EventDataBatch eventBatch = await producerClient.CreateBatchAsync();
 
-        var message = new EventData(Encoding.UTF8.GetBytes(JsonSerializer.Serialize(msgBody, SourceGenerationContext.Default.LoggingOutputMessage)));
+        var message = new EventData(Encoding.UTF8.GetBytes(JsonSerializer.Serialize(record)));
 
         message.Properties.Add("source", "Azure.OpenAI.ChargebackProxy");
         

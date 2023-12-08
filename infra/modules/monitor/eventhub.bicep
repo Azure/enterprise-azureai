@@ -13,7 +13,7 @@ param eventHubDnsZoneName string
 
 param publicNetworkAccess string = 'Disabled'
 param apimManagedIdentityName string
-param funcManagedIdentityName string
+param chargeManagedIdentityName string
 
 // Azure Event Hubs Data Sender
 var roleDefinitionResourceId = '/providers/Microsoft.Authorization/roleDefinitions/2b629674-e913-4c01-ae53-ef4638d8f975'
@@ -22,8 +22,8 @@ resource managedIdentityApim 'Microsoft.ManagedIdentity/userAssignedIdentities@2
   name: apimManagedIdentityName
 }
 
-resource managedIdentityFunc 'Microsoft.ManagedIdentity/userAssignedIdentities@2018-11-30' existing = {
-  name: funcManagedIdentityName
+resource managedIdentityCharge 'Microsoft.ManagedIdentity/userAssignedIdentities@2018-11-30' existing = {
+  name: chargeManagedIdentityName
 }
 
 resource eventHubNamespace 'Microsoft.EventHub/namespaces@2022-10-01-preview' = {
@@ -106,12 +106,12 @@ resource roleAssignmentApim 'Microsoft.Authorization/roleAssignments@2022-04-01'
   }
 }
 
-resource roleAssignmentFunc 'Microsoft.Authorization/roleAssignments@2022-04-01' = {
+resource roleAssignmentCharge 'Microsoft.Authorization/roleAssignments@2022-04-01' = {
   scope: eventHubNamespace
-  name: guid(managedIdentityFunc.id, roleDefinitionResourceId)
+  name: guid(managedIdentityCharge.id, roleDefinitionResourceId)
   properties: {
     roleDefinitionId: roleDefinitionResourceId
-    principalId: managedIdentityFunc.properties.principalId
+    principalId: managedIdentityCharge.properties.principalId
     principalType: 'ServicePrincipal'
   }
 }

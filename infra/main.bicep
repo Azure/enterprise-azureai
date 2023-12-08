@@ -18,14 +18,12 @@ param resourceGroupName string = ''
 param openAiServiceName string = ''
 param keyVaultName string = ''
 param apimIdentityName string = ''
-param funcIdentityName string = ''
+param chargeIdentityName string = ''
 param apimServiceName string = ''
 param logAnalyticsName string = ''
 param applicationInsightsDashboardName string = ''
 param applicationInsightsName string = ''
-param storageAccountName string = ''
-param functionAppName string = ''
-param appServicePlanName string = ''
+param chargeAppName string = ''
 param vnetName string = ''
 param apimSubnetName string = ''
 param apimNsgName string = ''
@@ -48,31 +46,20 @@ var resourceToken = toLower(uniqueString(subscription().id, environmentName, loc
 var openAiSkuName = 'S0'
 var chatGptDeploymentName = 'chat'
 var chatGptModelName = 'gpt-35-turbo'
-var openaiApiKeySecretName = 'openai-apikey'
-var functionKeySecretName = 'function-key'
-var functionContentShareName = 'function-content-share'
 var eventHubListenPolicyName = 'listen'
 var eventHubSendPolicyName = 'send'
 var eventHubName = 'openai-chargeback-hub'
 var tags = { 'azd-env-name': environmentName }
 
 var openAiPrivateDnsZoneName = 'privatelink.openai.azure.com'
-var keyVaultPrivateDnsZoneName = 'privatelink.vaultcore.azure.net'
 var monitorPrivateDnsZoneName = 'privatelink.monitor.azure.com'
 var redisCachePrivateDnsZoneName = 'privatelink.redis.cache.windows.net'
-var storageAccountBlobPrivateDnsZoneName = 'privatelink.blob.core.windows.net'
-var storageAccountFilePrivateDnsZoneName = 'privatelink.file.core.windows.net'
-var appServicePrivateDnsZoneName = 'privatelink.azurewebsites.net'
 var eventHubPrivateDnsZoneName = 'privatelink.servicebus.windows.net'
 
 var privateDnsZoneNames = [
   openAiPrivateDnsZoneName
-  keyVaultPrivateDnsZoneName
   monitorPrivateDnsZoneName
   redisCachePrivateDnsZoneName
-  storageAccountBlobPrivateDnsZoneName
-  storageAccountFilePrivateDnsZoneName
-  appServicePrivateDnsZoneName
   eventHubPrivateDnsZoneName
 ]
 
@@ -101,50 +88,13 @@ module managedIdentityApim './modules/security/managed-identity.bicep' = {
   }
 }
 
-module managedIdentityFunc './modules/security/managed-identity.bicep' = {
-  name: 'managed-identity-func'
+module managedIdentityCharge './modules/security/managed-identity.bicep' = {
+  name: 'managed-identity-aca'
   scope: resourceGroup
   params: {
-    name: !empty(funcIdentityName) ? funcIdentityName : '${abbrs.managedIdentityUserAssignedIdentities}${resourceToken}-func'
+    name: !empty(chargeIdentityName) ? chargeIdentityName : '${abbrs.managedIdentityUserAssignedIdentities}${resourceToken}-cb'
     location: location
     tags: tags
-  }
-}
-
-module keyVault './modules/security/key-vault.bicep' = {
-  name: 'key-vault'
-  scope: resourceGroup
-  params: {
-    name: !empty(keyVaultName) ? keyVaultName : '${abbrs.keyVaultVaults}${resourceToken}'
-    location: location
-    tags: tags
-    keyVaultPrivateEndpointName: '${abbrs.keyVaultVaults}${abbrs.privateEndpoints}${resourceToken}'
-    vNetName: vnet.outputs.vnetName
-    privateEndpointSubnetName: vnet.outputs.privateEndpointSubnetName
-    logAnalyticsWorkspaceName: monitoring.outputs.logAnalyticsWorkspaceName
-    managedIdentityNameApim: managedIdentityApim.outputs.managedIdentityName
-    managedIdentityNameFunc: managedIdentityFunc.outputs.managedIdentityName
-    keyVaultDnsZoneName: keyVaultPrivateDnsZoneName
-  }
-}
-
-module openAiKeyVaultSecret './modules/security/keyvault-secret-openai.bicep' = {
-  name: 'openai-keyvault-secret'
-  scope: resourceGroup
-  params: {
-    keyVaultName: keyVault.outputs.keyVaultName
-    openAiKeySecretName: openaiApiKeySecretName
-    openAiName: openAi.outputs.openAiName
-  }
-}
-
-module functionKeyVaultSecret './modules/security/keyvault-secret-function.bicep' = {
-  name: 'function-keyvault-secret'
-  scope: resourceGroup
-  params: {
-    keyVaultName: keyVault.outputs.keyVaultName
-    functionKeySecretName: functionKeySecretName
-    functionAppName: functionApp.outputs.functionAppName
   }
 }
 
@@ -200,66 +150,6 @@ module monitoring './modules/monitor/monitoring.bicep' = {
   }
 }
 
-module storage './modules/storage/storage-account.bicep' = {
-  name: 'storage'
-  scope: resourceGroup
-  params: {
-    name: !empty(storageAccountName) ? storageAccountName : '${abbrs.storageStorageAccounts}${resourceToken}'
-    location: location
-    tags: tags
-    storageAccountBlobPrivateEndpointName: '${abbrs.storageStorageAccounts}-${abbrs.privateEndpoints}blob-${resourceToken}'
-    storageAccountFilePrivateEndpointName: '${abbrs.storageStorageAccounts}-${abbrs.privateEndpoints}file-${resourceToken}'
-    vNetName: vnet.outputs.vnetName
-    privateEndpointSubnetName: vnet.outputs.privateEndpointSubnetName
-    storageAccountBlobDnsZoneName: storageAccountBlobPrivateDnsZoneName
-    storageAccountFileDnsZoneName: storageAccountFilePrivateDnsZoneName
-    functionContentShareName: functionContentShareName
-  }
-}
-
-module appServicePlan './modules/host/appserviceplan.bicep' = {
-  name: 'appserviceplan'
-  scope: resourceGroup
-  params: {
-    name: !empty(appServicePlanName) ? appServicePlanName : '${abbrs.webServerFarms}${resourceToken}'
-    location: location
-    tags: tags
-    kind: 'Linux'
-    sku: {
-      name: 'B1'
-      tier: 'Basic'
-    }
-  }
-}
-
-module functionApp './modules/host/function.bicep' = {
-  name: 'function-app'
-  scope: resourceGroup
-  params: {
-    name: !empty(functionAppName) ? functionAppName : '${abbrs.webSitesFunctions}${resourceToken}'
-    location: location
-    tags: tags
-    appInsightsName: monitoring.outputs.applicationInsightsName
-    appServicePlanName: appServicePlan.outputs.appServicePlanName
-    storageAccountName: storage.outputs.storageAccountName
-    logAnalyticsWorkspaceName: monitoring.outputs.logAnalyticsWorkspaceName
-    managedIdentityName: managedIdentityFunc.outputs.managedIdentityName
-    functionAppPrivateEndpointName: '${abbrs.webSitesFunctions}${abbrs.privateEndpoints}${resourceToken}'
-    appServicePrivateDnsZoneName: appServicePrivateDnsZoneName
-    privateEndpointSubnetName: vnet.outputs.privateEndpointSubnetName
-    vNetName: vnet.outputs.vnetName
-    appServiceSubnetName: vnet.outputs.appServiceSubnetName
-    openAiUri: openAi.outputs.openAiEndpointUri
-    functionContentShareName: functionContentShareName
-    openaiKeyVaultSecretName: openAiKeyVaultSecret.outputs.openAiKeyVaultSecretName
-    keyVaultName: keyVault.outputs.keyVaultName
-    myIpAddress: myIpAddress
-    eventHubNamespaceName: eventHub.outputs.eventHubNamespaceName
-    eventHubName: eventHub.outputs.eventHubName
-    eventHubSendPolicyName: eventHub.outputs.eventHubSendPolicyName
-  }
-}
-
 module eventHub './modules/monitor/eventhub.bicep' = {
   name: 'event-hub'
   scope: resourceGroup
@@ -270,7 +160,7 @@ module eventHub './modules/monitor/eventhub.bicep' = {
     eventHubListenPolicyName: eventHubListenPolicyName
     eventHubSendPolicyName: eventHubSendPolicyName
     apimManagedIdentityName: managedIdentityApim.outputs.managedIdentityName
-    funcManagedIdentityName: managedIdentityFunc.outputs.managedIdentityName
+    chargeManagedIdentityName: managedIdentityCharge.outputs.managedIdentityName
     eventHubName: !empty(eventHubName) ? eventHubName : '${abbrs.eventHubNamespacesEventHubs}${resourceToken}'
     eventHubPrivateEndpointName: '${abbrs.eventHubNamespaces}${abbrs.privateEndpoints}${resourceToken}'
     vNetName: vnet.outputs.vnetName
@@ -286,18 +176,14 @@ module apim './modules/apim/apim.bicep' = {
     name: !empty(apimServiceName) ? apimServiceName : '${abbrs.apiManagementService}${resourceToken}'
     location: location
     tags: tags
-    sku: 'Developer' //StandardV2
+    sku: 'StandardV2' //StandardV2
     virtualNetworkType: 'External'
     applicationInsightsName: monitoring.outputs.applicationInsightsName
     logAnalyticsWorkspaceId: monitoring.outputs.logAnalyticsWorkspaceId
-    openAiUri: openAi.outputs.openAiEndpointUri
-    openaiKeyVaultSecretName: openAiKeyVaultSecret.outputs.openAiKeyVaultSecretName
-    keyVaultEndpoint: keyVault.outputs.keyVaultEndpoint
+    chargeBackUri: 'komt nog'
     apimManagedIdentityName: managedIdentityApim.outputs.managedIdentityName
     redisCacheServiceName: redisCache.outputs.cacheName
     apimSubnetId: vnet.outputs.apimSubnetId
-    functionAppUri: functionApp.outputs.functionAppUri
-    functionKeyVaultSecretName: functionKeyVaultSecret.outputs.functionKeyVaultSecretName
     eventHubName: eventHub.outputs.eventHubName
     eventHubNamespaceName: eventHub.outputs.eventHubNamespaceName
   }
@@ -311,7 +197,7 @@ module openAi 'modules/ai/cognitiveservices.bicep' = {
     location: location
     tags: tags
     apimManagedIdentityName: managedIdentityApim.outputs.managedIdentityName
-    funcManagedIdentityName: managedIdentityFunc.outputs.managedIdentityName
+    chargeManagedIdentityName: managedIdentityCharge.outputs.managedIdentityName
     logAnalyticsWorkspaceId: monitoring.outputs.logAnalyticsWorkspaceId
     sku: {
       name: openAiSkuName

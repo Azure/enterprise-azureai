@@ -10,7 +10,7 @@ param sku object = {
   name: 'S0'
 }
 param apimManagedIdentityName string
-param funcManagedIdentityName string
+param chargeManagedIdentityName string
 param logAnalyticsWorkspaceId string
 
 //Private Endpoint settings
@@ -26,8 +26,8 @@ resource managedIdentityApim 'Microsoft.ManagedIdentity/userAssignedIdentities@2
   name: apimManagedIdentityName
 }
 
-resource managedIdentityFunc 'Microsoft.ManagedIdentity/userAssignedIdentities@2018-11-30' existing = {
-  name: funcManagedIdentityName
+resource managedIdentityCharge 'Microsoft.ManagedIdentity/userAssignedIdentities@2018-11-30' existing = {
+  name: chargeManagedIdentityName
 }
 
 resource account 'Microsoft.CognitiveServices/accounts@2023-05-01' = {
@@ -84,12 +84,12 @@ resource roleAssignmentApim 'Microsoft.Authorization/roleAssignments@2022-04-01'
   }
 }
 
-resource roleAssignmentFunc 'Microsoft.Authorization/roleAssignments@2022-04-01' = {
+resource roleAssignmentCharge 'Microsoft.Authorization/roleAssignments@2022-04-01' = {
   scope: account
-  name: guid(managedIdentityFunc.id, roleDefinitionResourceId)
+  name: guid(managedIdentityCharge.id, roleDefinitionResourceId)
   properties: {
     roleDefinitionId: roleDefinitionResourceId
-    principalId: managedIdentityFunc.properties.principalId
+    principalId: managedIdentityCharge.properties.principalId
     principalType: 'ServicePrincipal'
   }
 }

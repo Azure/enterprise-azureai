@@ -24,12 +24,12 @@ internal class OpenAIChargebackTransformProvider : ITransformProvider
 
     public OpenAIChargebackTransformProvider(
         IConfiguration config, 
-       
         IManagedIdentityService managedIdentityService,
         ILogIngestionService logIngestionService)
     {
         _config = config;
         _managedIdentityService = managedIdentityService;
+        _logIngestionService = logIngestionService;
         
 
         DefaultAzureCredentialOptions defaultAzureCredentialOptions = new()
@@ -158,7 +158,7 @@ internal class OpenAIChargebackTransformProvider : ITransformProvider
             }
 
 
-            //_logIngestionService.LogAsync(record).SafeFireAndForget();
+            _logIngestionService.LogAsync(record).SafeFireAndForget();
         });
     }
 }

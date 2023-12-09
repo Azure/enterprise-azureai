@@ -6,13 +6,12 @@ using Microsoft.Extensions.Logging;
 var builder = WebApplication.CreateBuilder(args);
 
 var config = builder.Configuration;
-ILogger logger = builder.Services.BuildServiceProvider().GetRequiredService<ILogger<Program>>();
-
 
 builder.Services.AddSingleton<IManagedIdentityService, ManagedIdentityService>();
 builder.Services.AddSingleton<ILogIngestionService, LogIngestionService>((ctx) =>
 {
     var managedIdentityService = ctx.GetService<IManagedIdentityService>();
+    ILogger logger = builder.Services.BuildServiceProvider().GetRequiredService<ILogger<LogIngestionService>>();
     return new LogIngestionService(managedIdentityService, config, logger);
 });
 

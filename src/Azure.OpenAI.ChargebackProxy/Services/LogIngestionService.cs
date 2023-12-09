@@ -16,8 +16,7 @@ namespace Azure.OpenAI.ChargebackProxy.Services
         public LogIngestionService(
             IManagedIdentityService managedIdentityService, 
             IConfiguration config
-,
-            ILogger logger
+,           ILogger logger
             )
         {
             _config = config;
@@ -38,8 +37,7 @@ namespace Azure.OpenAI.ChargebackProxy.Services
         {
             try
             {
-                _logger.LogInformation("writing logs...");
-                Console.WriteLine("Writing logs....");
+                _logger.LogInformation("Writing logs...");
                 var jsonContent = new List<LogAnalyticsRecord>();
                 jsonContent.Add(record);
 
@@ -48,12 +46,12 @@ namespace Azure.OpenAI.ChargebackProxy.Services
                 var ruleId = _config.GetSection("AzureMonitor")["DataCollectionRuleImmutableId"].ToString();
                 var stream = _config.GetSection("AzureMonitor")["DataCollectionRuleStream"].ToString();
 
-                Response response = await _logsIngestionClient.UploadAsync(ruleId, stream, content).ConfigureAwait(false);
+                Response response = await _logsIngestionClient.UploadAsync(ruleId, stream, content);
 
             }
             catch (Exception ex)
             {
-                Console.WriteLine($"Writing to LogAnalytics Failed: {ex.Message}");
+                _logger.LogError($"Writing to LogAnalytics Failed: {ex.Message}");
             }
 
 

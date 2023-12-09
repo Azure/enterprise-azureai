@@ -19,6 +19,7 @@ namespace Azure.OpenAI.ChargebackProxy
                 RequestContent content = RequestContent.Create(JsonSerializer.Serialize(jsonContent));
                 var ruleId = config.GetSection("AzureMonitor")["DataCollectionRuleImmutableId"].ToString();
                 var stream = config.GetSection("AzureMonitor")["DataCollectionRuleStream"].ToString();
+                
                 Response response = await client.UploadAsync(ruleId, stream, content).ConfigureAwait(false);
                 
             }

@@ -1,7 +1,10 @@
 <policies>
     <inbound>
         <base/>
-        <set-backend-service backend-id="function-backend" />
+        <set-header name="X-Consumer" exists-action="override">
+            <value>@( context.Subscription.Name )</value>
+        </set-header>
+        <set-backend-service backend-id="chargeback-backend" />
     </inbound>
     <backend>
         <base/>

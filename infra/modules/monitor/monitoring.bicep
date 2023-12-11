@@ -8,6 +8,7 @@ param privateEndpointSubnetName string
 param applicationInsightsDnsZoneName string
 param applicationInsightsPrivateEndpointName string
 param applicationInsightsDashboardName string
+param chargeBackManagedIdentityName string
 
 var privateLinkScopeName = 'private-link-scope'
 
@@ -29,6 +30,7 @@ module logAnalytics 'loganalytics.bicep' = {
     location: location
     tags: tags
     privateLinkScopeName: privateLinkScopeName
+    chargeBackManagedIdentityName: chargeBackManagedIdentityName
   }
 }
 

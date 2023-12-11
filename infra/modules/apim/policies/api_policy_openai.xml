@@ -2,6 +2,8 @@
     <inbound>
         <base/>
         <set-backend-service backend-id="openai-backend" />
+        <!-- Use Managed Identity to authenticate to the backend -->
+        <authentication-managed-identity resource="https://cognitiveservices.azure.com" />
         <!-- Capture the value of the streaming property if it is included -->
         <choose>
             <when condition="@(context.Request.Body.As<JObject>(true)["stream"] != null && context.Request.Body.As<JObject>(true)["stream"].Type != JTokenType.Null)">
@@ -30,7 +32,6 @@
     </backend>
     <outbound>
         <base/>
-        <!--
         <choose>
             <when condition="@(context.Response.StatusCode == 200)">
                 <log-to-eventhub logger-id="eventhub-logger">@{
@@ -47,7 +48,6 @@
                 </log-to-eventhub>
             </when>
         </choose>
-        -->
     </outbound>
     <on-error>
         <base/>

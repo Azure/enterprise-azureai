@@ -12,10 +12,7 @@ param skuCount int = 1
 param applicationInsightsName string
 param logAnalyticsWorkspaceId string // optional for Diagnostic Settings
 param openAiUri string
-param functionAppUri string
-param openaiKeyVaultSecretName string
-param functionKeyVaultSecretName string
-param keyVaultEndpoint string
+param chargeBackAppUri string
 param apimManagedIdentityName string
 param redisCacheServiceName string = ''
 //Vnet Integration
@@ -28,12 +25,8 @@ param eventHubName string
 param logBytes int = 8192
 
 var openAiApiBackendId = 'openai-backend'
-var funcApiBackendId = 'function-backend'
-var openAiApiKeyNamedValue = 'openai-apikey'
-var functionKeyNamedValue = 'function-key'
+var chargeBackApiBackendId = 'chargeback-backend'
 var eventHubEndpoint = '${eventHubNamespaceName}.servicebus.windows.net'
-var diagnosticsNameOpenAi = 'diag-openai'
-var diagnosticsNameFunc = 'diag-func'
 
 var logSettings = {
   headers: [ 'Content-type', 'User-agent' ]
@@ -107,13 +100,13 @@ resource apimOpenaiApi 'Microsoft.ApiManagement/service/apis@2023-03-01-preview'
   }
 }
 
-resource apimFuncApi 'Microsoft.ApiManagement/service/apis@2023-03-01-preview' = {
-  name: 'azure-func-api'
+resource apimChargeBackApi 'Microsoft.ApiManagement/service/apis@2023-03-01-preview' = {
+  name: 'chargeback-api'
   parent: apimService
   properties: {
-    path: 'ai'
+    path: 'openai-chargeback'
     apiRevision: '1'
-    displayName: 'Azure AI Function API'
+    displayName: 'OpenAI Chargeback API'
     format: 'openapi-link'
     protocols: [ 'https' ]
     value: 'https://raw.githubusercontent.com/Azure/azure-rest-api-specs/main/specification/cognitiveservices/data-plane/AzureOpenAI/inference/stable/2023-05-15/inference.json'
@@ -132,62 +125,19 @@ resource openAiBackend 'Microsoft.ApiManagement/service/backends@2023-03-01-prev
       validateCertificateChain: true
       validateCertificateName: true
     }
-    credentials: {
-      header: {
-        'api-key': [
-          '{{${openAiApiKeyNamedValue}}}'
-        ]
-      }
-    }
   }
 }
 
-resource funcBackend 'Microsoft.ApiManagement/service/backends@2023-03-01-preview' = {
-  name: funcApiBackendId
+resource chargeBackBackend 'Microsoft.ApiManagement/service/backends@2023-03-01-preview' = {
+  name: chargeBackApiBackendId
   parent: apimService
   properties: {
-    description: funcApiBackendId
-    url: 'https://${functionAppUri}/openai/'
+    description: chargeBackApiBackendId
+    url: chargeBackAppUri
     protocol: 'http'
-    credentials: {
-      header: {
-        'x-functions-key': [
-          '{{${functionKeyNamedValue}}}'
-        ]
-      }
-    }
     tls: {
       validateCertificateChain: true
       validateCertificateName: true
-    }
-  }
-  dependsOn: [
-    funcKeyNamedValue
-  ]
-}
-
-resource apimOpenaiApiKeyNamedValue 'Microsoft.ApiManagement/service/namedValues@2022-08-01' = {
-  name: openAiApiKeyNamedValue
-  parent: apimService
-  properties: {
-    displayName: openAiApiKeyNamedValue
-    secret: true
-    keyVault:{
-      secretIdentifier: '${keyVaultEndpoint}secrets/${openaiKeyVaultSecretName}'
-      identityClientId: apimService.identity.userAssignedIdentities[managedIdentityApim.id].clientId
-    }
-  }
-}
-
-resource funcKeyNamedValue 'Microsoft.ApiManagement/service/namedValues@2022-08-01' = {
-  name: functionKeyNamedValue
-  parent: apimService
-  properties: {
-    displayName: functionKeyNamedValue
-    secret: true
-    keyVault:{
-      secretIdentifier: '${keyVaultEndpoint}secrets/${functionKeyVaultSecretName}'
-      identityClientId: apimService.identity.userAssignedIdentities[managedIdentityApim.id].clientId
     }
   }
 }
@@ -205,15 +155,15 @@ resource openaiApiPolicy 'Microsoft.ApiManagement/service/apis/policies@2023-03-
   ]
 }
 
-resource funcApiPolicy 'Microsoft.ApiManagement/service/apis/policies@2023-03-01-preview' = {
+resource chargeBackApiPolicy 'Microsoft.ApiManagement/service/apis/policies@2023-03-01-preview' = {
   name: 'policy'
-  parent: apimFuncApi
+  parent: apimChargeBackApi
   properties: {
-    value: loadTextContent('./policies/api_policy_func.xml')
+    value: loadTextContent('./policies/api_policy_chargeback.xml')
     format: 'rawxml'
   }
   dependsOn: [
-    funcBackend
+    chargeBackBackend
   ]
 }
 
@@ -265,9 +215,9 @@ resource eventHubLogger 'Microsoft.ApiManagement/service/loggers@2023-03-01-prev
     }
   }
 }
-/*
-resource diagnosticsPolicyOpenAi 'Microsoft.ApiManagement/service/apis/diagnostics@2022-08-01' = {
-  name: diagnosticsNameOpenAi
+
+resource diagPolicyOpenAi 'Microsoft.ApiManagement/service/apis/diagnostics@2022-08-01' = {
+  name: 'diagnotics-openai'
   parent: apimOpenaiApi
   properties: {
     alwaysLog: 'allErrors'
@@ -291,9 +241,9 @@ resource diagnosticsPolicyOpenAi 'Microsoft.ApiManagement/service/apis/diagnosti
   }
 }
 
-resource diagnosticsPolicyFunc 'Microsoft.ApiManagement/service/apis/diagnostics@2022-08-01' = {
-  name: diagnosticsNameFunc
-  parent: apimFuncApi
+resource diagPolicyChargeBack 'Microsoft.ApiManagement/service/apis/diagnostics@2022-08-01' = {
+  name: 'diagnotics-chargeback'
+  parent: apimChargeBackApi
   properties: {
     alwaysLog: 'allErrors'
     httpCorrelationProtocol: 'W3C'
@@ -315,6 +265,6 @@ resource diagnosticsPolicyFunc 'Microsoft.ApiManagement/service/apis/diagnostics
     }
   }
 }
-*/
+
 output apimName string = apimService.name
 output apimOpenaiApiPath string = apimOpenaiApi.properties.path

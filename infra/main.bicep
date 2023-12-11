@@ -10,20 +10,20 @@ param environmentName string
 @allowed(['westeurope','southcentralus','australiaeast', 'canadaeast', 'eastus', 'eastus2', 'francecentral', 'japaneast', 'northcentralus', 'swedencentral', 'switzerlandnorth', 'uksouth'])
 param location string
 
-@description('IP address of the machine running the deployment.')
-param myIpAddress string
+// Needed for isolated deployment, check if this can be removed
+//@description('IP address of the machine running the deployment.')
+//param myIpAddress string
 
 //Leave blank to use default naming conventions
 param resourceGroupName string = ''
 param openAiServiceName string = ''
-param keyVaultName string = ''
 param apimIdentityName string = ''
-param chargeIdentityName string = ''
+param chargeBackIdentityName string = ''
 param apimServiceName string = ''
 param logAnalyticsName string = ''
 param applicationInsightsDashboardName string = ''
 param applicationInsightsName string = ''
-param chargeAppName string = ''
+param chargeBackAppName string = ''
 param vnetName string = ''
 param apimSubnetName string = ''
 param apimNsgName string = ''
@@ -33,6 +33,8 @@ param privateEndpointSubnetName string = ''
 param privateEndpointNsgName string = ''
 param redisCacheServiceName string = ''
 param eventHubNamespaceName string = ''
+param containerRegistryName string = ''
+param containerAppsEnvironmentName string = ''
 
 //Determine the version of the chat model to deploy
 param arrayVersion0301Locations array = [
@@ -48,7 +50,8 @@ var chatGptDeploymentName = 'chat'
 var chatGptModelName = 'gpt-35-turbo'
 var eventHubListenPolicyName = 'listen'
 var eventHubSendPolicyName = 'send'
-var eventHubName = 'openai-chargeback-hub'
+var eventHubName = 'openai-logging'
+var imageName = 'chargeback-app'
 var tags = { 'azd-env-name': environmentName }
 
 var openAiPrivateDnsZoneName = 'privatelink.openai.azure.com'
@@ -88,11 +91,11 @@ module managedIdentityApim './modules/security/managed-identity.bicep' = {
   }
 }
 
-module managedIdentityCharge './modules/security/managed-identity.bicep' = {
-  name: 'managed-identity-aca'
+module managedIdentityChargeBack './modules/security/managed-identity.bicep' = {
+  name: 'managed-identity-chargeback'
   scope: resourceGroup
   params: {
-    name: !empty(chargeIdentityName) ? chargeIdentityName : '${abbrs.managedIdentityUserAssignedIdentities}${resourceToken}-cb'
+    name: !empty(chargeBackIdentityName) ? chargeBackIdentityName : '${abbrs.managedIdentityUserAssignedIdentities}${resourceToken}-cb'
     location: location
     tags: tags
   }
@@ -147,6 +150,7 @@ module monitoring './modules/monitor/monitoring.bicep' = {
     applicationInsightsDnsZoneName: monitorPrivateDnsZoneName
     applicationInsightsPrivateEndpointName: '${abbrs.insightsComponents}${abbrs.privateEndpoints}${resourceToken}'
     applicationInsightsDashboardName: !empty(applicationInsightsDashboardName) ? applicationInsightsDashboardName : '${abbrs.portalDashboards}${resourceToken}'
+    chargeBackManagedIdentityName: managedIdentityChargeBack.outputs.managedIdentityName
   }
 }
 
@@ -160,7 +164,7 @@ module eventHub './modules/monitor/eventhub.bicep' = {
     eventHubListenPolicyName: eventHubListenPolicyName
     eventHubSendPolicyName: eventHubSendPolicyName
     apimManagedIdentityName: managedIdentityApim.outputs.managedIdentityName
-    chargeManagedIdentityName: managedIdentityCharge.outputs.managedIdentityName
+    chargeBackManagedIdentityName: managedIdentityChargeBack.outputs.managedIdentityName
     eventHubName: !empty(eventHubName) ? eventHubName : '${abbrs.eventHubNamespacesEventHubs}${resourceToken}'
     eventHubPrivateEndpointName: '${abbrs.eventHubNamespaces}${abbrs.privateEndpoints}${resourceToken}'
     vNetName: vnet.outputs.vnetName
@@ -180,7 +184,8 @@ module apim './modules/apim/apim.bicep' = {
     virtualNetworkType: 'External'
     applicationInsightsName: monitoring.outputs.applicationInsightsName
     logAnalyticsWorkspaceId: monitoring.outputs.logAnalyticsWorkspaceId
-    chargeBackUri: 'komt nog'
+    openAiUri: openAi.outputs.openAiEndpointUri
+    chargeBackAppUri: 'komt nog'
     apimManagedIdentityName: managedIdentityApim.outputs.managedIdentityName
     redisCacheServiceName: redisCache.outputs.cacheName
     apimSubnetId: vnet.outputs.apimSubnetId
@@ -189,7 +194,7 @@ module apim './modules/apim/apim.bicep' = {
   }
 }
 
-module openAi 'modules/ai/cognitiveservices.bicep' = {
+module openAi './modules/ai/cognitiveservices.bicep' = {
   name: 'openai'
   scope: resourceGroup
   params: {
@@ -197,7 +202,7 @@ module openAi 'modules/ai/cognitiveservices.bicep' = {
     location: location
     tags: tags
     apimManagedIdentityName: managedIdentityApim.outputs.managedIdentityName
-    chargeManagedIdentityName: managedIdentityCharge.outputs.managedIdentityName
+    chargeBackManagedIdentityName: managedIdentityChargeBack.outputs.managedIdentityName
     logAnalyticsWorkspaceId: monitoring.outputs.logAnalyticsWorkspaceId
     sku: {
       name: openAiSkuName
@@ -220,6 +225,48 @@ module openAi 'modules/ai/cognitiveservices.bicep' = {
     privateEndpointSubnetName: vnet.outputs.privateEndpointSubnetName
     openAiDnsZoneName: openAiPrivateDnsZoneName
   }
+}
+
+module containerRegistry './modules/host/container-registry.bicep' = {
+  name: 'container-registry'
+  scope: resourceGroup
+  params: {
+    name: !empty(containerRegistryName) ? containerRegistryName : '${abbrs.containerRegistryRegistries}${resourceToken}'
+    location: location
+    tags: tags
+    chargeBackManagedIdentityName: managedIdentityChargeBack.outputs.managedIdentityName
+  }
+}
+
+module containerAppsEnvironment './modules/host/container-app-environment.bicep' = {
+  name: 'container-apps-environment'
+  scope: resourceGroup
+  params: {
+    name: !empty(containerAppsEnvironmentName) ? containerAppsEnvironmentName : '${abbrs.appManagedEnvironments}${resourceToken}' 
+    location: location
+    tags: tags
+    logAnalyticsWorkspaceName: monitoring.outputs.logAnalyticsWorkspaceName
+    applicationInsightsName: monitoring.outputs.applicationInsightsName
+  }
+}
+
+module app './modules/host/container-app.bicep' = {
+  name: 'container-app'
+  scope: resourceGroup
+  params: {
+    name: !empty(chargeBackAppName) ? chargeBackAppName : '${abbrs.appContainerApps}${resourceToken}-cb'
+    location: location
+    tags: tags
+    identityName: managedIdentityChargeBack.outputs.managedIdentityName
+    imageName: imageName
+    containerAppsEnvironmentName: containerAppsEnvironment.outputs.name
+    containerRegistryName: containerRegistry.outputs.name
+    targetPort: 8080
+  }
+  dependsOn: [
+    containerRegistry
+    containerAppsEnvironment
+  ]
 }
 
 output TENTANT_ID string = subscription().tenantId

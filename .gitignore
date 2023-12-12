@@ -9,3 +9,8 @@ local.settings.json
 /src/Azure.OpenAI.ChargebackProxy/appsettings.Development.json
 /src/Azure.OpenAI.ChargebackProxy.Client/appsettings.Development.json
 /src/.vscode
+/infra/.vscode/settings.json
+/infra/modules/appconfig/test.appconfiguration.params.json
+/infra/modules/monitor/test.customtable.params.json
+/infra/modules/monitor/test.datacollectionendpoint.params.json
+/infra/modules/monitor/test.datacollectionrule.params.json

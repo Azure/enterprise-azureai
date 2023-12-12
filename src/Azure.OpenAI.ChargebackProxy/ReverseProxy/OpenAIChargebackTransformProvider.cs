@@ -10,10 +10,11 @@ using AsyncAwaitBestPractices;
 using Azure.OpenAI.ChargebackProxy.Services;
 using Azure.Identity;
 
-namespace Azure.OpenAI.ChargebackProxy.Transforms;
+namespace Azure.OpenAI.ChargebackProxy.ReverseProxy;
 
 internal class OpenAIChargebackTransformProvider : ITransformProvider
 {
+   
     private readonly IConfiguration _config;
     private readonly IManagedIdentityService _managedIdentityService;
     private readonly ILogIngestionService _logIngestionService;
@@ -30,13 +31,8 @@ internal class OpenAIChargebackTransformProvider : ITransformProvider
         _config = config;
         _managedIdentityService = managedIdentityService;
         _logIngestionService = logIngestionService;
-        
-
-        DefaultAzureCredentialOptions defaultAzureCredentialOptions = new()
-        {
-            TenantId = config["TenantId"]
-        };
-        _managedIdentityCredential = _managedIdentityService.GetTokenCredential(defaultAzureCredentialOptions);
+               
+        _managedIdentityCredential = _managedIdentityService.GetTokenCredential();
 
     }
 
@@ -51,7 +47,7 @@ internal class OpenAIChargebackTransformProvider : ITransformProvider
             requestContext.HttpContext.Request.EnableBuffering();
 
             //check accessToken before replacing the Auth Header
-            if (String.IsNullOrEmpty(accessToken) || OpenAIAccessToken.IsTokenExpired(accessToken, _config["TenantId"]))
+            if (String.IsNullOrEmpty(accessToken) || OpenAIAccessToken.IsTokenExpired(accessToken, _config["EntraId:TenantId"]))
             {
                 accessToken = await OpenAIAccessToken.GetAccessTokenAsync(_managedIdentityCredential, CancellationToken.None);
             }
@@ -90,14 +86,14 @@ internal class OpenAIChargebackTransformProvider : ITransformProvider
             //now perform the analysis and create a log record
             var record = new LogAnalyticsRecord();
             record.TimeGenerated = DateTime.UtcNow;
-            record.ApiKey = responseContext.HttpContext.Request.Headers["api-key"].ToString();
+            
             if (responseContext.HttpContext.Request.Headers["X-Consumer"].ToString() != "")
             {
                 record.Consumer = responseContext.HttpContext.Request.Headers["X-Consumer"].ToString();
             }
             else
             {
-                record.Consumer = "Unknown";
+                record.Consumer = "Unknown Consumer";
             }
            
             bool firstChunck = true;

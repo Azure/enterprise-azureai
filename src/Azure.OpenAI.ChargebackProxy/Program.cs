@@ -1,13 +1,20 @@
+using Azure.OpenAI.ChargebackProxy.ReverseProxy;
 using Azure.OpenAI.ChargebackProxy.Services;
-using Azure.OpenAI.ChargebackProxy.Transforms;
-using Microsoft.Extensions.Hosting;
-using Microsoft.Extensions.Logging;
 
 var builder = WebApplication.CreateBuilder(args);
 
+builder.Services.AddSingleton<IManagedIdentityService, ManagedIdentityService>();
+
+var managedIdentityService = builder.Services.BuildServiceProvider().GetService<IManagedIdentityService>();
+
+
+builder.Configuration.AddAzureAppConfiguration(options =>
+    options.Connect(
+        new Uri(builder.Configuration["AppConfigEndpoint"]),
+        managedIdentityService.GetTokenCredential()));
+
 var config = builder.Configuration;
 
-builder.Services.AddSingleton<IManagedIdentityService, ManagedIdentityService>();
 builder.Services.AddSingleton<ILogIngestionService, LogIngestionService>((ctx) =>
 {
     var managedIdentityService = ctx.GetService<IManagedIdentityService>();
@@ -15,8 +22,12 @@ builder.Services.AddSingleton<ILogIngestionService, LogIngestionService>((ctx) =
     return new LogIngestionService(managedIdentityService, config, logger);
 });
 
+var routes = Routes.GetRoutes();
+var clusters = Clusters.GetClusterConfig(config);
+
 builder.Services.AddReverseProxy()
-    .LoadFromConfig(builder.Configuration.GetSection("ReverseProxy"))
+    .LoadFromMemory(routes, clusters)
+    //.LoadFromConfig(builder.Configuration.GetSection("ReverseProxy"))
     .ConfigureHttpClient((sp, options) =>
     {
         //decompress the Response so we can read it

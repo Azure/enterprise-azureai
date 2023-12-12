@@ -20,12 +20,9 @@ namespace Azure.OpenAI.ChargebackProxy.Services
             )
         {
             _config = config;
-            DefaultAzureCredentialOptions defaultAzureCredentialOptions = new()
-            {
-                TenantId = _config["TenantId"]
-            };
+            
 
-            _credential = managedIdentityService.GetTokenCredential(defaultAzureCredentialOptions);
+            _credential = managedIdentityService.GetTokenCredential();
             var endpoint = new Uri(_config.GetSection("AzureMonitor")["DataCollectionEndpoint"].ToString());
 
 

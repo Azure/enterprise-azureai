@@ -25,7 +25,7 @@ systemChatMessage.Role = "system";
 
 
 var userChatMessage = new ChatMessage();
-userChatMessage.Content = "When was Microsoft Founded?";
+userChatMessage.Content = "When was Microsoft Founded and what info can you give me on the founders in a maximum of 100 words";
 userChatMessage.Role = "user";
 
 
@@ -67,7 +67,7 @@ Console.WriteLine($"Using endpoint: {proxyEndpoint}");
 
 
 //embedding
-string embeddingDeploymentName = "ada-002";
+string embeddingDeploymentName = "text-embedding-ada-002";
 List<string> embeddingText = new List<string>();
 embeddingText.Add("When was Microsoft Founded?");
 

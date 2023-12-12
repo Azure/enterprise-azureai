@@ -5,6 +5,6 @@ namespace Azure.OpenAI.ChargebackProxy.Services
 {
     public interface IManagedIdentityService
     {
-        TokenCredential GetTokenCredential(DefaultAzureCredentialOptions defaultAzureCredentialOptions);
+        TokenCredential GetTokenCredential();
     }
 }

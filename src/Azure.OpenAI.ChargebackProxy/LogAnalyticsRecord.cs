@@ -4,7 +4,6 @@ namespace Azure.OpenAI.ChargebackProxy;
 public class LogAnalyticsRecord
 {
     public DateTime TimeGenerated { get; set; }
-    public string ApiKey { get; set; }
     public string Consumer { get; set; }
     public string Model { get; set; }
     public string ObjectType { get; set; }

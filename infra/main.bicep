@@ -55,7 +55,6 @@ var chatGptModelName = 'gpt-35-turbo'
 var eventHubListenPolicyName = 'listen'
 var eventHubSendPolicyName = 'send'
 var eventHubName = 'openai-logging'
-var imageName = 'chargeback-app'
 var tags = { 'azd-env-name': environmentName }
 
 var openAiPrivateDnsZoneName = 'privatelink.openai.azure.com'
@@ -190,9 +189,6 @@ module apim './modules/apim/apim.bicep' = {
     sku: 'StandardV2' //StandardV2
     virtualNetworkType: 'External'
     applicationInsightsName: monitoring.outputs.applicationInsightsName
-    logAnalyticsWorkspaceId: monitoring.outputs.logAnalyticsWorkspaceId
-    openAiUri: openAi.outputs.openAiEndpointUri
-    chargeBackAppUri: app.outputs.uri
     apimManagedIdentityName: managedIdentityApim.outputs.managedIdentityName
     redisCacheServiceName: redisCache.outputs.cacheName
     apimSubnetId: vnet.outputs.apimSubnetId
@@ -257,24 +253,26 @@ module containerAppsEnvironment './modules/host/container-app-environment.bicep'
   }
 }
 
-module app './modules/host/container-app.bicep' = {
-  name: 'container-app'
-  scope: resourceGroup
-  params: {
-    name: !empty(chargeBackAppName) ? chargeBackAppName : '${abbrs.appContainerApps}${resourceToken}-cb'
-    location: location
-    tags: tags
-    identityName: managedIdentityChargeBack.outputs.managedIdentityName
-    imageName: imageName
-    containerAppsEnvironmentName: containerAppsEnvironment.outputs.name
-    containerRegistryName: containerRegistry.outputs.name
-    targetPort: 8080
-  }
-  dependsOn: [
-    containerRegistry
-    containerAppsEnvironment
-  ]
-}
+// module app './modules/host/container-app.bicep' = {
+//   name: 'container-app'
+//   scope: resourceGroup
+//   params: {
+//     name: !empty(chargeBackAppName) ? chargeBackAppName : '${abbrs.appContainerApps}${resourceToken}-cb'
+//     location: location
+//     tags: tags
+//     identityName: managedIdentityChargeBack.outputs.managedIdentityName
+//     //deploy sample image first - we need the endpoint already for APIM
+//     //real image will be deployed later
+//     imageName: ''
+//     containerAppsEnvironmentName: containerAppsEnvironment.outputs.name
+//     containerRegistryName: containerRegistry.outputs.name
+//     targetPort: 8080
+//   }
+//   dependsOn: [
+//     containerRegistry
+//     containerAppsEnvironment
+//   ]
+// }
 
 module appconfig 'modules/appconfig/appconfiguration.bicep' = {
   name: 'appconfig'
@@ -291,5 +289,9 @@ module appconfig 'modules/appconfig/appconfiguration.bicep' = {
 
 output TENTANT_ID string = subscription().tenantId
 output AOI_DEPLOYMENTID string = chatGptDeploymentName
+output DEPLOYMENT_LOCATION string = location
 output APIM_NAME string = apim.outputs.apimName
-output APIM_AOI_PATH string = apim.outputs.apimOpenaiApiPath
+output RESOURCE_TOKEN string = resourceToken
+output AZURE_CONTAINER_ENVIRONMENT_NAME string = containerAppsEnvironment.outputs.name
+output AZURE_CONTAINER_REGISTRY_NAME string = containerRegistry.outputs.name
+output AZURE_PROXY_MANAGED_IDENTITY_NAME string = managedIdentityChargeBack.outputs.managedIdentityName

@@ -13,3 +13,6 @@ $request = @{
 }
 
 Invoke-RestMethod @request
+
+#you could also use az cli
+# az apim deletedservice purge --location $location --service-name $apimName

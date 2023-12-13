@@ -21,6 +21,8 @@ param apimIdentityName string = ''
 param chargeBackIdentityName string = ''
 param apimServiceName string = ''
 param logAnalyticsName string = ''
+param dataCollectionEndpointName string = ''
+param dataCollectionRuleName string = ''
 param applicationInsightsDashboardName string = ''
 param applicationInsightsName string = ''
 param chargeBackAppName string = ''
@@ -35,6 +37,8 @@ param redisCacheServiceName string = ''
 param eventHubNamespaceName string = ''
 param containerRegistryName string = ''
 param containerAppsEnvironmentName string = ''
+param appConfigurationName string = ''
+
 
 //Determine the version of the chat model to deploy
 param arrayVersion0301Locations array = [
@@ -145,12 +149,15 @@ module monitoring './modules/monitor/monitoring.bicep' = {
     tags: tags
     logAnalyticsName: !empty(logAnalyticsName) ? logAnalyticsName : '${abbrs.operationalInsightsWorkspaces}${resourceToken}'
     applicationInsightsName: !empty(applicationInsightsName) ? applicationInsightsName : '${abbrs.insightsComponents}${resourceToken}'
+    dataCollectionEndpointName: !empty(dataCollectionEndpointName) ? dataCollectionEndpointName : '${abbrs.dataCollectionEndpoints}${resourceToken}'
+    dataCollectionRuleName: !empty(dataCollectionRuleName) ? dataCollectionRuleName : '${abbrs.dataCollectionRules}${resourceToken}'
     vNetName: vnet.outputs.vnetName
     privateEndpointSubnetName: vnet.outputs.privateEndpointSubnetName
     applicationInsightsDnsZoneName: monitorPrivateDnsZoneName
     applicationInsightsPrivateEndpointName: '${abbrs.insightsComponents}${abbrs.privateEndpoints}${resourceToken}'
     applicationInsightsDashboardName: !empty(applicationInsightsDashboardName) ? applicationInsightsDashboardName : '${abbrs.portalDashboards}${resourceToken}'
     chargeBackManagedIdentityName: managedIdentityChargeBack.outputs.managedIdentityName
+    
   }
 }
 
@@ -185,7 +192,7 @@ module apim './modules/apim/apim.bicep' = {
     applicationInsightsName: monitoring.outputs.applicationInsightsName
     logAnalyticsWorkspaceId: monitoring.outputs.logAnalyticsWorkspaceId
     openAiUri: openAi.outputs.openAiEndpointUri
-    chargeBackAppUri: 'komt nog'
+    chargeBackAppUri: app.outputs.uri
     apimManagedIdentityName: managedIdentityApim.outputs.managedIdentityName
     redisCacheServiceName: redisCache.outputs.cacheName
     apimSubnetId: vnet.outputs.apimSubnetId
@@ -267,6 +274,19 @@ module app './modules/host/container-app.bicep' = {
     containerRegistry
     containerAppsEnvironment
   ]
+}
+
+module appconfig 'modules/appconfig/appconfiguration.bicep' = {
+  name: 'appconfig'
+  scope: resourceGroup
+  params: {
+    name: !empty(appConfigurationName) ? appConfigurationName : '${abbrs.appConfigurationConfigurationStores}${resourceToken}'
+    AzureMonitorDataCollectionEndPointUrl: monitoring.outputs.dataCollectionEndpointUrl
+    AzureMonitorDataCollectionRuleStream: monitoring.outputs.dataCollectionRuleStreamName
+    AzureMonitorDataCollectionRuleImmutableId: monitoring.outputs.dataCollectionRuleImmutableId
+    location: location
+    AzureOpenAIEndpoints: array(openAi.outputs.openAIEndpointUriRaw)
+  }
 }
 
 output TENTANT_ID string = subscription().tenantId

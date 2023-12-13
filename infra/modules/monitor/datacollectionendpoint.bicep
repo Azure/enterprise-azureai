@@ -1,6 +1,7 @@
 param name string
 param location string
 
+
 resource dataCollectionEndpoint 'Microsoft.Insights/dataCollectionEndpoints@2022-06-01' = {
   name: name
   location: location

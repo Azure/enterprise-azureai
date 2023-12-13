@@ -72,3 +72,4 @@ resource dataCollectionRule 'Microsoft.Insights/dataCollectionRules@2022-06-01' 
 
 output dataCollectionRuleId string = dataCollectionRule.id
 output dataCollectionRuleImmutableId string = dataCollectionRule.properties.immutableId
+output dataCollectionRuleStreamName string = 'Custom-OpenAIChargeback_CL'

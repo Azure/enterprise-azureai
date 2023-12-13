@@ -1,5 +1,7 @@
 param logAnalyticsName string
 param applicationInsightsName string
+param dataCollectionEndpointName string
+param dataCollectionRuleName string
 param location string = resourceGroup().location
 param tags object = {}
 //Private Endpoint settings
@@ -59,8 +61,41 @@ module dashboard 'dashboard.bicep' = {
   }
 }
 
+module loganalyticsCustomTable 'loganatylicscustomtable.bicep' = {
+  name: 'log-analytics-custom-table'
+  params:{
+    logAnalyticsWorkspaceName: logAnalytics.outputs.name
+  }
+}
+
+module dataCollectionEndpoint 'datacollectionendpoint.bicep' = {
+  name: 'data-collection-endpoint'
+  params: {
+    name: dataCollectionEndpointName
+    location: location
+  }
+}
+
+module dataCollectionRule 'datacollectionrule.bicep' = {
+  name: 'data-collection-rule'
+  dependsOn: [
+    loganalyticsCustomTable
+  ]
+  params: {
+    dataCollectionEndpointResourceId: dataCollectionEndpoint.outputs.dataCollectionEndpointResourceId
+    logAnalyticsWorkspaceId: logAnalytics.outputs.id
+    name: dataCollectionRuleName
+    location: location
+    tags: tags
+  }
+}
+
 output applicationInsightsConnectionString string = applicationInsights.outputs.connectionString
 output applicationInsightsInstrumentationKey string = applicationInsights.outputs.instrumentationKey
 output applicationInsightsName string = applicationInsights.outputs.name
 output logAnalyticsWorkspaceId string = logAnalytics.outputs.id
 output logAnalyticsWorkspaceName string = logAnalytics.outputs.name
+output dataCollectionEndpointUrl string = dataCollectionEndpoint.outputs.dataCollectionEndPointLogIngestionUrl
+output dataCollectionRuleImmutableId string = dataCollectionRule.outputs.dataCollectionRuleImmutableId
+output dataCollectionRuleStreamName string = dataCollectionRule.outputs.dataCollectionRuleStreamName
+

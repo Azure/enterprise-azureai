@@ -23,9 +23,9 @@ param networkRuleBypassOptions string = 'AzureServices'
 @description('Public network access setting')
 param publicNetworkAccess string = 'Disabled'
 
-@description('SKU settings')
+@description('SKU settings - you need Premium sku to enable private networking')
 param sku object = {
-  name: 'Basic'
+  name: 'Premium'
 }
 
 @description('Zone redundancy setting')

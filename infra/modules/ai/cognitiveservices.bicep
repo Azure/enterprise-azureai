@@ -111,3 +111,4 @@ resource diagnosticSettings 'Microsoft.Insights/diagnosticSettings@2021-05-01-pr
 
 output openAiName string = account.name
 output openAiEndpointUri string = '${account.properties.endpoint}openai/'
+output openAIEndpointUriRaw string = account.properties.endpoint

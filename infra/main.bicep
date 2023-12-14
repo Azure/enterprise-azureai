@@ -253,26 +253,28 @@ module containerAppsEnvironment './modules/host/container-app-environment.bicep'
   }
 }
 
-// module app './modules/host/container-app.bicep' = {
-//   name: 'container-app'
-//   scope: resourceGroup
-//   params: {
-//     name: !empty(chargeBackAppName) ? chargeBackAppName : '${abbrs.appContainerApps}${resourceToken}-cb'
-//     location: location
-//     tags: tags
-//     identityName: managedIdentityChargeBack.outputs.managedIdentityName
-//     //deploy sample image first - we need the endpoint already for APIM
-//     //real image will be deployed later
-//     imageName: ''
-//     containerAppsEnvironmentName: containerAppsEnvironment.outputs.name
-//     containerRegistryName: containerRegistry.outputs.name
-//     targetPort: 8080
-//   }
-//   dependsOn: [
-//     containerRegistry
-//     containerAppsEnvironment
-//   ]
-// }
+module app './modules/host/container-app.bicep' = {
+  name: 'container-app'
+  scope: resourceGroup
+  params: {
+    name: !empty(chargeBackAppName) ? chargeBackAppName : '${abbrs.appContainerApps}${resourceToken}-cb'
+    location: location
+    tags: tags
+    identityName: managedIdentityChargeBack.outputs.managedIdentityName
+    //deploy sample image first - we need the endpoint already for APIM
+    //real image will be deployed later
+    imageName: ''
+    pullFromPrivateRegistry: false
+    azdServiceName: 'proxy'
+    containerAppsEnvironmentName: containerAppsEnvironment.outputs.name
+    containerRegistryName: containerRegistry.outputs.name
+    targetPort: 8080
+  }
+  dependsOn: [
+    containerRegistry
+    containerAppsEnvironment
+  ]
+}
 
 module appconfig 'modules/appconfig/appconfiguration.bicep' = {
   name: 'appconfig'
@@ -294,4 +296,5 @@ output APIM_NAME string = apim.outputs.apimName
 output RESOURCE_TOKEN string = resourceToken
 output AZURE_CONTAINER_ENVIRONMENT_NAME string = containerAppsEnvironment.outputs.name
 output AZURE_CONTAINER_REGISTRY_NAME string = containerRegistry.outputs.name
+output AZURE_CONTAINER_REGISTRY_ENDPOINT string = containerRegistry.outputs.loginServer
 output AZURE_PROXY_MANAGED_IDENTITY_NAME string = managedIdentityChargeBack.outputs.managedIdentityName

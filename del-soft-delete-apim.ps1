@@ -1,6 +1,6 @@
 param ($subscriptionId, $apimName)
 
-$location = "West Europe"
+$location = "FranceCentral"
 $token = Get-AzAccessToken
 $uri = "https://management.azure.com/subscriptions/$subscriptionId/providers/Microsoft.ApiManagement/locations/$location/deletedservices/$apimName/?api-version=2020-12-01"
 

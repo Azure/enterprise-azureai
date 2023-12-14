@@ -47,7 +47,9 @@ param revisionMode string = 'Single'
 @description('The target port for the container')
 param targetPort int
 
-var usePrivateRegistry = true
+param pullFromPrivateRegistry bool = true
+
+param azdServiceName string 
 
 resource userIdentity 'Microsoft.ManagedIdentity/userAssignedIdentities@2023-01-31' existing = if (!empty(identityName)) {
   name: identityName
@@ -56,7 +58,7 @@ resource userIdentity 'Microsoft.ManagedIdentity/userAssignedIdentities@2023-01-
 resource app 'Microsoft.App/containerApps@2023-04-01-preview' = {
   name: name
   location: location
-  tags: tags
+  tags: union(tags, { 'azd-service-name': azdServiceName })
   // It is critical that the identity is granted ACR pull access before the app is created
   // otherwise the container app will throw a provision error
   // This also forces us to use an user assigned managed identity since there would no way to 
@@ -80,7 +82,7 @@ resource app 'Microsoft.App/containerApps@2023-04-01-preview' = {
         }
       } : null
       service: null
-      registries: usePrivateRegistry ? [
+      registries: pullFromPrivateRegistry ? [
         {
           server: '${containerRegistryName}.azurecr.io'
           identity: userIdentity.id

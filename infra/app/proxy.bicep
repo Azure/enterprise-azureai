@@ -18,6 +18,8 @@ module app '../modules/host/container-app.bicep' = {
     imageName: imageName
     containerAppsEnvironmentName: containerAppsEnvironmentName
     containerRegistryName: containerRegistryName
+    azdServiceName: 'proxy'
+    pullFromPrivateRegistry: false
     targetPort: 8080
   }
 }

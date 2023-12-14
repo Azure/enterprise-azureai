@@ -62,12 +62,14 @@ var openAiPrivateDnsZoneName = 'privatelink.openai.azure.com'
 var monitorPrivateDnsZoneName = 'privatelink.monitor.azure.com'
 var redisCachePrivateDnsZoneName = 'privatelink.redis.cache.windows.net'
 var eventHubPrivateDnsZoneName = 'privatelink.servicebus.windows.net'
+var appConfigPrivateDnsZoneName = 'privatelink.azconfig.io'
 
 var privateDnsZoneNames = [
   openAiPrivateDnsZoneName
   monitorPrivateDnsZoneName
   redisCachePrivateDnsZoneName
   eventHubPrivateDnsZoneName
+  appConfigPrivateDnsZoneName
 ]
 
 // Organize resources in a resource group

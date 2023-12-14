@@ -74,7 +74,7 @@ resource app 'Microsoft.App/containerApps@2023-04-01-preview' = {
     configuration: {
       activeRevisionsMode: revisionMode
       ingress: ingressEnabled ? {
-        external: external
+        external: false
         targetPort: targetPort
         transport: 'auto'
         corsPolicy: {
@@ -89,6 +89,7 @@ resource app 'Microsoft.App/containerApps@2023-04-01-preview' = {
         }
       ] : []
     }
+    workloadProfileName: 'Consumption'
     template: {
       serviceBinds: null
       containers: [
@@ -106,16 +107,41 @@ resource app 'Microsoft.App/containerApps@2023-04-01-preview' = {
         minReplicas: containerMinReplicas
         maxReplicas: containerMaxReplicas
       }
+      
     }
   }
 }
+
+//split fqdn into hostname and dns zone name
+var fqdnParts = split(app.properties.configuration.ingress.fqdn, '.')
+var hostname = fqdnParts[0]
+var dnsZoneName = replace(app.properties.configuration.ingress.fqdn, '${hostname}.', '')
+
+
+module privateDnsZone '../networking/dns.bicep' = {
+  name: 'dns-deployment-app'
+  params: {
+    name: dnsZoneName
+  }
+
+}
+
+module dnsEntry '../networking/dnsentry.bicep' = {
+  name: 'dns-entry-app'
+  params: {
+    dnsZoneName: privateDnsZone.outputs.privateDnsZoneName
+    hostname: hostname
+    ipAddress: containerAppsEnvironment.properties.staticIp
+  }
+}
+
 
 resource containerAppsEnvironment 'Microsoft.App/managedEnvironments@2023-04-01-preview' existing = {
   name: containerAppsEnvironmentName
 }
 
 output defaultDomain string = containerAppsEnvironment.properties.defaultDomain
-output identityPrincipalId string = app.identity.principalId
+output identityPrincipalId string = userIdentity.id
 output imageName string = imageName
 output name string = app.name
 output uri string = ingressEnabled ? 'https://${app.properties.configuration.ingress.fqdn}' : ''

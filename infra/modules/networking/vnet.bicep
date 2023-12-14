@@ -2,8 +2,8 @@ param name string
 param location string = resourceGroup().location
 param apimSubnetName string
 param apimNsgName string
-param appServiceSubnetName string
-param appServiceNsgName string
+param acaSubnetName string
+param acaNsgName string
 param privateEndpointSubnetName string
 param privateEndpointNsgName string
 param privateDnsZoneNames array
@@ -58,8 +58,8 @@ resource apimNsg 'Microsoft.Network/networkSecurityGroups@2020-07-01' = {
   }
 }
 
-resource appServiceNsg 'Microsoft.Network/networkSecurityGroups@2022-09-01' = {
-  name: appServiceNsgName
+resource acaNsg 'Microsoft.Network/networkSecurityGroups@2022-09-01' = {
+  name: acaNsgName
   location: location
   properties: {
     securityRules: []
@@ -120,20 +120,22 @@ resource virtualNetwork 'Microsoft.Network/virtualNetworks@2019-11-01' = {
         }
       }
       {
-        name: appServiceSubnetName
+        name: acaSubnetName
         properties: {
           addressPrefix: '10.0.3.0/24'
-          networkSecurityGroup: appServiceNsg.id == '' ? null : {
-            id: appServiceNsg.id
+          networkSecurityGroup: acaNsg.id == '' ? null : {
+            id: acaNsg.id
           }
           delegations: [
             {
-              name: 'Microsoft.Web/serverFarms'
+              name: 'Microsoft.App/environments'
               properties: {
-                serviceName: 'Microsoft.Web/serverFarms'
+                serviceName: 'Microsoft.App/environments'
               }
             }
           ]
+          
+          
         }
       }
     ]
@@ -147,8 +149,8 @@ resource virtualNetwork 'Microsoft.Network/virtualNetworks@2019-11-01' = {
     name: apimSubnetName
   }
   
-  resource appServiceSubnet 'subnets' existing = {
-    name: appServiceSubnetName
+  resource acaSubnet 'subnets' existing = {
+    name: acaSubnetName
   }
   
   resource privateEndpointSubnet 'subnets' existing = {
@@ -171,7 +173,7 @@ output virtualNetworkId string = virtualNetwork.id
 output vnetName string = virtualNetwork.name
 output apimSubnetName string = virtualNetwork::apimSubnet.name
 output apimSubnetId string = virtualNetwork::apimSubnet.id
-output appServiceSubnetName string = virtualNetwork::appServiceSubnet.name
-output appServiceSubnetId string = virtualNetwork::appServiceSubnet.id
+output acaSubnetName string = virtualNetwork::acaSubnet.name
+output acaSubnetId string = virtualNetwork::acaSubnet.id
 output privateEndpointSubnetName string = virtualNetwork::privateEndpointSubnet.name
 output privateEndpointSubnetId string = virtualNetwork::privateEndpointSubnet.id

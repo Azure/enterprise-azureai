@@ -3,6 +3,7 @@ param location string
 param AzureMonitorDataCollectionEndPointUrl string
 param AzureMonitorDataCollectionRuleImmutableId string
 param AzureMonitorDataCollectionRuleStream string
+
 param AzureOpenAIEndpoints array
 
 resource appconfig 'Microsoft.AppConfiguration/configurationStores@2023-03-01' = {
@@ -45,6 +46,8 @@ resource EntraIdTenantId 'Microsoft.AppConfiguration/configurationStores/keyValu
   }
 }
 
+
+
 var flatArray = replace(replace(string(AzureOpenAIEndpoints), '(', '['), ')', ']')
 
 resource azureOpenAIEndpoints 'Microsoft.AppConfiguration/configurationStores/keyValues@2023-03-01' = {
@@ -54,4 +57,6 @@ resource azureOpenAIEndpoints 'Microsoft.AppConfiguration/configurationStores/ke
     value: flatArray
   }
 }
+
+output appConfigEndPoint string = appconfig.properties.endpoint
 

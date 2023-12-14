@@ -2,6 +2,12 @@ param name string
 param location string = resourceGroup().location
 param tags object = {}
 param chargeBackManagedIdentityName string
+param myIpAddress string = ''
+param containerRegistryDnsZoneName string = ''
+param containerRegistryPrivateEndpointName string = ''
+param privateEndpointSubnetName string = ''
+param vNetName string = ''
+
 
 @description('Indicates whether admin user is enabled')
 param adminUserEnabled bool = false
@@ -55,6 +61,30 @@ resource containerRegistry 'Microsoft.ContainerRegistry/registries@2022-02-01-pr
     networkRuleBypassOptions: networkRuleBypassOptions
     publicNetworkAccess: publicNetworkAccess
     zoneRedundancy: zoneRedundancy
+    networkRuleSet: myIpAddress == '' ? null : {
+      defaultAction: 'Deny'
+      ipRules: [
+        {
+          action: 'Allow'
+          value: myIpAddress
+        }
+      ]
+    }
+  }
+}
+
+module privateEndpoint '../networking/private-endpoint.bicep' = {
+  name: '${containerRegistry.name}-privateEndpoint-deployment'
+  params: {
+    groupIds: [
+      'registry'
+    ]
+    dnsZoneName: containerRegistryDnsZoneName
+    name: containerRegistryPrivateEndpointName
+    subnetName: privateEndpointSubnetName
+    privateLinkServiceId: containerRegistry.id
+    vNetName: vNetName
+    location: location
   }
 }
 

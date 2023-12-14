@@ -6,9 +6,9 @@ param imageName string
 param containerAppsEnvironmentName string
 param containerRegistryName string
 param apimServiceName string
+param appConfigEndpoint string
 
-
-module app '../modules/host/container-app.bicep' = {
+module app 'modules/host/container-app.bicep' = {
   name: 'container-app'
   params: {
     name: name
@@ -18,13 +18,22 @@ module app '../modules/host/container-app.bicep' = {
     imageName: imageName
     containerAppsEnvironmentName: containerAppsEnvironmentName
     containerRegistryName: containerRegistryName
+    containerName: imageName
     azdServiceName: 'proxy'
-    pullFromPrivateRegistry: false
+    pullFromPrivateRegistry: true
     targetPort: 8080
+    env: [
+      {
+        name: 'APPCONFIGENDPOINT'
+        value: appConfigEndpoint
+      }
+    ]
+    
+    
   }
 }
 
-module apim '../modules/apim/apim-backend.bicep' = {
+module apim 'modules/apim/apim-backend.bicep' = {
   name: 'apim-backend'
   params: {
     apimServiceName: apimServiceName

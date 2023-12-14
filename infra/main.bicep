@@ -29,8 +29,8 @@ param chargeBackAppName string = ''
 param vnetName string = ''
 param apimSubnetName string = ''
 param apimNsgName string = ''
-param appServiceSubnetName string = ''
-param appServiceNsgName string = ''
+param acaSubnetName string = ''
+param acaNsgName string = ''
 param privateEndpointSubnetName string = ''
 param privateEndpointNsgName string = ''
 param redisCacheServiceName string = ''
@@ -38,6 +38,7 @@ param eventHubNamespaceName string = ''
 param containerRegistryName string = ''
 param containerAppsEnvironmentName string = ''
 param appConfigurationName string = ''
+param myIpAddress string = ''
 
 
 //Determine the version of the chat model to deploy
@@ -61,12 +62,14 @@ var openAiPrivateDnsZoneName = 'privatelink.openai.azure.com'
 var monitorPrivateDnsZoneName = 'privatelink.monitor.azure.com'
 var redisCachePrivateDnsZoneName = 'privatelink.redis.cache.windows.net'
 var eventHubPrivateDnsZoneName = 'privatelink.servicebus.windows.net'
+var containerRegistryPrivateDnsZoneName = 'privatelink.azurecr.io'
 
 var privateDnsZoneNames = [
   openAiPrivateDnsZoneName
   monitorPrivateDnsZoneName
   redisCachePrivateDnsZoneName
   eventHubPrivateDnsZoneName
+  containerRegistryPrivateDnsZoneName
 ]
 
 // Organize resources in a resource group
@@ -130,8 +133,8 @@ module vnet './modules/networking/vnet.bicep' = {
     name: !empty(vnetName) ? vnetName : '${abbrs.networkVirtualNetworks}${resourceToken}'
     apimSubnetName: !empty(apimSubnetName) ? apimSubnetName : '${abbrs.networkVirtualNetworksSubnets}${abbrs.apiManagementService}${resourceToken}'
     apimNsgName: !empty(apimNsgName) ? apimNsgName : '${abbrs.networkNetworkSecurityGroups}${abbrs.apiManagementService}${resourceToken}'
-    appServiceSubnetName: !empty(appServiceSubnetName) ? appServiceSubnetName : '${abbrs.networkVirtualNetworksSubnets}${abbrs.webSitesFunctions}${resourceToken}'
-    appServiceNsgName: !empty(appServiceNsgName) ? appServiceNsgName : '${abbrs.networkNetworkSecurityGroups}${abbrs.webSitesFunctions}${resourceToken}'
+    acaSubnetName: !empty(acaSubnetName) ? acaSubnetName : '${abbrs.networkVirtualNetworksSubnets}${abbrs.appContainerApps}${resourceToken}'
+    acaNsgName: !empty(acaNsgName) ? acaNsgName : '${abbrs.networkNetworkSecurityGroups}${abbrs.appContainerApps}${resourceToken}'
     privateEndpointSubnetName: !empty(privateEndpointSubnetName) ? privateEndpointSubnetName : '${abbrs.networkVirtualNetworksSubnets}${abbrs.privateEndpoints}${resourceToken}'
     privateEndpointNsgName: !empty(privateEndpointNsgName) ? privateEndpointNsgName : '${abbrs.networkNetworkSecurityGroups}${abbrs.privateEndpoints}${resourceToken}'
     location: location
@@ -238,6 +241,15 @@ module containerRegistry './modules/host/container-registry.bicep' = {
     location: location
     tags: tags
     chargeBackManagedIdentityName: managedIdentityChargeBack.outputs.managedIdentityName
+    myIpAddress: myIpAddress
+    //needed for container app deployment
+    adminUserEnabled: true
+    publicNetworkAccess: myIpAddress == '' ? 'Disabled': 'Enabled'
+    containerRegistryDnsZoneName: containerRegistryPrivateDnsZoneName
+    containerRegistryPrivateEndpointName: '${abbrs.containerRegistryRegistries}-${abbrs.privateEndpoints}${resourceToken}'
+    vNetName: vnet.outputs.vnetName
+    privateEndpointSubnetName: vnet.outputs.privateEndpointSubnetName
+    
   }
 }
 
@@ -250,6 +262,8 @@ module containerAppsEnvironment './modules/host/container-app-environment.bicep'
     tags: tags
     logAnalyticsWorkspaceName: monitoring.outputs.logAnalyticsWorkspaceName
     applicationInsightsName: monitoring.outputs.applicationInsightsName
+    vnetName: vnet.outputs.vnetName
+    subnetName: vnet.outputs.acaSubnetName
   }
 }
 
@@ -264,7 +278,17 @@ module app './modules/host/container-app.bicep' = {
     //deploy sample image first - we need the endpoint already for APIM
     //real image will be deployed later
     imageName: ''
-    pullFromPrivateRegistry: false
+    env: [
+      {
+        name: 'APPCONFIG_ENDPOINT'
+        value: appconfig.outputs.appConfigEndPoint
+      }
+      {
+        name: 'CLIENT_ID'
+        value: managedIdentityChargeBack.outputs.managedIdentityClientId
+      }
+    ]
+    pullFromPrivateRegistry: true
     azdServiceName: 'proxy'
     containerAppsEnvironmentName: containerAppsEnvironment.outputs.name
     containerRegistryName: containerRegistry.outputs.name
@@ -298,3 +322,5 @@ output AZURE_CONTAINER_ENVIRONMENT_NAME string = containerAppsEnvironment.output
 output AZURE_CONTAINER_REGISTRY_NAME string = containerRegistry.outputs.name
 output AZURE_CONTAINER_REGISTRY_ENDPOINT string = containerRegistry.outputs.loginServer
 output AZURE_PROXY_MANAGED_IDENTITY_NAME string = managedIdentityChargeBack.outputs.managedIdentityName
+output AZURE_APPCONFIG_ENDPOINT string = appconfig.outputs.appConfigEndPoint
+output AZURE_RESOURCE_GROUP string = resourceGroup.name

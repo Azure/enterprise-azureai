@@ -19,6 +19,9 @@
       },
       "managedIdentityName": {
         "value": "${AZURE_PROXY_MANAGED_IDENTITY_NAME}"
+      },
+      "appConfigEndPoint": {
+        "value": "${AZURE_APPCONFIG_ENDPOINT}"
       }
     }
   }

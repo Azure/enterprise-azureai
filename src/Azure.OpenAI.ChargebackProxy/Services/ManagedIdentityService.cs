@@ -45,6 +45,11 @@ namespace Azure.OpenAI.ChargebackProxy.Services
                 options.TenantId = _config["EntraId:TenantId"];
             }
 
+            if (_config["CLIENT_ID"] is not null)
+            {
+                options.ManagedIdentityClientId = _config["CLIENT_ID"];
+            }
+
             return options;
         }
 

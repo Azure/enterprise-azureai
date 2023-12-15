@@ -57,29 +57,30 @@ resource chargeBackApiPolicy 'Microsoft.ApiManagement/service/apis/policies@2023
     ]
   }
 
-  resource diagPolicyChargeBack 'Microsoft.ApiManagement/service/apis/diagnostics@2022-08-01' = {
-      name: 'diagnotics-chargeback'
-      parent: apimChargeBackApi
-      properties: {
-        alwaysLog: 'allErrors'
-        httpCorrelationProtocol: 'W3C'
-        logClientIp: true
-        loggerId: apimLogger.id
-        metrics: true
-        verbosity: 'verbose'
-        sampling: {
-          samplingType: 'fixed'
-          percentage: 100
-        }
-        frontend: {
-          request: logSettings
-          response: logSettings
-        }
-        backend: {
-          request: logSettings
-          response: logSettings
-        }
-      }
-    }
+  // *** TODO: Not sure why this is not working and throwing errors ***
+  // resource diagPolicyChargeBack 'Microsoft.ApiManagement/service/apis/diagnostics@2022-08-01' = {
+  //     name: 'diagnotics-chargeback'
+  //     parent: apimChargeBackApi
+  //     properties: {
+  //       alwaysLog: 'allErrors'
+  //       httpCorrelationProtocol: 'W3C'
+  //       logClientIp: true
+  //       loggerId: apimLogger.id
+  //       metrics: true
+  //       verbosity: 'verbose'
+  //       sampling: {
+  //         samplingType: 'fixed'
+  //         percentage: 100
+  //       }
+  //       frontend: {
+  //         request: logSettings
+  //         response: logSettings
+  //       }
+  //       backend: {
+  //         request: logSettings
+  //         response: logSettings
+  //       }
+  //     }
+  //   }
     
     

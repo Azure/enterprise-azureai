@@ -1,5 +1,6 @@
 targetScope = 'subscription'
 
+// Main parameters
 @minLength(1)
 @maxLength(64)
 @description('Name of the the environment which is used to generate a short unique hash used in all resources.')
@@ -10,9 +11,12 @@ param environmentName string
 @allowed(['westeurope','southcentralus','australiaeast', 'canadaeast', 'eastus', 'eastus2', 'francecentral', 'japaneast', 'northcentralus', 'swedencentral', 'switzerlandnorth', 'uksouth'])
 param location string
 
-// Needed for isolated deployment, check if this can be removed
-//@description('IP address of the machine running the deployment.')
-//param myIpAddress string
+@description('Use Redis Cache.')
+param useRedis bool = false
+
+@description('Add Azure Open AI Service to secondary region for load balancing.')
+@allowed(['','westeurope','southcentralus','australiaeast', 'canadaeast', 'eastus', 'eastus2', 'francecentral', 'japaneast', 'northcentralus', 'swedencentral', 'switzerlandnorth', 'uksouth'])
+param secondaryOpenAILocation string = ''
 
 //Leave blank to use default naming conventions
 param resourceGroupName string = ''
@@ -29,15 +33,15 @@ param chargeBackAppName string = ''
 param vnetName string = ''
 param apimSubnetName string = ''
 param apimNsgName string = ''
-param appServiceSubnetName string = ''
-param appServiceNsgName string = ''
+param acaSubnetName string = ''
+param acaNsgName string = ''
 param privateEndpointSubnetName string = ''
 param privateEndpointNsgName string = ''
 param redisCacheServiceName string = ''
-param eventHubNamespaceName string = ''
 param containerRegistryName string = ''
 param containerAppsEnvironmentName string = ''
 param appConfigurationName string = ''
+param myIpAddress string = ''
 
 
 //Determine the version of the chat model to deploy
@@ -46,16 +50,13 @@ param arrayVersion0301Locations array = [
   'southcentralus'
 ]
 param chatGptModelVersion string = ((contains(arrayVersion0301Locations, location)) ? '0301' : '0613')
+param chatGptModelVersionSecondary string = ((contains(arrayVersion0301Locations, secondaryOpenAILocation)) ? '0301' : '0613')
 
 var abbrs = loadJsonContent('./abbreviations.json')
 var resourceToken = toLower(uniqueString(subscription().id, environmentName, location))
 var openAiSkuName = 'S0'
-var chatGptDeploymentName = 'chat'
+var chatGptDeploymentName = 'gpt-35-turbo'
 var chatGptModelName = 'gpt-35-turbo'
-var eventHubListenPolicyName = 'listen'
-var eventHubSendPolicyName = 'send'
-var eventHubName = 'openai-logging'
-var imageName = 'chargeback-app'
 var tags = { 'azd-env-name': environmentName }
 
 var openAiPrivateDnsZoneName = 'privatelink.openai.azure.com'
@@ -63,13 +64,14 @@ var monitorPrivateDnsZoneName = 'privatelink.monitor.azure.com'
 var redisCachePrivateDnsZoneName = 'privatelink.redis.cache.windows.net'
 var eventHubPrivateDnsZoneName = 'privatelink.servicebus.windows.net'
 var appConfigPrivateDnsZoneName = 'privatelink.azconfig.io'
+var containerRegistryPrivateDnsZoneName = 'privatelink.azurecr.io'
 
 var privateDnsZoneNames = [
   openAiPrivateDnsZoneName
   monitorPrivateDnsZoneName
   redisCachePrivateDnsZoneName
   eventHubPrivateDnsZoneName
-  appConfigPrivateDnsZoneName
+  containerRegistryPrivateDnsZoneName
 ]
 
 // Organize resources in a resource group
@@ -133,8 +135,8 @@ module vnet './modules/networking/vnet.bicep' = {
     name: !empty(vnetName) ? vnetName : '${abbrs.networkVirtualNetworks}${resourceToken}'
     apimSubnetName: !empty(apimSubnetName) ? apimSubnetName : '${abbrs.networkVirtualNetworksSubnets}${abbrs.apiManagementService}${resourceToken}'
     apimNsgName: !empty(apimNsgName) ? apimNsgName : '${abbrs.networkNetworkSecurityGroups}${abbrs.apiManagementService}${resourceToken}'
-    appServiceSubnetName: !empty(appServiceSubnetName) ? appServiceSubnetName : '${abbrs.networkVirtualNetworksSubnets}${abbrs.webSitesFunctions}${resourceToken}'
-    appServiceNsgName: !empty(appServiceNsgName) ? appServiceNsgName : '${abbrs.networkNetworkSecurityGroups}${abbrs.webSitesFunctions}${resourceToken}'
+    acaSubnetName: !empty(acaSubnetName) ? acaSubnetName : '${abbrs.networkVirtualNetworksSubnets}${abbrs.appContainerApps}${resourceToken}'
+    acaNsgName: !empty(acaNsgName) ? acaNsgName : '${abbrs.networkNetworkSecurityGroups}${abbrs.appContainerApps}${resourceToken}'
     privateEndpointSubnetName: !empty(privateEndpointSubnetName) ? privateEndpointSubnetName : '${abbrs.networkVirtualNetworksSubnets}${abbrs.privateEndpoints}${resourceToken}'
     privateEndpointNsgName: !empty(privateEndpointNsgName) ? privateEndpointNsgName : '${abbrs.networkNetworkSecurityGroups}${abbrs.privateEndpoints}${resourceToken}'
     location: location
@@ -163,24 +165,24 @@ module monitoring './modules/monitor/monitoring.bicep' = {
   }
 }
 
-module eventHub './modules/monitor/eventhub.bicep' = {
-  name: 'event-hub'
-  scope: resourceGroup
-  params: {
-    name: !empty(eventHubNamespaceName) ? eventHubNamespaceName : '${abbrs.eventHubNamespaces}${resourceToken}'
-    location: location
-    tags: tags
-    eventHubListenPolicyName: eventHubListenPolicyName
-    eventHubSendPolicyName: eventHubSendPolicyName
-    apimManagedIdentityName: managedIdentityApim.outputs.managedIdentityName
-    chargeBackManagedIdentityName: managedIdentityChargeBack.outputs.managedIdentityName
-    eventHubName: !empty(eventHubName) ? eventHubName : '${abbrs.eventHubNamespacesEventHubs}${resourceToken}'
-    eventHubPrivateEndpointName: '${abbrs.eventHubNamespaces}${abbrs.privateEndpoints}${resourceToken}'
-    vNetName: vnet.outputs.vnetName
-    privateEndpointSubnetName: vnet.outputs.privateEndpointSubnetName
-    eventHubDnsZoneName: eventHubPrivateDnsZoneName
-  }
-}
+// module eventHub './modules/monitor/eventhub.bicep' = {
+//   name: 'event-hub'
+//   scope: resourceGroup
+//   params: {
+//     name: !empty(eventHubNamespaceName) ? eventHubNamespaceName : '${abbrs.eventHubNamespaces}${resourceToken}'
+//     location: location
+//     tags: tags
+//     eventHubListenPolicyName: eventHubListenPolicyName
+//     eventHubSendPolicyName: eventHubSendPolicyName
+//     apimManagedIdentityName: managedIdentityApim.outputs.managedIdentityName
+//     chargeBackManagedIdentityName: managedIdentityChargeBack.outputs.managedIdentityName
+//     eventHubName: !empty(eventHubName) ? eventHubName : '${abbrs.eventHubNamespacesEventHubs}${resourceToken}'
+//     eventHubPrivateEndpointName: '${abbrs.eventHubNamespaces}${abbrs.privateEndpoints}${resourceToken}'
+//     vNetName: vnet.outputs.vnetName
+//     privateEndpointSubnetName: vnet.outputs.privateEndpointSubnetName
+//     eventHubDnsZoneName: eventHubPrivateDnsZoneName
+//   }
+// }
 
 module apim './modules/apim/apim.bicep' = {
   name: 'apim'
@@ -192,14 +194,11 @@ module apim './modules/apim/apim.bicep' = {
     sku: 'StandardV2' //StandardV2
     virtualNetworkType: 'External'
     applicationInsightsName: monitoring.outputs.applicationInsightsName
-    logAnalyticsWorkspaceId: monitoring.outputs.logAnalyticsWorkspaceId
-    openAiUri: openAi.outputs.openAiEndpointUri
-    chargeBackAppUri: app.outputs.uri
     apimManagedIdentityName: managedIdentityApim.outputs.managedIdentityName
     redisCacheServiceName: redisCache.outputs.cacheName
     apimSubnetId: vnet.outputs.apimSubnetId
-    eventHubName: eventHub.outputs.eventHubName
-    eventHubNamespaceName: eventHub.outputs.eventHubNamespaceName
+    // eventHubName: eventHub.outputs.eventHubName
+    // eventHubNamespaceName: eventHub.outputs.eventHubNamespaceName
   }
 }
 
@@ -210,7 +209,38 @@ module openAi './modules/ai/cognitiveservices.bicep' = {
     name: !empty(openAiServiceName) ? openAiServiceName : '${abbrs.cognitiveServicesAccounts}${resourceToken}'
     location: location
     tags: tags
-    apimManagedIdentityName: managedIdentityApim.outputs.managedIdentityName
+    chargeBackManagedIdentityName: managedIdentityChargeBack.outputs.managedIdentityName
+    logAnalyticsWorkspaceId: monitoring.outputs.logAnalyticsWorkspaceId
+    sku: {
+      name: openAiSkuName
+    }
+    deployments: [
+      {
+        name: chatGptDeploymentName
+        model: {
+          format: 'OpenAI'
+          name: chatGptModelName
+          version: chatGptModelVersion
+        }
+        scaleSettings: {
+          scaleType: 'Standard'
+        }
+      }
+    ]
+    openAiPrivateEndpointName: '${abbrs.cognitiveServicesAccounts}${abbrs.privateEndpoints}${resourceToken}'
+    vNetName: vnet.outputs.vnetName
+    privateEndpointSubnetName: vnet.outputs.privateEndpointSubnetName
+    openAiDnsZoneName: openAiPrivateDnsZoneName
+  }
+}
+
+module openAiSecondary './modules/ai/cognitiveservices.bicep' = if (secondaryOpenAILocation != '') {
+  name: 'openai-secondary'
+  scope: resourceGroup
+  params: {
+    name: !empty(openAiServiceName) ? openAiServiceName : '${abbrs.cognitiveServicesAccounts}${resourceToken}-secondary'
+    location: secondaryOpenAILocation
+    tags: tags
     chargeBackManagedIdentityName: managedIdentityChargeBack.outputs.managedIdentityName
     logAnalyticsWorkspaceId: monitoring.outputs.logAnalyticsWorkspaceId
     sku: {
@@ -244,6 +274,15 @@ module containerRegistry './modules/host/container-registry.bicep' = {
     location: location
     tags: tags
     chargeBackManagedIdentityName: managedIdentityChargeBack.outputs.managedIdentityName
+    myIpAddress: myIpAddress
+    //needed for container app deployment
+    adminUserEnabled: true
+    publicNetworkAccess: myIpAddress == '' ? 'Disabled': 'Enabled'
+    containerRegistryDnsZoneName: containerRegistryPrivateDnsZoneName
+    containerRegistryPrivateEndpointName: '${abbrs.containerRegistryRegistries}-${abbrs.privateEndpoints}${resourceToken}'
+    vNetName: vnet.outputs.vnetName
+    privateEndpointSubnetName: vnet.outputs.privateEndpointSubnetName
+    
   }
 }
 
@@ -256,6 +295,8 @@ module containerAppsEnvironment './modules/host/container-app-environment.bicep'
     tags: tags
     logAnalyticsWorkspaceName: monitoring.outputs.logAnalyticsWorkspaceName
     applicationInsightsName: monitoring.outputs.applicationInsightsName
+    vnetName: vnet.outputs.vnetName
+    subnetName: vnet.outputs.acaSubnetName
   }
 }
 
@@ -267,7 +308,21 @@ module app './modules/host/container-app.bicep' = {
     location: location
     tags: tags
     identityName: managedIdentityChargeBack.outputs.managedIdentityName
-    imageName: imageName
+    //deploy sample image first - we need the endpoint already for APIM
+    //real image will be deployed later
+    imageName: ''
+    env: [
+      {
+        name: 'APPCONFIG_ENDPOINT'
+        value: appconfig.outputs.appConfigEndPoint
+      }
+      {
+        name: 'CLIENT_ID'
+        value: managedIdentityChargeBack.outputs.managedIdentityClientId
+      }
+    ]
+    pullFromPrivateRegistry: true
+    azdServiceName: 'proxy'
     containerAppsEnvironmentName: containerAppsEnvironment.outputs.name
     containerRegistryName: containerRegistry.outputs.name
     targetPort: 8080
@@ -293,5 +348,12 @@ module appconfig 'modules/appconfig/appconfiguration.bicep' = {
 
 output TENTANT_ID string = subscription().tenantId
 output AOI_DEPLOYMENTID string = chatGptDeploymentName
+output DEPLOYMENT_LOCATION string = location
 output APIM_NAME string = apim.outputs.apimName
-output APIM_AOI_PATH string = apim.outputs.apimOpenaiApiPath
+output RESOURCE_TOKEN string = resourceToken
+output AZURE_CONTAINER_ENVIRONMENT_NAME string = containerAppsEnvironment.outputs.name
+output AZURE_CONTAINER_REGISTRY_NAME string = containerRegistry.outputs.name
+output AZURE_CONTAINER_REGISTRY_ENDPOINT string = containerRegistry.outputs.loginServer
+output AZURE_PROXY_MANAGED_IDENTITY_NAME string = managedIdentityChargeBack.outputs.managedIdentityName
+output AZURE_APPCONFIG_ENDPOINT string = appconfig.outputs.appConfigEndPoint
+output AZURE_RESOURCE_GROUP string = resourceGroup.name

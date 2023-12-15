@@ -47,7 +47,9 @@ param revisionMode string = 'Single'
 @description('The target port for the container')
 param targetPort int
 
-var usePrivateRegistry = true
+param pullFromPrivateRegistry bool = true
+
+param azdServiceName string 
 
 resource userIdentity 'Microsoft.ManagedIdentity/userAssignedIdentities@2023-01-31' existing = if (!empty(identityName)) {
   name: identityName
@@ -56,7 +58,7 @@ resource userIdentity 'Microsoft.ManagedIdentity/userAssignedIdentities@2023-01-
 resource app 'Microsoft.App/containerApps@2023-04-01-preview' = {
   name: name
   location: location
-  tags: tags
+  tags: union(tags, { 'azd-service-name': azdServiceName })
   // It is critical that the identity is granted ACR pull access before the app is created
   // otherwise the container app will throw a provision error
   // This also forces us to use an user assigned managed identity since there would no way to 
@@ -72,7 +74,7 @@ resource app 'Microsoft.App/containerApps@2023-04-01-preview' = {
     configuration: {
       activeRevisionsMode: revisionMode
       ingress: ingressEnabled ? {
-        external: external
+        external: false
         targetPort: targetPort
         transport: 'auto'
         corsPolicy: {
@@ -80,13 +82,14 @@ resource app 'Microsoft.App/containerApps@2023-04-01-preview' = {
         }
       } : null
       service: null
-      registries: usePrivateRegistry ? [
+      registries: pullFromPrivateRegistry ? [
         {
           server: '${containerRegistryName}.azurecr.io'
           identity: userIdentity.id
         }
       ] : []
     }
+    workloadProfileName: 'Consumption'
     template: {
       serviceBinds: null
       containers: [
@@ -104,16 +107,41 @@ resource app 'Microsoft.App/containerApps@2023-04-01-preview' = {
         minReplicas: containerMinReplicas
         maxReplicas: containerMaxReplicas
       }
+      
     }
   }
 }
+
+//split fqdn into hostname and dns zone name
+var fqdnParts = split(app.properties.configuration.ingress.fqdn, '.')
+var hostname = fqdnParts[0]
+var dnsZoneName = replace(app.properties.configuration.ingress.fqdn, '${hostname}.', '')
+
+
+module privateDnsZone '../networking/dns.bicep' = {
+  name: 'dns-deployment-app'
+  params: {
+    name: dnsZoneName
+  }
+
+}
+
+module dnsEntry '../networking/dnsentry.bicep' = {
+  name: 'dns-entry-app'
+  params: {
+    dnsZoneName: privateDnsZone.outputs.privateDnsZoneName
+    hostname: hostname
+    ipAddress: containerAppsEnvironment.properties.staticIp
+  }
+}
+
 
 resource containerAppsEnvironment 'Microsoft.App/managedEnvironments@2023-04-01-preview' existing = {
   name: containerAppsEnvironmentName
 }
 
 output defaultDomain string = containerAppsEnvironment.properties.defaultDomain
-output identityPrincipalId string = app.identity.principalId
+output identityPrincipalId string = userIdentity.id
 output imageName string = imageName
 output name string = app.name
 output uri string = ingressEnabled ? 'https://${app.properties.configuration.ingress.fqdn}' : ''

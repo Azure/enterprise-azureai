@@ -11,6 +11,9 @@ param daprEnabled bool = false
 @description('Name of the Log Analytics workspace')
 param logAnalyticsWorkspaceName string
 
+param vnetName string
+param subnetName string
+
 resource containerAppsEnvironment 'Microsoft.App/managedEnvironments@2023-04-01-preview' = {
   name: name
   location: location
@@ -24,6 +27,16 @@ resource containerAppsEnvironment 'Microsoft.App/managedEnvironments@2023-04-01-
       }
     }
     daprAIInstrumentationKey: daprEnabled && !empty(applicationInsightsName) ? applicationInsights.properties.InstrumentationKey : ''
+    vnetConfiguration: {
+      internal: true
+      infrastructureSubnetId: resourceId('Microsoft.Network/VirtualNetworks/subnets', vnetName, subnetName)
+    }
+    workloadProfiles: [
+      {
+        name: 'Consumption'
+        workloadProfileType: 'Consumption'
+      }
+    ]
   }
 }
 

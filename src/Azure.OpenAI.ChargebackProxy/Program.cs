@@ -10,7 +10,7 @@ var managedIdentityService = builder.Services.BuildServiceProvider().GetService<
 
 builder.Configuration.AddAzureAppConfiguration(options =>
     options.Connect(
-        new Uri(builder.Configuration["AppConfigEndpoint"]),
+        new Uri(builder.Configuration["APPCONFIG_ENDPOINT"]),
         managedIdentityService.GetTokenCredential()));
 
 var config = builder.Configuration;

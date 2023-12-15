@@ -9,7 +9,7 @@ param publicNetworkAccess string = 'Disabled'
 param sku object = {
   name: 'S0'
 }
-param apimManagedIdentityName string
+//param apimManagedIdentityName string
 param chargeBackManagedIdentityName string
 param logAnalyticsWorkspaceId string
 
@@ -22,9 +22,9 @@ param openAiDnsZoneName string
 // Cognitive Services OpenAI User
 var roleDefinitionResourceId = '/providers/Microsoft.Authorization/roleDefinitions/5e0bd9bd-7b93-4f28-af87-19fc36ad61bd'
 
-resource managedIdentityApim 'Microsoft.ManagedIdentity/userAssignedIdentities@2018-11-30' existing = {
-  name: apimManagedIdentityName
-}
+// resource managedIdentityApim 'Microsoft.ManagedIdentity/userAssignedIdentities@2018-11-30' existing = {
+//   name: apimManagedIdentityName
+// }
 
 resource managedIdentityChargeBack 'Microsoft.ManagedIdentity/userAssignedIdentities@2018-11-30' existing = {
   name: chargeBackManagedIdentityName
@@ -74,15 +74,15 @@ module privateEndpoint '../networking/private-endpoint.bicep' = {
   }
 }
 
-resource roleAssignmentApim 'Microsoft.Authorization/roleAssignments@2022-04-01' = {
-  scope: account
-  name: guid(managedIdentityApim.id, roleDefinitionResourceId)
-  properties: {
-    roleDefinitionId: roleDefinitionResourceId
-    principalId: managedIdentityApim.properties.principalId
-    principalType: 'ServicePrincipal'
-  }
-}
+// resource roleAssignmentApim 'Microsoft.Authorization/roleAssignments@2022-04-01' = {
+//   scope: account
+//   name: guid(managedIdentityApim.id, roleDefinitionResourceId)
+//   properties: {
+//     roleDefinitionId: roleDefinitionResourceId
+//     principalId: managedIdentityApim.properties.principalId
+//     principalType: 'ServicePrincipal'
+//   }
+// }
 
 resource roleAssignmentChargeBack 'Microsoft.Authorization/roleAssignments@2022-04-01' = {
   scope: account

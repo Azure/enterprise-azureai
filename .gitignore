@@ -14,4 +14,5 @@ local.settings.json
 /infra/modules/monitor/test.customtable.params.json
 /infra/modules/monitor/test.datacollectionendpoint.params.json
 /infra/modules/monitor/test.datacollectionrule.params.json
+.vscode/settings.json
 /docs/raw/*.drawio.bkp

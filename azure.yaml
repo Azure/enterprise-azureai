@@ -8,11 +8,22 @@
 name: ais-apim-openai
 metadata:
   template: ais-apim-openai@1.0.0
-#services:
-#  web:
-#    project: ./src/api
-#    host: containerapp
-#    language: dotnet
-#    docker:
-#      path: ../Dockerfile
-#      context: ../
+services:
+  proxy:
+    project: ./src/Azure.OpenAI.ChargebackProxy
+    host: containerapp
+    language: dotnet
+    
+    docker:
+      path: ./Dockerfile
+      context: ../
+hooks:
+   preprovision: # Pull environment variable inline from local device and set in .env file
+       shell: pwsh
+       run: ./scripts/set-env.ps1
+#   predown: 
+#     windows:
+#       shell: pwsh
+#       run: az apim deletedservice purge --location ${AZURE_LOCATION} --service-name ${APIM_NAME}
+#       interactive: true
+    

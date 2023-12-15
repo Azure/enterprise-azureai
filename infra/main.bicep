@@ -165,24 +165,24 @@ module monitoring './modules/monitor/monitoring.bicep' = {
   }
 }
 
-module eventHub './modules/monitor/eventhub.bicep' = {
-  name: 'event-hub'
-  scope: resourceGroup
-  params: {
-    name: !empty(eventHubNamespaceName) ? eventHubNamespaceName : '${abbrs.eventHubNamespaces}${resourceToken}'
-    location: location
-    tags: tags
-    eventHubListenPolicyName: eventHubListenPolicyName
-    eventHubSendPolicyName: eventHubSendPolicyName
-    apimManagedIdentityName: managedIdentityApim.outputs.managedIdentityName
-    chargeBackManagedIdentityName: managedIdentityChargeBack.outputs.managedIdentityName
-    eventHubName: !empty(eventHubName) ? eventHubName : '${abbrs.eventHubNamespacesEventHubs}${resourceToken}'
-    eventHubPrivateEndpointName: '${abbrs.eventHubNamespaces}${abbrs.privateEndpoints}${resourceToken}'
-    vNetName: vnet.outputs.vnetName
-    privateEndpointSubnetName: vnet.outputs.privateEndpointSubnetName
-    eventHubDnsZoneName: eventHubPrivateDnsZoneName
-  }
-}
+// module eventHub './modules/monitor/eventhub.bicep' = {
+//   name: 'event-hub'
+//   scope: resourceGroup
+//   params: {
+//     name: !empty(eventHubNamespaceName) ? eventHubNamespaceName : '${abbrs.eventHubNamespaces}${resourceToken}'
+//     location: location
+//     tags: tags
+//     eventHubListenPolicyName: eventHubListenPolicyName
+//     eventHubSendPolicyName: eventHubSendPolicyName
+//     apimManagedIdentityName: managedIdentityApim.outputs.managedIdentityName
+//     chargeBackManagedIdentityName: managedIdentityChargeBack.outputs.managedIdentityName
+//     eventHubName: !empty(eventHubName) ? eventHubName : '${abbrs.eventHubNamespacesEventHubs}${resourceToken}'
+//     eventHubPrivateEndpointName: '${abbrs.eventHubNamespaces}${abbrs.privateEndpoints}${resourceToken}'
+//     vNetName: vnet.outputs.vnetName
+//     privateEndpointSubnetName: vnet.outputs.privateEndpointSubnetName
+//     eventHubDnsZoneName: eventHubPrivateDnsZoneName
+//   }
+// }
 
 module apim './modules/apim/apim.bicep' = {
   name: 'apim'
@@ -197,8 +197,8 @@ module apim './modules/apim/apim.bicep' = {
     apimManagedIdentityName: managedIdentityApim.outputs.managedIdentityName
     redisCacheServiceName: redisCache.outputs.cacheName
     apimSubnetId: vnet.outputs.apimSubnetId
-    eventHubName: eventHub.outputs.eventHubName
-    eventHubNamespaceName: eventHub.outputs.eventHubNamespaceName
+    // eventHubName: eventHub.outputs.eventHubName
+    // eventHubNamespaceName: eventHub.outputs.eventHubNamespaceName
   }
 }
 

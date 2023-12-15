@@ -15,10 +15,10 @@ param redisCacheServiceName string = ''
 //Vnet Integration
 param apimSubnetId string
 param virtualNetworkType string
-param eventHubNamespaceName string
-param eventHubName string
 
-var eventHubEndpoint = '${eventHubNamespaceName}.servicebus.windows.net'
+//param eventHubNamespaceName string
+// param eventHubName string
+// var eventHubEndpoint = '${eventHubNamespaceName}.servicebus.windows.net'
 
 
 resource applicationInsights 'Microsoft.Insights/components@2020-02-02' existing = {

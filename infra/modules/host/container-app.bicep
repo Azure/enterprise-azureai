@@ -75,7 +75,7 @@ resource app 'Microsoft.App/containerApps@2023-04-01-preview' = {
     configuration: {
       activeRevisionsMode: revisionMode
       ingress: ingressEnabled ? {
-        external: false
+        //external: false
         targetPort: targetPort
         transport: 'auto'
         corsPolicy: {

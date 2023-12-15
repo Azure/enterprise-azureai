@@ -1,5 +1,6 @@
 targetScope = 'subscription'
 
+// Main parameters
 @minLength(1)
 @maxLength(64)
 @description('Name of the the environment which is used to generate a short unique hash used in all resources.')
@@ -10,9 +11,12 @@ param environmentName string
 @allowed(['westeurope','southcentralus','australiaeast', 'canadaeast', 'eastus', 'eastus2', 'francecentral', 'japaneast', 'northcentralus', 'swedencentral', 'switzerlandnorth', 'uksouth'])
 param location string
 
-// Needed for isolated deployment, check if this can be removed
-//@description('IP address of the machine running the deployment.')
-//param myIpAddress string
+@description('Use Redis Cache.')
+param useRedis bool = false
+
+@description('Add Azure Open AI Service to secondary region for load balancing.')
+@allowed(['','westeurope','southcentralus','australiaeast', 'canadaeast', 'eastus', 'eastus2', 'francecentral', 'japaneast', 'northcentralus', 'swedencentral', 'switzerlandnorth', 'uksouth'])
+param secondaryOpenAILocation string = ''
 
 //Leave blank to use default naming conventions
 param resourceGroupName string = ''
@@ -34,7 +38,6 @@ param acaNsgName string = ''
 param privateEndpointSubnetName string = ''
 param privateEndpointNsgName string = ''
 param redisCacheServiceName string = ''
-param eventHubNamespaceName string = ''
 param containerRegistryName string = ''
 param containerAppsEnvironmentName string = ''
 param appConfigurationName string = ''
@@ -47,28 +50,24 @@ param arrayVersion0301Locations array = [
   'southcentralus'
 ]
 param chatGptModelVersion string = ((contains(arrayVersion0301Locations, location)) ? '0301' : '0613')
+param chatGptModelVersionSecondary string = ((contains(arrayVersion0301Locations, secondaryOpenAILocation)) ? '0301' : '0613')
 
 var abbrs = loadJsonContent('./abbreviations.json')
 var resourceToken = toLower(uniqueString(subscription().id, environmentName, location))
 var openAiSkuName = 'S0'
-var chatGptDeploymentName = 'chat'
+var chatGptDeploymentName = 'gpt-35-turbo'
 var chatGptModelName = 'gpt-35-turbo'
-var eventHubListenPolicyName = 'listen'
-var eventHubSendPolicyName = 'send'
-var eventHubName = 'openai-logging'
 var tags = { 'azd-env-name': environmentName }
 
 var openAiPrivateDnsZoneName = 'privatelink.openai.azure.com'
 var monitorPrivateDnsZoneName = 'privatelink.monitor.azure.com'
 var redisCachePrivateDnsZoneName = 'privatelink.redis.cache.windows.net'
-var eventHubPrivateDnsZoneName = 'privatelink.servicebus.windows.net'
 var containerRegistryPrivateDnsZoneName = 'privatelink.azurecr.io'
 
 var privateDnsZoneNames = [
   openAiPrivateDnsZoneName
   monitorPrivateDnsZoneName
   redisCachePrivateDnsZoneName
-  eventHubPrivateDnsZoneName
   containerRegistryPrivateDnsZoneName
 ]
 
@@ -207,7 +206,38 @@ module openAi './modules/ai/cognitiveservices.bicep' = {
     name: !empty(openAiServiceName) ? openAiServiceName : '${abbrs.cognitiveServicesAccounts}${resourceToken}'
     location: location
     tags: tags
-    apimManagedIdentityName: managedIdentityApim.outputs.managedIdentityName
+    chargeBackManagedIdentityName: managedIdentityChargeBack.outputs.managedIdentityName
+    logAnalyticsWorkspaceId: monitoring.outputs.logAnalyticsWorkspaceId
+    sku: {
+      name: openAiSkuName
+    }
+    deployments: [
+      {
+        name: chatGptDeploymentName
+        model: {
+          format: 'OpenAI'
+          name: chatGptModelName
+          version: chatGptModelVersion
+        }
+        scaleSettings: {
+          scaleType: 'Standard'
+        }
+      }
+    ]
+    openAiPrivateEndpointName: '${abbrs.cognitiveServicesAccounts}${abbrs.privateEndpoints}${resourceToken}'
+    vNetName: vnet.outputs.vnetName
+    privateEndpointSubnetName: vnet.outputs.privateEndpointSubnetName
+    openAiDnsZoneName: openAiPrivateDnsZoneName
+  }
+}
+
+module openAiSecondary './modules/ai/cognitiveservices.bicep' = if (secondaryOpenAILocation != '') {
+  name: 'openai-secondary'
+  scope: resourceGroup
+  params: {
+    name: !empty(openAiServiceName) ? openAiServiceName : '${abbrs.cognitiveServicesAccounts}${resourceToken}-secondary'
+    location: secondaryOpenAILocation
+    tags: tags
     chargeBackManagedIdentityName: managedIdentityChargeBack.outputs.managedIdentityName
     logAnalyticsWorkspaceId: monitoring.outputs.logAnalyticsWorkspaceId
     sku: {

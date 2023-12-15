@@ -74,6 +74,7 @@ resource apimService 'Microsoft.ApiManagement/service@2023-03-01-preview' = {
   }
 }
 
+//2 subscription voor 2 departments.
 
 // resource apiSubscription 'Microsoft.ApiManagement/service/subscriptions@2023-03-01-preview' = {
 //   parent: apimService

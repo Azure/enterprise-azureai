@@ -4,7 +4,7 @@
         <set-header name="X-Consumer" exists-action="override">
             <value>@( context.Subscription.Name )</value>
         </set-header>
-        <set-backend-service backend-id="chargeback-backend" />
+        <set-backend-service backend-id="proxy-backend" />
     </inbound>
     <backend>
         <base/>

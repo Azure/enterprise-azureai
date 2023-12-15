@@ -28,20 +28,24 @@ resource backend 'Microsoft.ApiManagement/service/backends@2023-03-01-preview' =
       validateCertificateChain: true
       validateCertificateName: true
     }
+
   }
 }
 
 resource apimChargeBackApi 'Microsoft.ApiManagement/service/apis@2023-03-01-preview' = {
-  name: 'chargeback-api'
+  name: 'chargeback-proxy'
   parent: apimService
   properties: {
-    path: 'openai-chargeback'
+    path: 'openai'
     apiRevision: '1'
-    displayName: 'OpenAI Chargeback API'
+    displayName: 'OpenAI Chargeback Proxy'
     format: 'openapi-link'
     protocols: [ 'https' ]
     value: 'https://raw.githubusercontent.com/Azure/azure-rest-api-specs/main/specification/cognitiveservices/data-plane/AzureOpenAI/inference/stable/2023-05-15/inference.json'
     subscriptionRequired: true
+    subscriptionKeyParameterNames: {
+      header: 'api-key'
+    }
   }
 }
 

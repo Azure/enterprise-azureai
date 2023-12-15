@@ -2,6 +2,7 @@ param name string
 param location string = resourceGroup().location
 param tags object = {}
 
+
 @description('Allowed origins')
 param allowedOrigins array = []
 
@@ -115,32 +116,13 @@ resource app 'Microsoft.App/containerApps@2023-04-01-preview' = {
 //split fqdn into hostname and dns zone name
 var fqdnParts = split(app.properties.configuration.ingress.fqdn, '.')
 var hostname = fqdnParts[0]
-var dnsZoneName = replace(app.properties.configuration.ingress.fqdn, '${hostname}.', '')
-
-
-module privateDnsZone '../networking/dns.bicep' = {
-  name: 'dns-deployment-app'
-  params: {
-    name: dnsZoneName
-  }
-
-}
-
-module dnsEntry '../networking/dnsentry.bicep' = {
-  name: 'dns-entry-app'
-  params: {
-    dnsZoneName: privateDnsZone.outputs.privateDnsZoneName
-    hostname: hostname
-    ipAddress: containerAppsEnvironment.properties.staticIp
-  }
-}
 
 module apim '../apim/apim-backend.bicep' = {
   name: 'apim-backend'
   params: {
     apimServiceName: apimServiceName
-    chargeBackApiBackendId: 'chargeback-backend'
-    chargeBackAppUri: 'https://${app.properties.configuration.ingress.fqdn}'
+    chargeBackApiBackendId: 'proxy-backend'
+    chargeBackAppUri: 'https://${hostname}.${containerAppsEnvironment.properties.defaultDomain}/openai'
   }
 }
 

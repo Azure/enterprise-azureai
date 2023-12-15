@@ -40,6 +40,33 @@ resource containerAppsEnvironment 'Microsoft.App/managedEnvironments@2023-04-01-
   }
 }
 
+module privateDnsZone '../networking/dns.bicep' = {
+  name: 'dns-deployment-app'
+  params: {
+    name: containerAppsEnvironment.properties.defaultDomain
+  }
+}
+
+module dnsEntry '../networking/dnsentry.bicep' = {
+  name: 'dns-entry-env'
+  params: {
+    dnsZoneName: privateDnsZone.outputs.privateDnsZoneName
+    hostname: '*'
+    ipAddress: containerAppsEnvironment.properties.staticIp
+  }
+}
+
+module privateDnsZoneLink '../networking/dnsvirtualnetworklink.bicep' = {
+  name: 'dns-vnetlink'
+  dependsOn: [
+    dnsEntry
+  ]
+  params: {
+    dnsZoneName: privateDnsZone.outputs.privateDnsZoneName
+    vnetName: vnetName
+  }
+}
+
 resource logAnalyticsWorkspace 'Microsoft.OperationalInsights/workspaces@2022-10-01' existing = {
   name: logAnalyticsWorkspaceName
 }

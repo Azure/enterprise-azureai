@@ -30,8 +30,6 @@ param containerRegistryName string = ''
 @description('The environment variables for the container')
 param env array = []
 
-@description('Specifies if the resource is external')
-param external bool = false
 
 @description('The name of the user-assigned identity')
 param identityName string
@@ -50,6 +48,8 @@ param targetPort int
 param pullFromPrivateRegistry bool = true
 
 param azdServiceName string 
+
+param apimServiceName string
 
 resource userIdentity 'Microsoft.ManagedIdentity/userAssignedIdentities@2023-01-31' existing = if (!empty(identityName)) {
   name: identityName
@@ -135,6 +135,15 @@ module dnsEntry '../networking/dnsentry.bicep' = {
   }
 }
 
+module apim '../apim/apim-backend.bicep' = {
+  name: 'apim-backend'
+  params: {
+    apimServiceName: apimServiceName
+    chargeBackApiBackendId: 'chargeback-backend'
+    chargeBackAppUri: app.properties.configuration.ingress.fqdn
+  }
+}
+
 
 resource containerAppsEnvironment 'Microsoft.App/managedEnvironments@2023-04-01-preview' existing = {
   name: containerAppsEnvironmentName
@@ -144,4 +153,3 @@ output defaultDomain string = containerAppsEnvironment.properties.defaultDomain
 output identityPrincipalId string = userIdentity.id
 output imageName string = imageName
 output name string = app.name
-output uri string = ingressEnabled ? 'https://${app.properties.configuration.ingress.fqdn}' : ''

@@ -311,6 +311,7 @@ module app './modules/host/container-app.bicep' = {
     //deploy sample image first - we need the endpoint already for APIM
     //real image will be deployed later
     imageName: ''
+    apimServiceName: apim.outputs.apimName
     env: [
       {
         name: 'APPCONFIG_ENDPOINT'

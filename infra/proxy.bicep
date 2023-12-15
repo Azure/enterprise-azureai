@@ -22,6 +22,7 @@ module app 'modules/host/container-app.bicep' = {
     azdServiceName: 'proxy'
     pullFromPrivateRegistry: true
     targetPort: 8080
+    apimServiceName: apimServiceName
     env: [
       {
         name: 'APPCONFIGENDPOINT'
@@ -33,11 +34,4 @@ module app 'modules/host/container-app.bicep' = {
   }
 }
 
-module apim 'modules/apim/apim-backend.bicep' = {
-  name: 'apim-backend'
-  params: {
-    apimServiceName: apimServiceName
-    chargeBackApiBackendId: 'chargeback-backend'
-    chargeBackAppUri: app.outputs.uri
-  }
-}
+

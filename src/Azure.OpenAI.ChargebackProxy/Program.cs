@@ -1,5 +1,6 @@
 using Azure.OpenAI.ChargebackProxy.ReverseProxy;
 using Azure.OpenAI.ChargebackProxy.Services;
+using System.Reflection.Metadata.Ecma335;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -38,6 +39,7 @@ builder.Services.AddReverseProxy()
 
 var app = builder.Build();
 app.MapReverseProxy();
+app.MapGet("/health", () => { return "Alive"; });
 app.Run();
 
 

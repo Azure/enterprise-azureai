@@ -16,7 +16,7 @@ OpenAIClient client = new OpenAIClient(
     );
 
 
-var deploymentName = "gpt-4";
+var deploymentName = "gpt-35-turbo";
 var chatMessages = new List<ChatMessage>();
 
 var systemChatMessage = new ChatMessage();

@@ -1,8 +1,17 @@
 param name string
 param location string = resourceGroup().location
 param tags object = {}
-param logAnalyticsWorkspaceId string
+param logAnalyticsWorkspaceResourceId string
 param dataCollectionEndpointResourceId string
+param proxyManagedIdentityName string
+
+// Monitoring Metrics Publisher role definition
+var roleDefinitionId = '3913510d-42f4-4e42-8a64-420c390055eb'
+
+resource proxyIdentity 'Microsoft.ManagedIdentity/userAssignedIdentities@2018-11-30' existing = {
+  name: proxyManagedIdentityName
+}
+
 
 var uniqueDestinationName = uniqueString('Custom-OpenAIChargeback_CL')
 
@@ -50,7 +59,7 @@ resource dataCollectionRule 'Microsoft.Insights/dataCollectionRules@2022-06-01' 
     destinations: {
       logAnalytics: [
         {
-        workspaceResourceId: logAnalyticsWorkspaceId
+        workspaceResourceId: logAnalyticsWorkspaceResourceId
         name: uniqueDestinationName
         }
       ]
@@ -67,6 +76,16 @@ resource dataCollectionRule 'Microsoft.Insights/dataCollectionRules@2022-06-01' 
         outputStream: 'Custom-OpenAIChargeback_CL'
       }
     ]
+  }
+}
+
+module roleAssignment '../roleassignments/roleassignment.bicep' = {
+  name: 'roleAssignment'
+  params: {
+    principalId: proxyIdentity.properties.principalId
+    roleDefinitionId: roleDefinitionId
+    targetResourceId: dataCollectionRule.id
+    deploymentName: 'proxy-roleassignment-MonitoringMetricsPublisher'
   }
 }
 

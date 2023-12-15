@@ -3,14 +3,8 @@ param location string = resourceGroup().location
 param tags object = {}
 //Private Endpoint
 param privateLinkScopeName string
-param chargeBackManagedIdentityName string
 
-// Monitoring Metrics Publisher role definition
-var roleDefinitionResourceId = '/providers/Microsoft.Authorization/roleDefinitions/3913510d-42f4-4e42-8a64-420c390055eb'
 
-resource managedIdentityChargeBack 'Microsoft.ManagedIdentity/userAssignedIdentities@2018-11-30' existing = {
-  name: chargeBackManagedIdentityName
-}
 
 
 resource privateLinkScope 'microsoft.insights/privateLinkScopes@2021-07-01-preview' existing = {
@@ -43,15 +37,15 @@ resource logAnalyticsScopedResource 'Microsoft.Insights/privateLinkScopes/scoped
   }
 }
 
-resource roleAssignmentChargeBack 'Microsoft.Authorization/roleAssignments@2022-04-01' = {
-  scope: logAnalytics
-  name: guid(managedIdentityChargeBack.id, roleDefinitionResourceId)
-  properties: {
-    roleDefinitionId: roleDefinitionResourceId
-    principalId: managedIdentityChargeBack.properties.principalId
-    principalType: 'ServicePrincipal'
-  }
-}
+// resource roleAssignmentChargeBack 'Microsoft.Authorization/roleAssignments@2022-04-01' = {
+//   scope: logAnalytics
+//   name: guid(managedIdentityChargeBack.id, roleDefinitionResourceId)
+//   properties: {
+//     roleDefinitionId: roleDefinitionResourceId
+//     principalId: managedIdentityChargeBack.properties.principalId
+//     principalType: 'ServicePrincipal'
+//   }
+// }
 
-output id string = logAnalytics.id
+output resourceId string = logAnalytics.id
 output name string = logAnalytics.name

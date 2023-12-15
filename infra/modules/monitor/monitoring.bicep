@@ -32,7 +32,6 @@ module logAnalytics 'loganalytics.bicep' = {
     location: location
     tags: tags
     privateLinkScopeName: privateLinkScopeName
-    chargeBackManagedIdentityName: chargeBackManagedIdentityName
   }
 }
 
@@ -42,7 +41,7 @@ module applicationInsights 'applicationinsights.bicep' = {
     name: applicationInsightsName
     location: location
     tags: tags
-    logAnalyticsWorkspaceId: logAnalytics.outputs.id
+    logAnalyticsWorkspaceId: logAnalytics.outputs.resourceId
     //Private Endpoint settings
     privateLinkScopeName: privateLinkScopeName
     vNetName: vNetName
@@ -83,17 +82,18 @@ module dataCollectionRule 'datacollectionrule.bicep' = {
   ]
   params: {
     dataCollectionEndpointResourceId: dataCollectionEndpoint.outputs.dataCollectionEndpointResourceId
-    logAnalyticsWorkspaceId: logAnalytics.outputs.id
+    logAnalyticsWorkspaceResourceId: logAnalytics.outputs.resourceId
     name: dataCollectionRuleName
     location: location
     tags: tags
+    proxyManagedIdentityName: chargeBackManagedIdentityName
   }
 }
 
 output applicationInsightsConnectionString string = applicationInsights.outputs.connectionString
 output applicationInsightsInstrumentationKey string = applicationInsights.outputs.instrumentationKey
 output applicationInsightsName string = applicationInsights.outputs.name
-output logAnalyticsWorkspaceId string = logAnalytics.outputs.id
+output logAnalyticsWorkspaceId string = logAnalytics.outputs.resourceId
 output logAnalyticsWorkspaceName string = logAnalytics.outputs.name
 output dataCollectionEndpointUrl string = dataCollectionEndpoint.outputs.dataCollectionEndPointLogIngestionUrl
 output dataCollectionRuleImmutableId string = dataCollectionRule.outputs.dataCollectionRuleImmutableId

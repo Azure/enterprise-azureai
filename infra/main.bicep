@@ -11,8 +11,8 @@ param environmentName string
 @allowed(['westeurope','southcentralus','australiaeast', 'canadaeast', 'eastus', 'eastus2', 'francecentral', 'japaneast', 'northcentralus', 'swedencentral', 'switzerlandnorth', 'uksouth'])
 param location string
 
-@description('Use Redis Cache.')
-param useRedis bool = false
+@description('Use Redis Cache for Azure API Management.')
+param useRedisCacheForAPIM bool = false
 
 @description('Add Azure Open AI Service to secondary region for load balancing.')
 @allowed(['','westeurope','southcentralus','australiaeast', 'canadaeast', 'eastus', 'eastus2', 'francecentral', 'japaneast', 'northcentralus', 'swedencentral', 'switzerlandnorth', 'uksouth'])
@@ -49,20 +49,19 @@ param arrayVersion0301Locations array = [
   'westeurope'
   'southcentralus'
 ]
-param chatGptModelVersion string = ((contains(arrayVersion0301Locations, location)) ? '0301' : '0613')
-param chatGptModelVersionSecondary string = ((contains(arrayVersion0301Locations, secondaryOpenAILocation)) ? '0301' : '0613')
+param gptModelVersion string = ((contains(arrayVersion0301Locations, location)) ? '0301' : '0613')
+param gptModelVersionSecondary string = ((contains(arrayVersion0301Locations, secondaryOpenAILocation)) ? '0301' : '0613')
 
 var abbrs = loadJsonContent('./abbreviations.json')
 var resourceToken = toLower(uniqueString(subscription().id, environmentName, location))
 var openAiSkuName = 'S0'
-var chatGptDeploymentName = 'gpt-35-turbo'
-var chatGptModelName = 'gpt-35-turbo'
+var gptDeploymentName = 'gpt-35-turbo'
+var gptModelName = 'gpt-35-turbo'
 var tags = { 'azd-env-name': environmentName }
 
 var openAiPrivateDnsZoneName = 'privatelink.openai.azure.com'
 var monitorPrivateDnsZoneName = 'privatelink.monitor.azure.com'
 var redisCachePrivateDnsZoneName = 'privatelink.redis.cache.windows.net'
-var eventHubPrivateDnsZoneName = 'privatelink.servicebus.windows.net'
 var appConfigPrivateDnsZoneName = 'privatelink.azconfig.io'
 var containerRegistryPrivateDnsZoneName = 'privatelink.azurecr.io'
 
@@ -70,8 +69,8 @@ var privateDnsZoneNames = [
   openAiPrivateDnsZoneName
   monitorPrivateDnsZoneName
   redisCachePrivateDnsZoneName
-  eventHubPrivateDnsZoneName
   containerRegistryPrivateDnsZoneName
+  appConfigPrivateDnsZoneName
 ]
 
 // Organize resources in a resource group
@@ -109,7 +108,7 @@ module managedIdentityChargeBack './modules/security/managed-identity.bicep' = {
   }
 }
 
-module redisCache './modules/cache/redis.bicep' = {
+module redisCache './modules/cache/redis.bicep' = if(useRedisCacheForAPIM){
   name: 'redis-cache'
   scope: resourceGroup
   params: {
@@ -165,24 +164,6 @@ module monitoring './modules/monitor/monitoring.bicep' = {
   }
 }
 
-// module eventHub './modules/monitor/eventhub.bicep' = {
-//   name: 'event-hub'
-//   scope: resourceGroup
-//   params: {
-//     name: !empty(eventHubNamespaceName) ? eventHubNamespaceName : '${abbrs.eventHubNamespaces}${resourceToken}'
-//     location: location
-//     tags: tags
-//     eventHubListenPolicyName: eventHubListenPolicyName
-//     eventHubSendPolicyName: eventHubSendPolicyName
-//     apimManagedIdentityName: managedIdentityApim.outputs.managedIdentityName
-//     chargeBackManagedIdentityName: managedIdentityChargeBack.outputs.managedIdentityName
-//     eventHubName: !empty(eventHubName) ? eventHubName : '${abbrs.eventHubNamespacesEventHubs}${resourceToken}'
-//     eventHubPrivateEndpointName: '${abbrs.eventHubNamespaces}${abbrs.privateEndpoints}${resourceToken}'
-//     vNetName: vnet.outputs.vnetName
-//     privateEndpointSubnetName: vnet.outputs.privateEndpointSubnetName
-//     eventHubDnsZoneName: eventHubPrivateDnsZoneName
-//   }
-// }
 
 module apim './modules/apim/apim.bicep' = {
   name: 'apim'
@@ -195,10 +176,8 @@ module apim './modules/apim/apim.bicep' = {
     virtualNetworkType: 'External'
     applicationInsightsName: monitoring.outputs.applicationInsightsName
     apimManagedIdentityName: managedIdentityApim.outputs.managedIdentityName
-    redisCacheServiceName: redisCache.outputs.cacheName
+    redisCacheServiceName: useRedisCacheForAPIM ? redisCache.outputs.cacheName : ''
     apimSubnetId: vnet.outputs.apimSubnetId
-    // eventHubName: eventHub.outputs.eventHubName
-    // eventHubNamespaceName: eventHub.outputs.eventHubNamespaceName
   }
 }
 
@@ -206,7 +185,7 @@ module openAi './modules/ai/cognitiveservices.bicep' = {
   name: 'openai'
   scope: resourceGroup
   params: {
-    name: !empty(openAiServiceName) ? openAiServiceName : '${abbrs.cognitiveServicesAccounts}${resourceToken}'
+    name: !empty(openAiServiceName) ? openAiServiceName : '${abbrs.cognitiveServicesAccounts}${resourceToken}-${location}'
     location: location
     tags: tags
     chargeBackManagedIdentityName: managedIdentityChargeBack.outputs.managedIdentityName
@@ -216,18 +195,18 @@ module openAi './modules/ai/cognitiveservices.bicep' = {
     }
     deployments: [
       {
-        name: chatGptDeploymentName
+        name: gptDeploymentName
         model: {
           format: 'OpenAI'
-          name: chatGptModelName
-          version: chatGptModelVersion
+          name: gptModelName
+          version: gptModelVersion
         }
         scaleSettings: {
           scaleType: 'Standard'
         }
       }
     ]
-    openAiPrivateEndpointName: '${abbrs.cognitiveServicesAccounts}${abbrs.privateEndpoints}${resourceToken}'
+    openAiPrivateEndpointName: '${abbrs.cognitiveServicesAccounts}${abbrs.privateEndpoints}${resourceToken}-${location}'
     vNetName: vnet.outputs.vnetName
     privateEndpointSubnetName: vnet.outputs.privateEndpointSubnetName
     openAiDnsZoneName: openAiPrivateDnsZoneName
@@ -238,7 +217,7 @@ module openAiSecondary './modules/ai/cognitiveservices.bicep' = if (secondaryOpe
   name: 'openai-secondary'
   scope: resourceGroup
   params: {
-    name: !empty(openAiServiceName) ? openAiServiceName : '${abbrs.cognitiveServicesAccounts}${resourceToken}-secondary'
+    name: !empty(openAiServiceName) ? openAiServiceName : '${abbrs.cognitiveServicesAccounts}${resourceToken}-${secondaryOpenAILocation}'
     location: secondaryOpenAILocation
     tags: tags
     chargeBackManagedIdentityName: managedIdentityChargeBack.outputs.managedIdentityName
@@ -248,18 +227,18 @@ module openAiSecondary './modules/ai/cognitiveservices.bicep' = if (secondaryOpe
     }
     deployments: [
       {
-        name: chatGptDeploymentName
+        name: gptDeploymentName
         model: {
           format: 'OpenAI'
-          name: chatGptModelName
-          version: chatGptModelVersion
+          name: gptModelName
+          version: gptModelVersionSecondary
         }
         scaleSettings: {
           scaleType: 'Standard'
         }
       }
     ]
-    openAiPrivateEndpointName: '${abbrs.cognitiveServicesAccounts}${abbrs.privateEndpoints}${resourceToken}'
+    openAiPrivateEndpointName: '${abbrs.cognitiveServicesAccounts}${abbrs.privateEndpoints}${resourceToken}-${secondaryOpenAILocation}'
     vNetName: vnet.outputs.vnetName
     privateEndpointSubnetName: vnet.outputs.privateEndpointSubnetName
     openAiDnsZoneName: openAiPrivateDnsZoneName
@@ -344,11 +323,12 @@ module appconfig 'modules/appconfig/appconfiguration.bicep' = {
     AzureMonitorDataCollectionRuleImmutableId: monitoring.outputs.dataCollectionRuleImmutableId
     location: location
     AzureOpenAIEndpoints: array(openAi.outputs.openAIEndpointUriRaw)
+    proxyManagedIdentityName: managedIdentityChargeBack.outputs.managedIdentityName
+    
   }
 }
 
 output TENTANT_ID string = subscription().tenantId
-output AOI_DEPLOYMENTID string = chatGptDeploymentName
 output DEPLOYMENT_LOCATION string = location
 output APIM_NAME string = apim.outputs.apimName
 output RESOURCE_TOKEN string = resourceToken

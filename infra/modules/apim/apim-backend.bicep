@@ -23,7 +23,7 @@ resource backend 'Microsoft.ApiManagement/service/backends@2023-03-01-preview' =
   properties: {
     description: chargeBackApiBackendId
     url: chargeBackAppUri
-    protocol: 'https'
+    protocol: 'http'
     tls: {
       validateCertificateChain: true
       validateCertificateName: true

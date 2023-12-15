@@ -16,10 +16,8 @@ param redisCacheServiceName string = ''
 param apimSubnetId string
 param virtualNetworkType string
 
-//param eventHubNamespaceName string
-// param eventHubName string
-// var eventHubEndpoint = '${eventHubNamespaceName}.servicebus.windows.net'
 
+var useRedisCache = (redisCacheServiceName != '')
 
 resource applicationInsights 'Microsoft.Insights/components@2020-02-02' existing = {
   name: applicationInsightsName
@@ -29,9 +27,10 @@ resource managedIdentityApim 'Microsoft.ManagedIdentity/userAssignedIdentities@2
   name: apimManagedIdentityName
 }
 
-resource redisCache 'Microsoft.Cache/redis@2022-06-01' existing = if (!empty(redisCacheServiceName)) {
-  name: redisCacheServiceName
-}
+// *** TODO: no time to debug this - but conditial provision is not working***
+// resource redisCache 'Microsoft.Cache/redis@2022-06-01' existing = if (useRedisCache) {
+//   name: redisCacheServiceName
+// }
 
 resource apimService 'Microsoft.ApiManagement/service@2023-03-01-preview' = {
   name: name
@@ -74,28 +73,39 @@ resource apimService 'Microsoft.ApiManagement/service@2023-03-01-preview' = {
   }
 }
 
-//2 subscription voor 2 departments.
 
-// resource apiSubscription 'Microsoft.ApiManagement/service/subscriptions@2023-03-01-preview' = {
-//   parent: apimService
-//   name: 'openai-subscription'
-//   properties: {
-//     scope: '/apis'
-//     displayName: 'OpenAI Subscription'
-//     state: 'active'
-//     allowTracing: true
-//   }
-// }
-
-resource apimCache 'Microsoft.ApiManagement/service/caches@2023-03-01-preview' = if (!empty(redisCacheServiceName)) {
-  name: 'redis-cache'
+resource apiFinanceSubscription 'Microsoft.ApiManagement/service/subscriptions@2023-03-01-preview' = {
   parent: apimService
+  name: 'finance-dept-subscription'
   properties: {
-    connectionString: '${redisCache.properties.hostName},password=${redisCache.listKeys().primaryKey},ssl=True,abortConnect=False'
-    useFromLocation: 'default'
-    description: redisCache.properties.hostName
+    scope: '/apis'
+    displayName: 'Finance'
+    state: 'active'
+    allowTracing: true
   }
 }
+
+resource apiMarketingSubscription 'Microsoft.ApiManagement/service/subscriptions@2023-03-01-preview' = {
+  parent: apimService
+  name: 'marketing-dept-subscription'
+  properties: {
+    scope: '/apis'
+    displayName: 'Marketing'
+    state: 'active'
+    allowTracing: true
+  }
+}
+
+// *** TODO: no time to debug this - but conditial provision is not working***
+// resource apimCache 'Microsoft.ApiManagement/service/caches@2023-03-01-preview' = if (useRedisCache) {
+//   name: 'redis-cache'
+//   parent: apimService
+//   properties: {
+//     connectionString: '${redisCache.properties.hostName},password=${redisCache.listKeys().primaryKey},ssl=True,abortConnect=False'
+//     useFromLocation: 'default'
+//     description: redisCache.properties.hostName
+//   }
+// }
 
 resource apimLogger 'Microsoft.ApiManagement/service/loggers@2021-12-01-preview' = {
   name: 'appinsights-logger'
@@ -110,20 +120,6 @@ resource apimLogger 'Microsoft.ApiManagement/service/loggers@2021-12-01-preview'
     resourceId: applicationInsights.id
   }
 }
-
-// resource eventHubLogger 'Microsoft.ApiManagement/service/loggers@2023-03-01-preview' = {
-//   name: 'eventhub-logger'
-//   parent: apimService
-//   properties: {
-//     loggerType: 'azureEventHub'
-//     description: 'Event hub logger with user-assigned managed identity'
-//     credentials: {
-//       endpointAddress: eventHubEndpoint
-//       identityClientId: managedIdentityApim.properties.clientId
-//       name: eventHubName
-//     }
-//   }
-// }
 
 
 output apimName string = apimService.name

@@ -22,7 +22,7 @@ param containerMemory string = '1.0Gi'
 param containerMinReplicas int = 1
 
 @description('The name of the container')
-param containerName string = 'main'
+param containerName string = 'proxy'
 
 @description('The name of the container registry')
 param containerRegistryName string = ''
@@ -140,7 +140,7 @@ module apim '../apim/apim-backend.bicep' = {
   params: {
     apimServiceName: apimServiceName
     chargeBackApiBackendId: 'chargeback-backend'
-    chargeBackAppUri: app.properties.configuration.ingress.fqdn
+    chargeBackAppUri: 'https://${app.properties.configuration.ingress.fqdn}'
   }
 }
 

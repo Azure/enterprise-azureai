@@ -14,8 +14,8 @@
       "chargeBackAppName" : {
         "value": "${SERVICE_PROXY_NAME}"
       },
-      "useRedis" : {
-        "value": "${USE_REDIS}"
+      "useRedisCacheForAPIM" : {
+        "value": "${USE_REDIS_CACHE_APIM}"
       },
       "secondaryOpenAILocation" : {
         "value": "${SECONDARY_OPENAI_LOCATION}"

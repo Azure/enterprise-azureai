@@ -13,7 +13,7 @@ namespace Azure.OpenAI.ChargebackProxy.ReverseProxy
                 ClusterId = "AzureOpenAI",
                 Match = new RouteMatch()
                 {
-                    Path = "{**catch-all}"
+                    Path = "openai/{**catch-all}"
                 }
             };
 

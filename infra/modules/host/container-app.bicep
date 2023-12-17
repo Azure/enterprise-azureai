@@ -46,6 +46,9 @@ param revisionMode string = 'Single'
 @description('The target port for the container')
 param targetPort int
 
+@description('ingress limited to vnet (true) or app environment (false)')
+param external bool
+
 param pullFromPrivateRegistry bool = true
 
 param azdServiceName string 
@@ -75,7 +78,7 @@ resource app 'Microsoft.App/containerApps@2023-04-01-preview' = {
     configuration: {
       activeRevisionsMode: revisionMode
       ingress: ingressEnabled ? {
-        //external: false
+        external: external
         targetPort: targetPort
         transport: 'auto'
         corsPolicy: {

@@ -8,6 +8,17 @@ param privateEndpointSubnetName string
 param privateEndpointNsgName string
 param privateDnsZoneNames array
 param tags object = {}
+param apimSku string
+
+
+var webServerFarmDelegation = [
+  {
+    name: 'Microsoft.Web/serverFarms'
+    properties: {
+      serviceName: 'Microsoft.Web/serverFarms'
+    }
+  }
+] 
 
 resource apimNsg 'Microsoft.Network/networkSecurityGroups@2020-07-01' = {
   name: apimNsgName
@@ -100,14 +111,7 @@ resource virtualNetwork 'Microsoft.Network/virtualNetworks@2019-11-01' = {
             id: apimNsg.id 
           }
           // Needed when using APIM StandardV2 SKU
-          delegations: [
-            {
-              name: 'Microsoft.Web/serverFarms'
-              properties: {
-                serviceName: 'Microsoft.Web/serverFarms'
-              }
-            }
-          ]
+          delegations: apimSku == 'StandardV2' ? webServerFarmDelegation :  []
         }
       }
       {

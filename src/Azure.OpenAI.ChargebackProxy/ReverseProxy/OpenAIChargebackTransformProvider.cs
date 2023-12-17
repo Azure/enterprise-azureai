@@ -148,10 +148,10 @@ internal class OpenAIChargebackTransformProvider : ITransformProvider
 
             record.TotalTokens = record.InputTokens + record.OutputTokens;
 
-            if (bool.Parse(_config["OutputToEventHub"].ToString()))
-            {
-                EventHub.SendAsync(record, _config, _managedIdentityCredential).SafeFireAndForget();
-            }
+            //if (bool.Parse(_config["OutputToEventHub"].ToString()))
+            //{
+            //    EventHub.SendAsync(record, _config, _managedIdentityCredential).SafeFireAndForget();
+            //}
 
 
             _logIngestionService.LogAsync(record).SafeFireAndForget();

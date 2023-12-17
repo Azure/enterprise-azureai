@@ -43,6 +43,8 @@ param containerAppsEnvironmentName string = ''
 param appConfigurationName string = ''
 param myIpAddress string = ''
 
+param apimSku string = 'StandardV2'
+
 
 //Determine the version of the chat model to deploy
 param arrayVersion0301Locations array = [
@@ -57,6 +59,10 @@ var resourceToken = toLower(uniqueString(subscription().id, environmentName, loc
 var openAiSkuName = 'S0'
 var gptDeploymentName = 'gpt-35-turbo'
 var gptModelName = 'gpt-35-turbo'
+var embeddingDeploymentName = 'text-embedding-ada-002'
+var embeddingModelName = 'text-embedding-ada-002'
+var embeddingModelVersion = '2'
+var embeddingModelVersionSecondary = '2'
 var tags = { 'azd-env-name': environmentName }
 
 var openAiPrivateDnsZoneName = 'privatelink.openai.azure.com'
@@ -141,6 +147,7 @@ module vnet './modules/networking/vnet.bicep' = {
     location: location
     tags: tags
     privateDnsZoneNames: privateDnsZoneNames
+    apimSku: apimSku
   }
 }
 
@@ -172,7 +179,7 @@ module apim './modules/apim/apim.bicep' = {
     name: !empty(apimServiceName) ? apimServiceName : '${abbrs.apiManagementService}${resourceToken}'
     location: location
     tags: tags
-    sku: 'StandardV2' //StandardV2
+    sku: apimSku
     virtualNetworkType: 'External'
     applicationInsightsName: monitoring.outputs.applicationInsightsName
     apimManagedIdentityName: managedIdentityApim.outputs.managedIdentityName
@@ -203,6 +210,14 @@ module openAi './modules/ai/cognitiveservices.bicep' = {
         }
         scaleSettings: {
           scaleType: 'Standard'
+        }
+      }
+      {
+        name: embeddingDeploymentName
+        model: {
+          format: 'OpenAI'
+          name: embeddingModelName
+          version: embeddingModelVersion
         }
       }
     ]
@@ -237,6 +252,15 @@ module openAiSecondary './modules/ai/cognitiveservices.bicep' = if (secondaryOpe
           scaleType: 'Standard'
         }
       }
+      {
+        name: embeddingDeploymentName
+        model: {
+          format: 'OpenAI'
+          name: embeddingModelName
+          version: embeddingModelVersionSecondary
+        }
+      }
+
     ]
     openAiPrivateEndpointName: '${abbrs.cognitiveServicesAccounts}${abbrs.privateEndpoints}${resourceToken}-${secondaryOpenAILocation}'
     vNetName: vnet.outputs.vnetName
@@ -291,6 +315,7 @@ module app './modules/host/container-app.bicep' = {
     //real image will be deployed later
     imageName: ''
     apimServiceName: apim.outputs.apimName
+    external: true
     env: [
       {
         name: 'APPCONFIG_ENDPOINT'

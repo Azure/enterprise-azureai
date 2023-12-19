@@ -11,9 +11,6 @@
       "myIpAddress": {
         "value": "${MY_IP_ADDRESS}"
       },
-      "chargeBackAppName" : {
-        "value": "${SERVICE_PROXY_NAME}"
-      },
       "useRedisCacheForAPIM" : {
         "value": "${USE_REDIS_CACHE_APIM}"
       },

@@ -23,6 +23,7 @@ module app 'modules/host/container-app.bicep' = {
     pullFromPrivateRegistry: true
     targetPort: 8080
     apimServiceName: apimServiceName
+    external: true
     env: [
       {
         name: 'APPCONFIGENDPOINT'

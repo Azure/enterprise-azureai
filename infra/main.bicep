@@ -43,7 +43,7 @@ param containerAppsEnvironmentName string = ''
 param appConfigurationName string = ''
 param myIpAddress string = ''
 
-param apimSku string = 'StandardV2'
+param apimSku string = 'Developer' //StandardV2, error on creating: service is not active.
 
 
 //Determine the version of the chat model to deploy
@@ -67,7 +67,7 @@ var tags = { 'azd-env-name': environmentName }
 
 var openAiPrivateDnsZoneName = 'privatelink.openai.azure.com'
 var monitorPrivateDnsZoneName = 'privatelink.monitor.azure.com'
-var redisCachePrivateDnsZoneName = 'privatelink.redis.cache.windows.net'
+var redisCachePrivateDnsZoneName = useRedisCacheForAPIM ? 'privatelink.redis.cache.windows.net' : ''
 var appConfigPrivateDnsZoneName = 'privatelink.azconfig.io'
 var containerRegistryPrivateDnsZoneName = 'privatelink.azurecr.io'
 

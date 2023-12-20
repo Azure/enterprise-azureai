@@ -105,9 +105,11 @@ azd monitor --overview
 
 If you deleted the deployment via the Azure Portal, and you want to run this deployment again, you might run into the issue that the APIM name is still reserved because of the soft-delete feature. You can remove the soft-delete by using this az cli command:
 
-```ps1
-$location = "<your-location>"
-$apimName = "<your-apim-name>"
+```bash
+location = "<your-location>"
+apimName = "<your-apim-name>"
+subscriptionId = "<your-subscription-id>"
+az account set --subscription $subscriptionId
 az apim deletedservice purge --location $location --service-name $apimName
 ```
 

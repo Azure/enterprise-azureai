@@ -21,9 +21,8 @@ hooks:
    preprovision: # Pull environment variable inline from local device and set in .env file
        shell: sh
        run: ./scripts/set-env.sh
-#   predown: 
-#     windows:
-#       shell: pwsh
+#   postdown: 
+#       shell: sh
 #       run: az apim deletedservice purge --location ${AZURE_LOCATION} --service-name ${APIM_NAME}
 #       interactive: true
     

@@ -18,6 +18,10 @@ param useRedisCacheForAPIM bool = false
 @allowed(['','westeurope','southcentralus','australiaeast', 'canadaeast', 'eastus', 'eastus2', 'francecentral', 'japaneast', 'northcentralus', 'swedencentral', 'switzerlandnorth', 'uksouth'])
 param secondaryOpenAILocation string = ''
 
+@description('Azure API Management SKU.')
+@allowed(['StandardV2', 'Developer', 'Premium'])
+param apimSku string = 'StandardV2'
+
 //Leave blank to use default naming conventions
 param resourceGroupName string = ''
 param openAiServiceName string = ''
@@ -42,9 +46,6 @@ param containerRegistryName string = ''
 param containerAppsEnvironmentName string = ''
 param appConfigurationName string = ''
 param myIpAddress string = ''
-
-param apimSku string = 'Developer' //StandardV2, error on creating: service is not active.
-
 
 //Determine the version of the chat model to deploy
 param arrayVersion0301Locations array = [

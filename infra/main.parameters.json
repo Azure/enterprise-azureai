@@ -16,6 +16,12 @@
       },
       "secondaryOpenAILocation" : {
         "value": "${SECONDARY_OPENAI_LOCATION}"
+      },
+      "apimSku": {
+        "value": "${APIM_SKU}"
+      },
+      "apimServiceName": {
+        "value": "${APIM_NAME}"
       }
     }
 }

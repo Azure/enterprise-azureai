@@ -25,7 +25,7 @@
         }
     },
     "forwardPorts": [8080],
-    "postCreateCommand": "",
+    "postCreateCommand": "bash -i -c 'chmod u+x ./scripts/set-env.sh'",
     "remoteUser": "vscode",
     "hostRequirements": {
         "memory": "8gb"

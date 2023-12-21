@@ -19,8 +19,8 @@ param useRedisCacheForAPIM bool = false
 param secondaryOpenAILocation string = ''
 
 @description('Azure API Management SKU.')
-@allowed(['StandardV2', 'Developer', 'Premium'])
-param apimSku string = 'StandardV2'
+//@allowed(['StandardV2', 'Developer', 'Premium'])
+param apimSku string = 'Developer'
 
 //Leave blank to use default naming conventions
 param resourceGroupName string = ''
@@ -128,6 +128,7 @@ module redisCache './modules/cache/redis.bicep' = if(useRedisCacheForAPIM){
     vNetName: vnet.outputs.vnetName
     privateEndpointSubnetName: vnet.outputs.privateEndpointSubnetName
     redisCacheDnsZoneName: redisCachePrivateDnsZoneName
+    apimServiceName: apim.outputs.apimName
   }
 }
 
@@ -184,7 +185,6 @@ module apim './modules/apim/apim.bicep' = {
     virtualNetworkType: 'External'
     applicationInsightsName: monitoring.outputs.applicationInsightsName
     apimManagedIdentityName: managedIdentityApim.outputs.managedIdentityName
-    redisCacheServiceName: useRedisCacheForAPIM ? redisCache.outputs.cacheName : ''
     apimSubnetId: vnet.outputs.apimSubnetId
   }
 }

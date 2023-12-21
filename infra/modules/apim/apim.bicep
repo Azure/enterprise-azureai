@@ -11,13 +11,9 @@ param sku string
 param skuCount int = 1
 param applicationInsightsName string
 param apimManagedIdentityName string
-param redisCacheServiceName string = ''
 //Vnet Integration
 param apimSubnetId string
 param virtualNetworkType string
-
-
-var useRedisCache = (redisCacheServiceName != '')
 
 resource applicationInsights 'Microsoft.Insights/components@2020-02-02' existing = {
   name: applicationInsightsName
@@ -26,11 +22,6 @@ resource applicationInsights 'Microsoft.Insights/components@2020-02-02' existing
 resource managedIdentityApim 'Microsoft.ManagedIdentity/userAssignedIdentities@2018-11-30' existing = {
   name: apimManagedIdentityName
 }
-
-// *** TODO: no time to debug this - but conditial provision is not working***
-// resource redisCache 'Microsoft.Cache/redis@2022-06-01' existing = if (useRedisCache) {
-//   name: redisCacheServiceName
-// }
 
 resource apimService 'Microsoft.ApiManagement/service@2023-03-01-preview' = {
   name: name
@@ -73,7 +64,6 @@ resource apimService 'Microsoft.ApiManagement/service@2023-03-01-preview' = {
   }
 }
 
-
 resource apiFinanceSubscription 'Microsoft.ApiManagement/service/subscriptions@2023-03-01-preview' = {
   parent: apimService
   name: 'finance-dept-subscription'
@@ -96,17 +86,6 @@ resource apiMarketingSubscription 'Microsoft.ApiManagement/service/subscriptions
   }
 }
 
-// *** TODO: no time to debug this - but conditial provision is not working***
-// resource apimCache 'Microsoft.ApiManagement/service/caches@2023-03-01-preview' = if (useRedisCache) {
-//   name: 'redis-cache'
-//   parent: apimService
-//   properties: {
-//     connectionString: '${redisCache.properties.hostName},password=${redisCache.listKeys().primaryKey},ssl=True,abortConnect=False'
-//     useFromLocation: 'default'
-//     description: redisCache.properties.hostName
-//   }
-// }
-
 resource apimLogger 'Microsoft.ApiManagement/service/loggers@2021-12-01-preview' = {
   name: 'appinsights-logger'
   parent: apimService
@@ -120,7 +99,6 @@ resource apimLogger 'Microsoft.ApiManagement/service/loggers@2021-12-01-preview'
     resourceId: applicationInsights.id
   }
 }
-
 
 output apimName string = apimService.name
 

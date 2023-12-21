@@ -50,41 +50,39 @@ resource apimChargeBackApi 'Microsoft.ApiManagement/service/apis@2023-03-01-prev
 }
 
 resource chargeBackApiPolicy 'Microsoft.ApiManagement/service/apis/policies@2023-03-01-preview' = {
-    name: 'policy'
-    parent: apimChargeBackApi
-    properties: {
-      value: loadTextContent('./policies/api_policy_chargeback.xml')
-      format: 'rawxml'
-    }
-    dependsOn: [
-      backend
-    ]
+  name: 'policy'
+  parent: apimChargeBackApi
+  properties: {
+    value: loadTextContent('./policies/api_policy_chargeback.xml')
+    format: 'rawxml'
   }
+  dependsOn: [
+    backend
+  ]
+}
 
-  // *** TODO: Not sure why this is not working and throwing errors ***
-  // resource diagPolicyChargeBack 'Microsoft.ApiManagement/service/apis/diagnostics@2022-08-01' = {
-  //     name: 'diagnotics-chargeback'
-  //     parent: apimChargeBackApi
-  //     properties: {
-  //       alwaysLog: 'allErrors'
-  //       httpCorrelationProtocol: 'W3C'
-  //       logClientIp: true
-  //       loggerId: apimLogger.id
-  //       metrics: true
-  //       verbosity: 'verbose'
-  //       sampling: {
-  //         samplingType: 'fixed'
-  //         percentage: 100
-  //       }
-  //       frontend: {
-  //         request: logSettings
-  //         response: logSettings
-  //       }
-  //       backend: {
-  //         request: logSettings
-  //         response: logSettings
-  //       }
-  //     }
-  //   }
-    
+resource diagnosticsPolicy 'Microsoft.ApiManagement/service/apis/diagnostics@2022-08-01' = if (!empty(apimLogger.name)) {
+  name: 'applicationinsights'
+  parent: apimChargeBackApi
+  properties: {
+    alwaysLog: 'allErrors'
+    httpCorrelationProtocol: 'W3C'
+    logClientIp: true
+    loggerId: apimLogger.id
+    metrics: true
+    verbosity: 'verbose'
+    sampling: {
+      samplingType: 'fixed'
+      percentage: 100
+    }
+    frontend: {
+      request: logSettings
+      response: logSettings
+    }
+    backend: {
+      request: logSettings
+      response: logSettings
+    }
+  }
+}
     

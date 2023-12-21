@@ -1,5 +1,6 @@
 param name string
 param location string = resourceGroup().location
+param apimServiceName string
 param tags object = {}
 
 @description('The pricing tier of the new Azure Cache for Redis instance')
@@ -48,6 +49,14 @@ module privateEndpoint '../networking/private-endpoint.bicep' = {
     privateLinkServiceId: redisCache.id
     vNetName: vNetName
     location: location
+  }
+}
+
+module apimRedisCache '../apim/apim-redis-cache.bicep' = {
+  name: 'apim-redis-cache-deployment'
+  params: {
+    apimServiceName: apimServiceName
+    redisCacheName: redisCache.name
   }
 }
 

@@ -4,9 +4,6 @@ param tags object = {}
 //Private Endpoint
 param privateLinkScopeName string
 
-
-
-
 resource privateLinkScope 'microsoft.insights/privateLinkScopes@2021-07-01-preview' existing = {
   name: privateLinkScopeName
 }

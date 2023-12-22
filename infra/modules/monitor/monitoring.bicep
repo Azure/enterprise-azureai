@@ -57,6 +57,7 @@ module dashboard 'dashboard.bicep' = {
     name: applicationInsightsDashboardName
     location: location
     applicationInsightsName: applicationInsights.outputs.name
+    logAnalyticsWorkspaceName: logAnalytics.outputs.name
   }
 }
 

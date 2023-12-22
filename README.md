@@ -38,7 +38,7 @@ The following assets have been provided:
 
 ## Credits
 
-Without the help of [Remko Brosky](https://github.com/azureholic) this amazing repository wouldn't have been possible. He helped me with the Bicep files and the chargeback proxy application. He also helped me with the documentation and the testing of the repository. So a big shoutout to him!
+Without the help of [Remko Brosky](https://github.com/azureholic) this amazing repository wouldn't have been possible. He helped me with the Bicep files and the chargeback proxy application. So a big shoutout to him!
 
 ## Architecture
 
@@ -93,7 +93,9 @@ azd pipeline config
 
 ## Monitoring
 
-The deployed resources include a Log Analytics workspace with an Application Insights dashboard to measure metrics like server response time.
+The deployed resources include a Log Analytics workspace with an Application Insights based dashboard to measure metrics like server response time and failed requests. We also included some custom visuals in the dashboard to visualize the token usage per consumer of the Azure OpenAI service.
+
+![ais-apim-openai](docs/images/dashboard.png)
 
 To open that dashboard, run this command once you've deployed:
 

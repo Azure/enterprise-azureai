@@ -38,7 +38,7 @@ The following assets have been provided:
 
 ## Credits
 
-Without the help of [Remco Brosky](https://github.com/azureholic) this amazing repository wouldn't have been possible. He helped me with the Bicep files and the chargeback proxy application. So a big shoutout to him!
+Without the help of [Remco Brosky](https://github.com/azureholic) this amazing repository wouldn't have been possible. So a big shoutout to him!
 
 ## Architecture
 

@@ -5,6 +5,8 @@ param tags object = {}
 param customSubDomainName string = name
 param deployments array = []
 param kind string = 'OpenAI'
+
+param disableLocalAuth bool = true // Only allow access to Azure OpenAI via managed identity
 param publicNetworkAccess string = 'Disabled'
 param sku object = {
   name: 'S0'
@@ -36,6 +38,7 @@ resource account 'Microsoft.CognitiveServices/accounts@2023-05-01' = {
   tags: union(tags, { 'azd-service-name': name })
   kind: kind
   properties: {
+    disableLocalAuth: disableLocalAuth 
     customSubDomainName: customSubDomainName
     publicNetworkAccess: publicNetworkAccess
     networkAcls: {

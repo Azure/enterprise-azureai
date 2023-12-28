@@ -54,6 +54,7 @@ internal class OpenAIChargebackTransformProvider : ITransformProvider
 
             //replace auth header with the accesstoken of the managed indentity of the proxy
             requestContext.ProxyRequest.Headers.Remove("api-key");
+            requestContext.ProxyRequest.Headers.Remove("Authorization");
             requestContext.ProxyRequest.Headers.Add("Authorization", $"Bearer {accessToken}");
 
         });

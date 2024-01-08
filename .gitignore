@@ -1,8 +1,6 @@
 .azure
-.vs
+.vscode
 local.tests.http
-local.softdelete.ps1
-local.del-soft-delete-apim.ps1
 bin
 obj
 local.settings.json
@@ -14,5 +12,4 @@ local.settings.json
 /infra/modules/monitor/test.customtable.params.json
 /infra/modules/monitor/test.datacollectionendpoint.params.json
 /infra/modules/monitor/test.datacollectionrule.params.json
-.vscode/settings.json
 /docs/raw/*.drawio.bkp

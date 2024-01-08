@@ -33,6 +33,7 @@ resource managedIdentityChargeBack 'Microsoft.ManagedIdentity/userAssignedIdenti
   name: chargeBackManagedIdentityName
 }
 
+// Create Azure OpenAI resource
 resource account 'Microsoft.CognitiveServices/accounts@2023-05-01' = {
   name: name
   location: location
@@ -49,6 +50,51 @@ resource account 'Microsoft.CognitiveServices/accounts@2023-05-01' = {
   sku: sku
 }
 
+// Create Azure OpenAI Content Filter (RAI policy)
+param raiPolicies array = [
+  {
+    name: 'default-policy'
+    fileName: 'default-with-jailbreak-detection.json'
+  }
+  {
+    name: 'low-filtering-policy'
+    fileName: 'low-filtering-policy.json'
+  }
+]
+
+resource managedIdentityDeploymentScript 'Microsoft.ManagedIdentity/userAssignedIdentities@2018-11-30' existing = {
+  name: 'DeploymentScriptManagedIdentity'
+}
+
+resource roleAssignmentDeploymentScript 'Microsoft.Authorization/roleAssignments@2022-04-01' = {
+  scope: account
+  name: guid(managedIdentityDeploymentScript.id, roleDefinitionResourceId)
+  properties: {
+    roleDefinitionId: roleDefinitionResourceId
+    principalId: managedIdentityDeploymentScript.properties.principalId
+    principalType: 'ServicePrincipal'
+  }
+}
+
+resource deploymentScript 'Microsoft.Resources/deploymentScripts@2023-08-01' = [for raiPolicy in raiPolicies: {
+  name: 'CreateRAIPolicy_${raiPolicy.name}'
+  location: location
+  kind: 'AzureCLI'
+  identity: {
+    type: 'UserAssigned'
+    userAssignedIdentities: {
+      '${managedIdentityDeploymentScript.id}': {}
+    }
+  }
+  properties: {
+    azCliVersion: '2.9.1'
+    scriptContent: 'az rest --method put --url ${environment().resourceManager}/subscriptions/${subscription().subscriptionId}/resourceGroups/${resourceGroup().name}/providers/Microsoft.CognitiveServices/accounts/${account.name}/raiPolicies/${raiPolicy.name}?api-version=2023-10-01-preview --debug --body @rai-policies/${raiPolicy.fileName}'
+    cleanupPreference: 'OnExpiration'
+    retentionInterval: 'PT1H'
+  }
+}]
+
+// Create Azure OpenAI model deployment
 @batchSize(1)
 resource deployment 'Microsoft.CognitiveServices/accounts/deployments@2023-05-01' = [for deployment in deployments: {
   parent: account

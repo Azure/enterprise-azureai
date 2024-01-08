@@ -1,20 +1,16 @@
-@tenantId = <your_tenant_id>
-@scope = user_impersonation
-@clientId = <app_id_consumer_app_registration>
-@clientSecret = <password_consumer_app_registration>
-@apimName = <api_management_name>
+@apimName = <your-api-management-name>
 @apiPath = openai
-@azureOpenAIDeploymentId = chat
+@azureOpenAIDeploymentId = gpt-35-turbo
 @azureOpenAIApiVersion = 2023-03-15-preview
 @prompt = "You are a helpful assistant."
-@subscriptionKey = <subscription_key>
+@stream = false
+@subscriptionKeyMarketing = <your-marketing-subscription-key>
+@subscriptionKeyFinance = <your-finance-subscription-key>
 
-"stream":true
-
-### Test Azure API Management endpoint, chat completion without OAuth2
+### Test Azure API Management endpoint with OpenAI backend, with Marketing subscription key
 POST https://{{apimName}}.azure-api.net/{{apiPath}}/deployments/{{azureOpenAIDeploymentId}}/chat/completions?api-version={{azureOpenAIApiVersion}}
 Content-Type: application/json
-Ocp-Apim-Subscription-Key: {{subscriptionKey}}
+api-key: {{subscriptionKeyMarketing}}
 
 {
     "messages": [
@@ -22,27 +18,14 @@ Ocp-Apim-Subscription-Key: {{subscriptionKey}}
             "role": "user",
             "content": {{prompt}}
         }
-    ]
+    ],
+    "stream": {{stream}}
 }
 
-### Get Token for consumer for OAuth2
-# @name consumerToken
-
-POST https://login.microsoftonline.com/{{tenantId}}/oauth2/token HTTP/1.1
-Content-Type: application/x-www-form-urlencoded
-
-client_id={{clientId}}
-&scope={{scope}}
-&client_secret={{clientSecret}}
-&grant_type=client_credentials
-
-#### Get Token Response
-@accessToken = {{consumerToken.response.body.$.access_token}}
-
-### Test Azure API Management endpoint, chat completion with OAuth2
+### Test Azure API Management endpoint with OpenAI backend, with Finance subscription key
 POST https://{{apimName}}.azure-api.net/{{apiPath}}/deployments/{{azureOpenAIDeploymentId}}/chat/completions?api-version={{azureOpenAIApiVersion}}
 Content-Type: application/json
-Authorization: Bearer {{accessToken}}
+api-key: {{subscriptionKeyFinance}}
 
 {
     "messages": [
@@ -50,5 +33,6 @@ Authorization: Bearer {{accessToken}}
             "role": "user",
             "content": {{prompt}}
         }
-    ]
+    ],
+    "stream": {{stream}}
 }

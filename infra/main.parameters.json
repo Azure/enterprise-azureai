@@ -7,6 +7,18 @@
       },
       "location": {
         "value": "${AZURE_LOCATION}"
+      },
+      "myIpAddress": {
+        "value": "${MY_IP_ADDRESS}"
+      },
+      "useRedisCacheForAPIM" : {
+        "value": "${USE_REDIS_CACHE_APIM}"
+      },
+      "secondaryOpenAILocation" : {
+        "value": "${SECONDARY_OPENAI_LOCATION}"
+      },
+      "apimServiceName": {
+        "value": "${APIM_NAME}"
       }
     }
 }

@@ -2,10 +2,23 @@ param name string
 param location string = resourceGroup().location
 param apimSubnetName string
 param apimNsgName string
+param acaSubnetName string
+param acaNsgName string
 param privateEndpointSubnetName string
 param privateEndpointNsgName string
 param privateDnsZoneNames array
 param tags object = {}
+param apimSku string
+
+
+var webServerFarmDelegation = [
+  {
+    name: 'Microsoft.Web/serverFarms'
+    properties: {
+      serviceName: 'Microsoft.Web/serverFarms'
+    }
+  }
+] 
 
 resource apimNsg 'Microsoft.Network/networkSecurityGroups@2020-07-01' = {
   name: apimNsgName
@@ -56,6 +69,14 @@ resource apimNsg 'Microsoft.Network/networkSecurityGroups@2020-07-01' = {
   }
 }
 
+resource acaNsg 'Microsoft.Network/networkSecurityGroups@2022-09-01' = {
+  name: acaNsgName
+  location: location
+  properties: {
+    securityRules: []
+  }
+}
+
 resource privateEndpointNsg 'Microsoft.Network/networkSecurityGroups@2020-07-01' = {
   name: privateEndpointNsgName
   location: location
@@ -89,6 +110,8 @@ resource virtualNetwork 'Microsoft.Network/virtualNetworks@2019-11-01' = {
           networkSecurityGroup: apimNsg.id == '' ? null : {
             id: apimNsg.id 
           }
+          // Needed when using APIM StandardV2 SKU
+          delegations: apimSku == 'StandardV2' ? webServerFarmDelegation :  []
         }
       }
       {
@@ -98,6 +121,25 @@ resource virtualNetwork 'Microsoft.Network/virtualNetworks@2019-11-01' = {
           networkSecurityGroup: privateEndpointNsg.id == '' ? null : {
             id: privateEndpointNsg.id
           }
+        }
+      }
+      {
+        name: acaSubnetName
+        properties: {
+          addressPrefix: '10.0.3.0/24'
+          networkSecurityGroup: acaNsg.id == '' ? null : {
+            id: acaNsg.id
+          }
+          delegations: [
+            {
+              name: 'Microsoft.App/environments'
+              properties: {
+                serviceName: 'Microsoft.App/environments'
+              }
+            }
+          ]
+          
+          
         }
       }
     ]
@@ -110,7 +152,11 @@ resource virtualNetwork 'Microsoft.Network/virtualNetworks@2019-11-01' = {
   resource apimSubnet 'subnets' existing = {
     name: apimSubnetName
   }
-
+  
+  resource acaSubnet 'subnets' existing = {
+    name: acaSubnetName
+  }
+  
   resource privateEndpointSubnet 'subnets' existing = {
     name: privateEndpointSubnetName
   }
@@ -131,5 +177,7 @@ output virtualNetworkId string = virtualNetwork.id
 output vnetName string = virtualNetwork.name
 output apimSubnetName string = virtualNetwork::apimSubnet.name
 output apimSubnetId string = virtualNetwork::apimSubnet.id
+output acaSubnetName string = virtualNetwork::acaSubnet.name
+output acaSubnetId string = virtualNetwork::acaSubnet.id
 output privateEndpointSubnetName string = virtualNetwork::privateEndpointSubnet.name
 output privateEndpointSubnetId string = virtualNetwork::privateEndpointSubnet.id

@@ -1,37 +1,31 @@
 {
     "name": "Azure Developer CLI",
-    "build": {
-        "dockerfile": "Dockerfile",
-        "args": {
-            // List of images: https://github.com/devcontainers/images/tree/main/src
-            "IMAGE": "python:3.10"
-        }
-    },
+    // See https://github.com/devcontainers/images/tree/main/src/dotnet for list of supported versions.
+    "image": "mcr.microsoft.com/devcontainers/dotnet:8.0",
     "features": {
         // See https://containers.dev/features for list of features
+        "ghcr.io/devcontainers/features/azure-cli:1": {},
+        "ghcr.io/devcontainers/features/docker-in-docker:2": {},
+        "ghcr.io/devcontainers/features/dotnet:2": {},
+        "ghcr.io/devcontainers/features/github-cli:1": {},
+        "ghcr.io/azure/azure-dev/azd:latest": {}
     },
     "customizations": {
-        "vscode": {
+        "vscode": {    
             "extensions": [
-                "GitHub.vscode-github-actions",
                 "ms-azuretools.azure-dev",
-                "ms-azuretools.vscode-azurefunctions",
                 "ms-azuretools.vscode-bicep",
                 "ms-azuretools.vscode-docker",
+                "ms-dotnettools.csharp",
                 "humao.rest-client",
-                "ms-vscode.vscode-node-azure-pack",
                 "ms-azuretools.vscode-apimanagement",
-                "GitHub.copilot",
-                "DotJoshJohnson.xml"
-                // Include other VSCode language extensions if needed
-                // Right click on an extension inside VSCode to add directly to devcontainer.json, or copy the extension ID
+                "ms-azuretools.vscode-azurecontainerapps",
+                "GitHub.copilot"
             ]
         }
     },
-    "forwardPorts": [
-        // Forward ports if needed for local development
-    ],
-    "postCreateCommand": "",
+    "forwardPorts": [8080],
+    "postCreateCommand": ".devcontainer/postCreate.sh",
     "remoteUser": "vscode",
     "hostRequirements": {
         "memory": "8gb"

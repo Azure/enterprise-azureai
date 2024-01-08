@@ -9,3 +9,4 @@ resource managedIdentity 'Microsoft.ManagedIdentity/userAssignedIdentities@2018-
 }
 
 output managedIdentityName string = managedIdentity.name
+output managedIdentityClientId string = managedIdentity.properties.clientId

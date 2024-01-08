@@ -1,6 +1,7 @@
 param name string
 param location string = resourceGroup().location
 param tags object = {}
+//Private Endpoint
 param privateLinkScopeName string
 
 resource privateLinkScope 'microsoft.insights/privateLinkScopes@2021-07-01-preview' existing = {
@@ -24,6 +25,7 @@ resource logAnalytics 'Microsoft.OperationalInsights/workspaces@2021-12-01-previ
   })
 }
 
+//Private Endpoint
 resource logAnalyticsScopedResource 'Microsoft.Insights/privateLinkScopes/scopedResources@2021-07-01-preview' = {
   parent: privateLinkScope
   name: '${logAnalytics.name}-connection'
@@ -32,5 +34,15 @@ resource logAnalyticsScopedResource 'Microsoft.Insights/privateLinkScopes/scoped
   }
 }
 
-output id string = logAnalytics.id
+// resource roleAssignmentChargeBack 'Microsoft.Authorization/roleAssignments@2022-04-01' = {
+//   scope: logAnalytics
+//   name: guid(managedIdentityChargeBack.id, roleDefinitionResourceId)
+//   properties: {
+//     roleDefinitionId: roleDefinitionResourceId
+//     principalId: managedIdentityChargeBack.properties.principalId
+//     principalType: 'ServicePrincipal'
+//   }
+// }
+
+output resourceId string = logAnalytics.id
 output name string = logAnalytics.name

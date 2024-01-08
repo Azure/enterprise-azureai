@@ -235,6 +235,7 @@ module openAiSecondary './modules/ai/cognitiveservices.bicep' = if (secondaryOpe
   params: {
     name: !empty(openAiServiceName) ? openAiServiceName : '${abbrs.cognitiveServicesAccounts}${resourceToken}-${secondaryOpenAILocation}'
     location: secondaryOpenAILocation
+    privateEndpointLocation: location
     tags: tags
     chargeBackManagedIdentityName: managedIdentityChargeBack.outputs.managedIdentityName
     logAnalyticsWorkspaceId: monitoring.outputs.logAnalyticsWorkspaceId

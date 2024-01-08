@@ -17,6 +17,7 @@ param logAnalyticsWorkspaceId string
 
 //Private Endpoint settings
 param openAiPrivateEndpointName string
+param privateEndpointLocation string = location
 param vNetName string
 param privateEndpointSubnetName string
 param openAiDnsZoneName string
@@ -73,7 +74,7 @@ module privateEndpoint '../networking/private-endpoint.bicep' = {
     subnetName: privateEndpointSubnetName
     privateLinkServiceId: account.id
     vNetName: vNetName
-    location: location
+    location: privateEndpointLocation
   }
 }
 

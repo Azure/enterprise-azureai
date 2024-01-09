@@ -27,6 +27,7 @@ param resourceGroupName string = ''
 param openAiServiceName string = ''
 param apimIdentityName string = ''
 param chargeBackIdentityName string = ''
+param deploymentScriptIdentityName string = ''
 param apimServiceName string = ''
 param logAnalyticsName string = ''
 param dataCollectionEndpointName string = ''
@@ -110,6 +111,16 @@ module managedIdentityChargeBack './modules/security/managed-identity.bicep' = {
   scope: resourceGroup
   params: {
     name: !empty(chargeBackIdentityName) ? chargeBackIdentityName : '${abbrs.managedIdentityUserAssignedIdentities}${resourceToken}-cb'
+    location: location
+    tags: tags
+  }
+}
+
+module managedIdentityDeploymentScript './modules/security/managed-identity.bicep' = {
+  name: 'managed-identity-deployment-script'
+  scope: resourceGroup
+  params: {
+    name: !empty(deploymentScriptIdentityName) ? deploymentScriptIdentityName : '${abbrs.managedIdentityUserAssignedIdentities}${resourceToken}-cb'
     location: location
     tags: tags
   }

@@ -25,6 +25,9 @@ param openAiDnsZoneName string
 // Cognitive Services OpenAI User
 var roleDefinitionResourceId = '/providers/Microsoft.Authorization/roleDefinitions/5e0bd9bd-7b93-4f28-af87-19fc36ad61bd'
 
+// Cognitive Services OpenAI Contributor
+var roleDefinitionDeploymentScriptResourceId = '/providers/Microsoft.Authorization/roleDefinitions/a001fd3d-188f-4b5d-821b-7da978bf7442'
+
 // resource managedIdentityApim 'Microsoft.ManagedIdentity/userAssignedIdentities@2018-11-30' existing = {
 //   name: apimManagedIdentityName
 // }
@@ -68,9 +71,9 @@ resource managedIdentityDeploymentScript 'Microsoft.ManagedIdentity/userAssigned
 
 resource roleAssignmentDeploymentScript 'Microsoft.Authorization/roleAssignments@2022-04-01' = {
   scope: account
-  name: guid(managedIdentityDeploymentScript.id, roleDefinitionResourceId)
+  name: guid(managedIdentityDeploymentScript.id, roleDefinitionDeploymentScriptResourceId)
   properties: {
-    roleDefinitionId: roleDefinitionResourceId
+    roleDefinitionId: roleDefinitionDeploymentScriptResourceId
     principalId: managedIdentityDeploymentScript.properties.principalId
     principalType: 'ServicePrincipal'
   }

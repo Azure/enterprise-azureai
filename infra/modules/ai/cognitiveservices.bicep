@@ -14,6 +14,7 @@ param sku object = {
 //param apimManagedIdentityName string
 param chargeBackManagedIdentityName string
 param logAnalyticsWorkspaceId string
+param deploymentScriptIdentityName string
 
 //Private Endpoint settings
 param openAiPrivateEndpointName string
@@ -66,7 +67,7 @@ param raiPolicies array = [
 ]
 
 resource managedIdentityDeploymentScript 'Microsoft.ManagedIdentity/userAssignedIdentities@2018-11-30' existing = {
-  name: 'DeploymentScriptManagedIdentity'
+  name: deploymentScriptIdentityName
 }
 
 resource roleAssignmentDeploymentScript 'Microsoft.Authorization/roleAssignments@2022-04-01' = {

@@ -208,6 +208,7 @@ module openAi './modules/ai/cognitiveservices.bicep' = {
     location: location
     tags: tags
     chargeBackManagedIdentityName: managedIdentityChargeBack.outputs.managedIdentityName
+    deploymentScriptIdentityName: managedIdentityDeploymentScript.outputs.managedIdentityName
     logAnalyticsWorkspaceId: monitoring.outputs.logAnalyticsWorkspaceId
     sku: {
       name: openAiSkuName
@@ -249,6 +250,7 @@ module openAiSecondary './modules/ai/cognitiveservices.bicep' = if (secondaryOpe
     privateEndpointLocation: location
     tags: tags
     chargeBackManagedIdentityName: managedIdentityChargeBack.outputs.managedIdentityName
+    deploymentScriptIdentityName: managedIdentityDeploymentScript.outputs.managedIdentityName
     logAnalyticsWorkspaceId: monitoring.outputs.logAnalyticsWorkspaceId
     sku: {
       name: openAiSkuName

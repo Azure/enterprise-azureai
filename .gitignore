@@ -5,6 +5,7 @@ local.tests.http
 bin
 obj
 local.settings.json
+*csproj.user
 /infra/.vscode/settings.json
 /infra/modules/appconfig/test.appconfiguration.params.json
 /infra/modules/monitor/test.customtable.params.json

@@ -28,7 +28,6 @@ var clusters = Clusters.GetClusterConfig(config);
 
 builder.Services.AddReverseProxy()
     .LoadFromMemory(routes, clusters)
-    //.LoadFromConfig(builder.Configuration.GetSection("ReverseProxy"))
     .ConfigureHttpClient((sp, options) =>
     {
         //decompress the Response so we can read it

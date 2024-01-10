@@ -59,7 +59,6 @@ internal class OpenAIChargebackTransformProvider : ITransformProvider
         });
         context.AddResponseTransform(async responseContext =>
         {
-
             var originalStream = await responseContext.ProxyResponse.Content.ReadAsStreamAsync();
             string capturedBody = "";
 
@@ -81,7 +80,6 @@ internal class OpenAIChargebackTransformProvider : ITransformProvider
 
             //flush any remaining content to the client
             await responseContext.HttpContext.Response.CompleteAsync();
-
 
             //now perform the analysis and create a log record
             var record = new LogAnalyticsRecord();
@@ -112,8 +110,6 @@ internal class OpenAIChargebackTransformProvider : ITransformProvider
                     else
                     {
                         string objectValue = jsonNode["object"].ToString();
-
-
 
                         switch (objectValue)
                         {
@@ -147,13 +143,6 @@ internal class OpenAIChargebackTransformProvider : ITransformProvider
             }
 
             record.TotalTokens = record.InputTokens + record.OutputTokens;
-
-            //if (bool.Parse(_config["OutputToEventHub"].ToString()))
-            //{
-            //    EventHub.SendAsync(record, _config, _managedIdentityCredential).SafeFireAndForget();
-            //}
-
-
             _logIngestionService.LogAsync(record).SafeFireAndForget();
         });
     }

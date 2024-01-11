@@ -5,23 +5,34 @@ Unleash the power of Azure OpenAI to your application developers in a secure & m
 [![Open in GitHub Codespaces](https://img.shields.io/static/v1?style=for-the-badge&label=GitHub+Codespaces&message=Open&color=lightgrey&logo=github)](https://codespaces.new/Azure/enterprise-azureai)
 [![Open in Dev Container](https://img.shields.io/static/v1?style=for-the-badge&label=Dev+Container&message=Open&color=blue&logo=visualstudiocode)](https://vscode.dev/redirect?url=vscode://ms-vscode-remote.remote-containers/cloneInVolume?url=https://github.com/Azure/enterprise-azureai)
 
-## Build Status
+## Build Status 
+
+After forking this repo, you can use this GitHub Action to enable CI/CD for your fork. Just adjust the README in your fork to point to your own GitHub repo.
 
 | GitHub Action | Status |
 | ----------- | ----------- |
 | `azd` Deploy | [![Deploy](https://github.com/Azure/enterprise-azureai/actions/workflows/azure-dev.yml/badge.svg?branch=main)](https://github.com/Azure/enterprise-azureai/actions/workflows/azure-dev.yml) |
 
+## Why
+
+When you're planning to implement Azure OpenAI in your organization for Production use, you want to make sure that you can control the costs and manage secure access to the service. You also want to make sure that you can monitor the usage of the service, so you can charge the costs back to the consuming application/team. This repository shows you how you can achieve that. 
+
+To summarize, the key benefits are:
+1. Control the costs of Azure OpenAI
+2. Secure & Monitor and manage access to Azure OpenAI centrally across your organization
+3. Utilize & loadbalance the capacity of Azure OpenAI across your organization
+
 ## About
 
-This repository demonstrates how to setup Azure OpenAI as a central capability within your organization with Azure API Management and Azure Container Apps. Azure OpenAI is a service that provides AI models that are trained on a large amount of data. You can use these models to generate text, images, and more. Azure API Management is a fully managed service that enables customers to publish, secure, transform, maintain, and monitor APIs. It is a great way to expose your APIs to the outside world in a secure and manageable way. In addition to that, we've added Azure Container Apps, which allows you to run containerized applications in Azure without having to manage any infrastructure. The containerized application in this repository is a .NET 8.0 chargeback proxy application, which allows you to chargeback the costs of the Azure OpenAI service to the application that is using it. This is a great way to control the costs of the Azure OpenAI service and offer it as a centralized capability within your organization. The chargeback proxy also supports load balancing across multiple Azure OpenAI instances, which allows you to scale the Azure OpenAI service horizontally, or enable multiple deployment models which are sometimes only available in specific regions. The chargeback report is presented in the Azure Dashboard, which is a great way to visualize the costs of the Azure OpenAI service.
+This repository illustrates how to integrate Azure OpenAI as a central capability within an organization using Azure API Management and Azure Container Apps. Azure OpenAI offers AI models for generating text, images, etc., trained on extensive data. Azure API Management facilitates secure and managed exposure of APIs to the external environment. Azure Container Apps allows running containerized applications in Azure without infrastructure management. The repository includes a .NET 8.0 proxy application to allocate Azure OpenAI service costs to the consuming application, aiding in cost control. The proxy supports load balancing and horizontal scaling of Azure OpenAI instances. A chargeback report in the Azure Dashboard visualizes Azure OpenAI service costs, making it a centralized capability within the organization.
 
-I've used the Azure Developer CLI Bicep Starter template to create this repository. With `azd` you can create a new repository with a fully functional CI/CD pipeline in minutes. You can find more information about `azd` [here](https://learn.microsoft.com/en-us/azure/developer/azure-developer-cli/).
+We've used the Azure Developer CLI Bicep Starter template to create this repository. With `azd` you can create a new repository with a fully functional CI/CD pipeline in minutes. You can find more information about `azd` [here](https://learn.microsoft.com/en-us/azure/developer/azure-developer-cli/).
 
 One of the key points of `azd` templates is that we can implement best practices together with our solution when it comes to security, network isolation, monitoring, etc. Users are free to define their own best practices for their dev teams & organization, so all deployments are followed by the same standards.
 
 The best practices we've followed for this architecture are: [Azure Integration Service Landingzone Accelerator](https://github.com/Azure/Integration-Services-Landing-Zone-Accelerator) and for Azure OpenAI we've used the blog post [Azure OpenAI Landing Zone reference architecture](https://techcommunity.microsoft.com/t5/azure-architecture-blog/azure-openai-landing-zone-reference-architecture/ba-p/3882102). For the chargeback proxy we've used the setup from the [Azure Container Apps Landingzone Accelerator](https://github.com/Azure/aca-landing-zone-accelerator).
 
-When it comes to security, there are recommendations mentioned for securing your Azure API Management instance in the Azure Integration Service Landingzone Accelerator. For example, with the use of Front Door or Application Gateway, proving Layer 7 protection and WAF capabilities, and by implementing OAuth authentication on the API Management instance. How to implement OAuth authentication on the API Management instance is described in another repository: [OAuth flow with Azure AD and Azure API Management.](https://github.com/pascalvanderheiden/ais-apim-oauth-flow). Because it really depends on the use case, we didn't implement Front Door or Application Gateway in this repository. But you can easily add it to the Bicep files if you want to, see [this](https://github.com/pascalvanderheiden/ais-sync-pattern-la-std-vnet) repository for as an example.
+When it comes to security, there are recommendations mentioned for securing your Azure API Management instance in the accelerators above. For example, with the use of Front Door or Application Gateway (see [this](https://github.com/pascalvanderheiden/ais-sync-pattern-la-std-vnet) repository), proving Layer 7 protection and WAF capabilities, and by implementing OAuth authentication on the API Management instance. How to implement OAuth authentication on API Management (see [here](https://github.com/pascalvanderheiden/ais-apim-oauth-flow) repository).
 
 We're also using [Azure Monitor Private Link Scope](https://learn.microsoft.com/en-us/azure/azure-monitor/logs/private-link-security#configure-access-to-your-resources). This allows us to define the boundaries of my monitoring network, and only allow traffic from within that network to my Log Analytics workspace. This is a great way to secure your monitoring network.
 
@@ -31,10 +42,6 @@ The following assets have been provided:
 - A [dev container](https://containers.dev) configuration file under the `.devcontainer` directory that installs infrastructure tooling by default. This can be readily used to create cloud-hosted developer environments such as [GitHub Codespaces](https://aka.ms/codespaces).
 - Continuous deployment workflows for CI providers such as GitHub Actions under the `.github` directory, and Azure Pipelines under the `.azdo` directory that work for most use-cases.
 - The .NET 8.0 chargeback proxy application under the `src` folder.
-
-## Credits
-
-Without the help of [Remco Brosky](https://github.com/azureholic) this amazing repository wouldn't have been possible. So a big shoutout to him!
 
 ## Architecture
 
@@ -87,6 +94,14 @@ This project includes a Github workflow and a Azure DevOps Pipeline for deployin
 
 ```shell
 azd pipeline config
+```
+
+## Enable AZD support for ADE (Azure Development Environment)
+
+You can configure `azd` to provision and deploy resources to your deployment environments using standard commands such as `azd up` or `azd provision`. When `platform.type` is set to devcenter, all `azd` remote environment state and provisioning uses dev center components. `azd` uses one of the infrastructure templates defined in your dev center catalog for resource provisioning. In this configuration, the infra folder in your local templates isn’t used.
+
+```shell
+ azd config set platform.type devcenter
 ```
 
 ## Monitoring

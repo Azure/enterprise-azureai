@@ -1,0 +1,93 @@
+{
+    "name": "low-filtering-policy",
+    "displayName": "Policy which only blocks low severity content",
+    "properties": {
+        "basePolicyName": "Microsoft.Default",
+        "type": "UserManaged",
+        "contentFilters": [
+            {
+                "name": "hate",
+                "blocking": true,
+                "enabled": true,
+                "allowedContentLevel": "medium",
+                "source": "prompt"
+            },
+            {
+                "name": "sexual",
+                "blocking": true,
+                "enabled": true,
+                "allowedContentLevel": "medium",
+                "source": "prompt"
+            },
+            {
+                "name": "selfharm",
+                "blocking": true,
+                "enabled": true,
+                "allowedContentLevel": "medium",
+                "source": "prompt"
+            },
+            {
+                "name": "violence",
+                "blocking": true,
+                "enabled": true,
+                "allowedContentLevel": "medium",
+                "source": "prompt"
+            },
+            {
+                "name": "hate",
+                "blocking": true,
+                "enabled": true,
+                "allowedContentLevel": "medium",
+                "source": "completion"
+            },
+            {
+                "name": "sexual",
+                "blocking": true,
+                "enabled": true,
+                "allowedContentLevel": "medium",
+                "source": "completion"
+            },
+            {
+                "name": "selfharm",
+                "blocking": true,
+                "enabled": true,
+                "allowedContentLevel": "medium",
+                "source": "completion"
+            },
+            {
+                "name": "violence",
+                "blocking": true,
+                "enabled": true,
+                "allowedContentLevel": "medium",
+                "source": "completion"
+            },
+            {
+                "name": "jailbreak",
+                "blocking": true,
+                "source": "prompt",
+                "enabled": true
+            },
+            {
+                "name": "protected_material_text",
+                "blocking": false,
+                "source": "completion",
+                "enabled": true
+            },
+            {
+                "name": "protected_material_code",
+                "blocking": false,
+                "source": "completion",
+                "enabled": true
+            },
+            {
+                "name": "profanity",
+                "blocking": false,
+                "source": "completion",
+                "enabled": false
+            }
+        ],
+        "completionBlocklists": [],
+        "promptBlocklists": [],
+        "mode": "default"
+    }
+}

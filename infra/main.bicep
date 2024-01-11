@@ -27,6 +27,7 @@ param resourceGroupName string = ''
 param openAiServiceName string = ''
 param apimIdentityName string = ''
 param chargeBackIdentityName string = ''
+param deploymentScriptIdentityName string = ''
 param apimServiceName string = ''
 param logAnalyticsName string = ''
 param dataCollectionEndpointName string = ''
@@ -115,6 +116,16 @@ module managedIdentityChargeBack './modules/security/managed-identity.bicep' = {
   }
 }
 
+module managedIdentityDeploymentScript './modules/security/managed-identity.bicep' = {
+  name: 'managed-identity-deployment-script'
+  scope: resourceGroup
+  params: {
+    name: !empty(deploymentScriptIdentityName) ? deploymentScriptIdentityName : '${abbrs.managedIdentityUserAssignedIdentities}${resourceToken}-cb'
+    location: location
+    tags: tags
+  }
+}
+
 module redisCache './modules/cache/redis.bicep' = if(useRedisCacheForAPIM){
   name: 'redis-cache'
   scope: resourceGroup
@@ -197,6 +208,7 @@ module openAi './modules/ai/cognitiveservices.bicep' = {
     location: location
     tags: tags
     chargeBackManagedIdentityName: managedIdentityChargeBack.outputs.managedIdentityName
+    deploymentScriptIdentityName: managedIdentityDeploymentScript.outputs.managedIdentityName
     logAnalyticsWorkspaceId: monitoring.outputs.logAnalyticsWorkspaceId
     sku: {
       name: openAiSkuName
@@ -238,6 +250,7 @@ module openAiSecondary './modules/ai/cognitiveservices.bicep' = if (secondaryOpe
     privateEndpointLocation: location
     tags: tags
     chargeBackManagedIdentityName: managedIdentityChargeBack.outputs.managedIdentityName
+    deploymentScriptIdentityName: managedIdentityDeploymentScript.outputs.managedIdentityName
     logAnalyticsWorkspaceId: monitoring.outputs.logAnalyticsWorkspaceId
     sku: {
       name: openAiSkuName

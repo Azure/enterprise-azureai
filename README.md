@@ -63,6 +63,8 @@ azd env set USE_REDIS_CACHE_APIM '<true-or-false>'
 azd env set SECONDARY_OPENAI_LOCATION '<your-secondary-openai-location>'
 ```
 
+> Note. Because Azure OpenAI isn't available yet in all regions, you might get an error when you deploy the resources. These OpenAI regions are allowed: westeurope, southcentralus, australiaeast, canadaeast, eastus, eastus2, francecentral, japaneast, northcentralus, swedencentral, switzerlandnorth, uksouth. You can find more information about the availability of Azure OpenAI [here](https://docs.microsoft.com/en-us/azure/openai/overview/regions).
+
 There is one environment variable we set automatically in the `azd` template, and that is your ip address. We use this to allow traffic from your local machine to the Azure Container Registry to deploy the containerized application.
 
 ### Step 3: Provision and deploy all the resources
@@ -75,8 +77,8 @@ It will prompt you to login, pick a subscription, and provide a location (like "
 
 For more details on the deployed services, see [additional details](#additional-details) below.
 
-> Note. Because Azure OpenAI isn't available yet in all regions, you might get an error when you deploy the resources. You can find more information about the availability of Azure OpenAI [here](https://docs.microsoft.com/en-us/azure/openai/overview/regions).
 > Note. It will take about 25 minutes to deploy Azure Redis Cache, that's why it's optional.
+
 > Note. Sometimes the dns zones for the private endpoints aren't created correctly / in time. If you get an error when you deploy the resources, you can try to deploy the resources again.
 
 ## CI/CD pipeline

@@ -8,6 +8,9 @@ public static class Tokens
 {
     public static int GetTokensFromString(string str, string modelName)
     {
+        if (modelName.Contains("gpt-35"))
+            modelName = modelName.Replace("35", "3.5");
+
         var encodingManager = TikToken.EncodingForModel(modelName);
         var encoding = encodingManager.Encode(str);
         int nrTokens = encoding.Count();

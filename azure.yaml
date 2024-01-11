@@ -5,12 +5,12 @@
 # To learn more about the azure.yaml file, visit https://learn.microsoft.com/en-us/azure/developer/azure-developer-cli/azd-schema
 
 # Name of the application.
-name: ais-apim-openai
+name: enterprise-azureai
 metadata:
-  template: ais-apim-openai@1.0.0
+  template: enterprise-azureai@1.0.0
 services:
   proxy:
-    project: ./src/AzureAI.Proxy
+    project: ./src/dotnet/AzureAI.Proxy
     host: containerapp
     language: dotnet
     

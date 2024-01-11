@@ -11,7 +11,8 @@ param publicNetworkAccess string = 'Disabled'
 param sku object = {
   name: 'S0'
 }
-//param apimManagedIdentityName string
+
+param deploymentScriptIdentityName string
 param chargeBackManagedIdentityName string
 param logAnalyticsWorkspaceId string
 
@@ -24,6 +25,8 @@ param openAiDnsZoneName string
 
 // Cognitive Services OpenAI User
 var roleDefinitionResourceId = '/providers/Microsoft.Authorization/roleDefinitions/5e0bd9bd-7b93-4f28-af87-19fc36ad61bd'
+// Cognitive Services OpenAI Contributor
+var roleDefinitionDeploymentScriptResourceId = '/providers/Microsoft.Authorization/roleDefinitions/a001fd3d-188f-4b5d-821b-7da978bf7442'
 
 // resource managedIdentityApim 'Microsoft.ManagedIdentity/userAssignedIdentities@2018-11-30' existing = {
 //   name: apimManagedIdentityName
@@ -31,6 +34,10 @@ var roleDefinitionResourceId = '/providers/Microsoft.Authorization/roleDefinitio
 
 resource managedIdentityChargeBack 'Microsoft.ManagedIdentity/userAssignedIdentities@2018-11-30' existing = {
   name: chargeBackManagedIdentityName
+}
+
+resource managedIdentityDeploymentScript 'Microsoft.ManagedIdentity/userAssignedIdentities@2018-11-30' existing = {
+  name: deploymentScriptIdentityName
 }
 
 resource account 'Microsoft.CognitiveServices/accounts@2023-05-01' = {
@@ -48,6 +55,49 @@ resource account 'Microsoft.CognitiveServices/accounts@2023-05-01' = {
   }
   sku: sku
 }
+
+
+resource roleAssignmentDeploymentScript 'Microsoft.Authorization/roleAssignments@2022-04-01' = {
+  scope: account
+  name: guid(managedIdentityDeploymentScript.id, roleDefinitionDeploymentScriptResourceId)
+  properties: {
+    roleDefinitionId: roleDefinitionDeploymentScriptResourceId
+    principalId: managedIdentityDeploymentScript.properties.principalId
+    principalType: 'ServicePrincipal'
+  }
+}
+
+param raiPolicies array = [
+  {
+    name: 'default-policy'
+    payload: replace(loadTextContent('rai_policies/default-with-jailbreak-detection.json'), '"', '\\"')
+  }
+  {
+    name: 'low-filtering-policy'
+    payload: replace(loadTextContent('rai_policies/low-filtering-policy.json'), '"', '\\"')
+  }
+]
+
+
+
+
+resource deploymentScript 'Microsoft.Resources/deploymentScripts@2023-08-01' = [for raiPolicy in raiPolicies: {
+  name: 'CreateRAIPolicy_${raiPolicy.name}'
+  location: location
+  kind: 'AzureCLI'
+  identity: {
+    type: 'UserAssigned'
+    userAssignedIdentities: {
+      '${managedIdentityDeploymentScript.id}': {}
+    }
+  }
+  properties: {
+    azCliVersion: '2.9.1'
+    scriptContent: 'az rest --method put --url ${environment().resourceManager}/subscriptions/${subscription().subscriptionId}/resourceGroups/${resourceGroup().name}/providers/Microsoft.CognitiveServices/accounts/${account.name}/raiPolicies/${raiPolicy.name}?api-version=2023-10-01-preview --debug --body "${raiPolicy.payload}"'
+    cleanupPreference: 'OnExpiration'
+    retentionInterval: 'PT1H'
+  }
+}]
 
 @batchSize(1)
 resource deployment 'Microsoft.CognitiveServices/accounts/deployments@2023-05-01' = [for deployment in deployments: {
@@ -78,15 +128,7 @@ module privateEndpoint '../networking/private-endpoint.bicep' = {
   }
 }
 
-// resource roleAssignmentApim 'Microsoft.Authorization/roleAssignments@2022-04-01' = {
-//   scope: account
-//   name: guid(managedIdentityApim.id, roleDefinitionResourceId)
-//   properties: {
-//     roleDefinitionId: roleDefinitionResourceId
-//     principalId: managedIdentityApim.properties.principalId
-//     principalType: 'ServicePrincipal'
-//   }
-// }
+
 
 resource roleAssignmentChargeBack 'Microsoft.Authorization/roleAssignments@2022-04-01' = {
   scope: account

@@ -1,6 +1,7 @@
 ﻿using System.Text.Json.Nodes;
+using AzureAI.Proxy.Models;
 
-namespace Azure.OpenAI.ChargebackProxy.OpenAIHandlers
+namespace AzureAI.Proxy.OpenAIHandlers
 {
     public static class Usage
     {

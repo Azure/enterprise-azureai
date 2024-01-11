@@ -1,5 +1,5 @@
-using Azure.OpenAI.ChargebackProxy.ReverseProxy;
-using Azure.OpenAI.ChargebackProxy.Services;
+using AzureAI.Proxy.ReverseProxy;
+using AzureAI.Proxy.Services;
 using System.Reflection.Metadata.Ecma335;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -28,7 +28,6 @@ var clusters = Clusters.GetClusterConfig(config);
 
 builder.Services.AddReverseProxy()
     .LoadFromMemory(routes, clusters)
-    //.LoadFromConfig(builder.Configuration.GetSection("ReverseProxy"))
     .ConfigureHttpClient((sp, options) =>
     {
         //decompress the Response so we can read it

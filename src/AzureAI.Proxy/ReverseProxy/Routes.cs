@@ -1,7 +1,6 @@
-﻿using Microsoft.Extensions.Azure;
-using Yarp.ReverseProxy.Configuration;
+﻿using Yarp.ReverseProxy.Configuration;
 
-namespace Azure.OpenAI.ChargebackProxy.ReverseProxy
+namespace AzureAI.Proxy.ReverseProxy
 {
     public class Routes
     {

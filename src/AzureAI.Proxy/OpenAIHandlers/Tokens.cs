@@ -2,12 +2,15 @@
 using System.Text.Json;
 using TiktokenSharp;
 
-namespace Azure.OpenAI.ChargebackProxy.OpenAIHandlers;
+namespace AzureAI.Proxy.OpenAIHandlers;
 
 public static class Tokens
 {
     public static int GetTokensFromString(string str, string modelName)
     {
+        if (modelName.Contains("gpt-35"))
+            modelName = modelName.Replace("35", "3.5");
+
         var encodingManager = TikToken.EncodingForModel(modelName);
         var encoding = encodingManager.Encode(str);
         int nrTokens = encoding.Count();

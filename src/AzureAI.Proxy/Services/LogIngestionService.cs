@@ -1,9 +1,9 @@
-﻿using Azure.Core;
-using Azure.Identity;
+﻿using Azure;
+using Azure.Core;
 using Azure.Monitor.Ingestion;
 using System.Text.Json;
 
-namespace Azure.OpenAI.ChargebackProxy.Services
+namespace AzureAI.Proxy.Services
 {
     public class LogIngestionService : ILogIngestionService
     {

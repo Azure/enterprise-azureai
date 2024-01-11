@@ -2,7 +2,7 @@
 using Yarp.ReverseProxy.Configuration;
 using Yarp.ReverseProxy.LoadBalancing;
 
-namespace Azure.OpenAI.ChargebackProxy.ReverseProxy
+namespace AzureAI.Proxy.ReverseProxy
 {
     public class Clusters
     {

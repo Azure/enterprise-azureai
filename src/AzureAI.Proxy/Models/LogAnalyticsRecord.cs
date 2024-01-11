@@ -1,6 +1,4 @@
-﻿using System.Text.Json.Serialization;
-
-namespace Azure.OpenAI.ChargebackProxy;
+﻿namespace AzureAI.Proxy;
 public class LogAnalyticsRecord
 {
     public DateTime TimeGenerated { get; set; }
@@ -10,10 +8,4 @@ public class LogAnalyticsRecord
     public int InputTokens { get; set; }
     public int OutputTokens { get; set; }
     public int TotalTokens { get; set; }
-}
-
-[JsonSourceGenerationOptions(WriteIndented = true)]
-[JsonSerializable(typeof(List<LogAnalyticsRecord>))]
-internal partial class LogAnalyticsRecordSourceGenerationContext : JsonSerializerContext
-{
 }

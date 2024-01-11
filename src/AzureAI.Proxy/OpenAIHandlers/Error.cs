@@ -1,6 +1,6 @@
 ﻿using System.Text.Json.Nodes;
 
-namespace Azure.OpenAI.ChargebackProxy.OpenAIHandlers;
+namespace AzureAI.Proxy.OpenAIHandlers;
 
 public static class Error
 {

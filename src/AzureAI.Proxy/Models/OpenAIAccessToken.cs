@@ -2,7 +2,7 @@
 using Microsoft.IdentityModel.Tokens;
 using System.IdentityModel.Tokens.Jwt;
 
-namespace Azure.OpenAI.ChargebackProxy;
+namespace AzureAI.Proxy.Models;
 
 public static class OpenAIAccessToken
 {
@@ -11,7 +11,7 @@ public static class OpenAIAccessToken
     public async static Task<string> GetAccessTokenAsync(TokenCredential managedIdenitityCredential, CancellationToken cancellationToken)
     {
         var accessToken = await managedIdenitityCredential.GetTokenAsync(
-            new Azure.Core.TokenRequestContext(
+            new TokenRequestContext(
                 new[] { OPENAI_SCOPE }
                 ),
             cancellationToken
@@ -22,7 +22,7 @@ public static class OpenAIAccessToken
 
 
     public static bool IsTokenExpired(string accessToken, string tenantId)
-    { 
+    {
         var validationParameters = new TokenValidationParameters
         {
             ValidateIssuer = true,
@@ -30,7 +30,7 @@ public static class OpenAIAccessToken
             ValidateAudience = true,
             ValidAudience = "https://cognitiveservices.azure.com",
             ValidateLifetime = true
-           
+
         };
 
         try
@@ -38,8 +38,8 @@ public static class OpenAIAccessToken
             var tokenHandler = new JwtSecurityTokenHandler();
             tokenHandler.ValidateToken(accessToken, validationParameters, out SecurityToken validatedToken);
             return true;
-        } 
-        catch (SecurityTokenValidationException ex) 
+        }
+        catch (SecurityTokenValidationException ex)
         {
             return false;
         }

@@ -1,16 +1,15 @@
-﻿using System.Text.Json.Nodes;
-using System.Text.Json;
+﻿using AsyncAwaitBestPractices;
+using Azure.Core;
+using AzureAI.Proxy.Models;
+using AzureAI.Proxy.OpenAIHandlers;
+using AzureAI.Proxy.Services;
 using System.Text;
+using System.Text.Json;
+using System.Text.Json.Nodes;
 using Yarp.ReverseProxy.Transforms;
 using Yarp.ReverseProxy.Transforms.Builder;
-using Azure.Core;
-using Azure.OpenAI.ChargebackProxy.OpenAIHandlers;
-using Azure.Monitor.Ingestion;
-using AsyncAwaitBestPractices;
-using Azure.OpenAI.ChargebackProxy.Services;
-using Azure.Identity;
 
-namespace Azure.OpenAI.ChargebackProxy.ReverseProxy;
+namespace AzureAI.Proxy.ReverseProxy;
 
 internal class OpenAIChargebackTransformProvider : ITransformProvider
 {
@@ -60,7 +59,6 @@ internal class OpenAIChargebackTransformProvider : ITransformProvider
         });
         context.AddResponseTransform(async responseContext =>
         {
-
             var originalStream = await responseContext.ProxyResponse.Content.ReadAsStreamAsync();
             string capturedBody = "";
 
@@ -82,7 +80,6 @@ internal class OpenAIChargebackTransformProvider : ITransformProvider
 
             //flush any remaining content to the client
             await responseContext.HttpContext.Response.CompleteAsync();
-
 
             //now perform the analysis and create a log record
             var record = new LogAnalyticsRecord();
@@ -113,8 +110,6 @@ internal class OpenAIChargebackTransformProvider : ITransformProvider
                     else
                     {
                         string objectValue = jsonNode["object"].ToString();
-
-
 
                         switch (objectValue)
                         {
@@ -148,13 +143,6 @@ internal class OpenAIChargebackTransformProvider : ITransformProvider
             }
 
             record.TotalTokens = record.InputTokens + record.OutputTokens;
-
-            //if (bool.Parse(_config["OutputToEventHub"].ToString()))
-            //{
-            //    EventHub.SendAsync(record, _config, _managedIdentityCredential).SafeFireAndForget();
-            //}
-
-
             _logIngestionService.LogAsync(record).SafeFireAndForget();
         });
     }

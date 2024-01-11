@@ -5,6 +5,7 @@ using Microsoft.Extensions.Configuration;
 IConfigurationRoot config = new ConfigurationBuilder()
     .AddJsonFile("appsettings.json")
     .AddJsonFile("appsettings.Development.json", optional: true)
+    .AddUserSecrets<Program>()
     .Build();
 
 var proxyEndpoint = config["ProxyEndPoint"];

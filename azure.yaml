@@ -10,7 +10,7 @@ metadata:
   template: ais-apim-openai@1.0.0
 services:
   proxy:
-    project: ./src/Azure.OpenAI.ChargebackProxy
+    project: ./src/AzureAI.Proxy
     host: containerapp
     language: dotnet
     

@@ -25,7 +25,7 @@
         }
     },
     "forwardPorts": [8080],
-    "postCreateCommand": ".devcontainer/postCreate.sh",
+    "postCreateCommand": "sh .devcontainer/postCreate.sh",
     "remoteUser": "vscode",
     "hostRequirements": {
         "memory": "8gb"

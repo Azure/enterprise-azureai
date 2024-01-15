@@ -61,12 +61,14 @@ azd up
 
 It will prompt you to login, pick a subscription, and provide a location (like "eastus"). Then it will provision the resources in your account and deploy the latest code.
 
-> Note. Because Azure OpenAI isn't available in all regions, you might get an error when you deploy the resources. You can find more information about the availability of Azure OpenAI [here](https://docs.microsoft.com/en-us/azure/openai/overview/regions).
+> [!NOTE]  
+> Because Azure OpenAI isn't available in all regions, you might get an error when you deploy the resources. You can find more information about the availability of Azure OpenAI [here](https://docs.microsoft.com/en-us/azure/openai/overview/regions).
 
 For more details on the deployed services, see [additional details](#additional-details) below.
 
 
-> Note. Sometimes the DNS zones for the private endpoints aren't created correctly / in time. If you get an error when you deploy the resources, you can try to deploy the resources again.
+> [!NOTE]  
+> Sometimes the DNS zones for the private endpoints aren't created correctly / in time. If you get an error when you deploy the resources, you can try to deploy the resources again.
 
 ## Optional features
 
@@ -77,7 +79,8 @@ You can [enable Azure Redis Cache to improve the performance of Azure API Manage
 ```shell
 azd env set USE_REDIS_CACHE_APIM 'true'
 ```
-> Note. Deployment of Azure Redis Cache can take up to 30 minutes.
+> [!NOTE]
+> Deployment of Azure Redis Cache can take up to 30 minutes.
 
 ### Secondary Azure OpenAI location
 You can enable a secondary Azure OpenAI location to improve the availability of Azure OpenAI. To enable this feature, set the `SECONDARY_OPENAI_LOCATION` environment variable to the [location of your choice](https://learn.microsoft.com/en-us/azure/ai-services/openai/concepts/models).

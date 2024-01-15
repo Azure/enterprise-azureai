@@ -25,8 +25,3 @@ hooks:
     windows:
       shell: pwsh
       run: ./scripts/set-env.ps1
-#   postdown: 
-#       shell: sh
-#       run: az apim deletedservice purge --location ${AZURE_LOCATION} --service-name ${APIM_NAME}
-#       interactive: true
-    

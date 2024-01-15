@@ -1,0 +1,62 @@
+{
+    "id": "chatcmpl-8hJ026MiNo0pc8vYBB8P7PdvCe4JA",
+    "object": "chat.completion",
+    "created": 1705331830,
+    "model": "gpt-35-turbo",
+    "prompt_filter_results": [
+        {
+            "prompt_index": 0,
+            "content_filter_results": {
+                "hate": {
+                    "filtered": false,
+                    "severity": "safe"
+                },
+                "self_harm": {
+                    "filtered": false,
+                    "severity": "safe"
+                },
+                "sexual": {
+                    "filtered": false,
+                    "severity": "safe"
+                },
+                "violence": {
+                    "filtered": false,
+                    "severity": "safe"
+                }
+            }
+        }
+    ],
+    "choices": [
+        {
+            "finish_reason": "stop",
+            "index": 0,
+            "message": {
+                "role": "assistant",
+                "content": "Microsoft was founded on April 4, 1975, by Bill Gates and Paul Allen. Bill Gates is an American entrepreneur, software developer, and philanthropist. He is best known for co-founding Microsoft Corporation and leading it to become one of the world's largest personal computer software companies. Paul Allen was also an American entrepreneur and philanthropist. He co-founded Microsoft with Bill Gates and was responsible for many of the company's early successes. After leaving Microsoft, Allen went on to become a successful investor and philanthropist, funding various projects in science, education, and the arts."
+            },
+            "content_filter_results": {
+                "hate": {
+                    "filtered": false,
+                    "severity": "safe"
+                },
+                "self_harm": {
+                    "filtered": false,
+                    "severity": "safe"
+                },
+                "sexual": {
+                    "filtered": false,
+                    "severity": "safe"
+                },
+                "violence": {
+                    "filtered": false,
+                    "severity": "safe"
+                }
+            }
+        }
+    ],
+    "usage": {
+        "prompt_tokens": 40,
+        "completion_tokens": 120,
+        "total_tokens": 160
+    }
+}

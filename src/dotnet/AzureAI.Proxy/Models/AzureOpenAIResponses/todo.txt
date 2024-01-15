@@ -1,0 +1,7 @@
+Use these files to create classes to have a 
+better deserialization experience
+
+We need to make sure that the class is bound to an API version so future
+responses can be modeled in a different class.
+
+Will check this with newer API version and see if the output is different

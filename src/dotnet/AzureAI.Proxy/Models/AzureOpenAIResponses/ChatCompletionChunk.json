@@ -1,0 +1,33 @@
+{
+    "id": "chatcmpl-8hJ9PUNF5akuDmpMyR3ks9AzTZhCT",
+    "object": "chat.completion.chunk",
+    "created": 1705332411,
+    "model": "gpt-35-turbo",
+    "choices": [
+        {
+            "finish_reason": null,
+            "index": 0,
+            "delta": {
+                "content": ","
+            },
+            "content_filter_results": {
+                "hate": {
+                    "filtered": false,
+                    "severity": "safe"
+                },
+                "self_harm": {
+                    "filtered": false,
+                    "severity": "safe"
+                },
+                "sexual": {
+                    "filtered": false,
+                    "severity": "safe"
+                },
+                "violence": {
+                    "filtered": false,
+                    "severity": "safe"
+                }
+            }
+        }
+    ]
+}

@@ -6,6 +6,7 @@ using Microsoft.Extensions.Configuration;
 using Yarp.ReverseProxy.Configuration;
 using Yarp.ReverseProxy.LoadBalancing;
 
+//can we make the proxy determine its own cluster and route configuration?
 
 var config = new ConfigurationBuilder().AddUserSecrets<Program>().Build();
 
@@ -52,6 +53,16 @@ foreach (var entry in tempClusters)
          Console.WriteLine($"    {url}");
     }
 }
+
+//can we use this to create routes and clusters for YARP?
+//probably
+//but:
+//  - we need to figure out what a PTU looks like to prioritize that over PAYG
+//  - we need at least a YARP route per deploymentname, so loadbalancing
+//    will actually work when deploymentnames across instances differ 
+//    (now roundrobin works just on instances and it does not consider 
+//    the deployment)
+
 
 
 

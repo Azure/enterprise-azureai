@@ -21,27 +21,13 @@ public static class OpenAIAccessToken
     }
 
 
-    public static bool IsTokenExpired(string accessToken, string tenantId)
+    public static bool IsTokenExpired(string accessToken)
     {
-        var validationParameters = new TokenValidationParameters
-        {
-            ValidateIssuer = true,
-            ValidIssuer = $"https://sts.windows.net/{tenantId}/",
-            ValidateAudience = true,
-            ValidAudience = "https://cognitiveservices.azure.com",
-            ValidateLifetime = true
+        var tokenHandler = new JwtSecurityTokenHandler();
+        var jwttoken = tokenHandler.ReadToken(accessToken);
+        var expDate = jwttoken.ValidTo;
 
-        };
-
-        try
-        {
-            var tokenHandler = new JwtSecurityTokenHandler();
-            tokenHandler.ValidateToken(accessToken, validationParameters, out SecurityToken validatedToken);
-            return true;
-        }
-        catch (SecurityTokenValidationException ex)
-        {
-            return false;
-        }
+        bool result = expDate < DateTime.UtcNow;
+        return result;
     }
 }

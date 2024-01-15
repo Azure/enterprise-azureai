@@ -46,7 +46,7 @@ internal class OpenAIChargebackTransformProvider : ITransformProvider
             requestContext.HttpContext.Request.EnableBuffering();
 
             //check accessToken before replacing the Auth Header
-            if (String.IsNullOrEmpty(accessToken) || OpenAIAccessToken.IsTokenExpired(accessToken, _config["EntraId:TenantId"]))
+            if (String.IsNullOrEmpty(accessToken) || OpenAIAccessToken.IsTokenExpired(accessToken))
             {
                 accessToken = await OpenAIAccessToken.GetAccessTokenAsync(_managedIdentityCredential, CancellationToken.None);
             }
@@ -59,8 +59,8 @@ internal class OpenAIChargebackTransformProvider : ITransformProvider
         });
         context.AddResponseTransform(async responseContext =>
         {
-            var originalStream = await responseContext.ProxyResponse.Content.ReadAsStreamAsync();
-            string capturedBody = "";
+            var originalStream = await responseContext.ProxyResponse.Content.ReadAsStreamAsync();                        
+            var stringBuilder = new StringBuilder();
 
             // Buffer for reading chunks
             byte[] buffer = new byte[8192];
@@ -72,7 +72,7 @@ internal class OpenAIChargebackTransformProvider : ITransformProvider
                 // Convert the chunk to a string for inspection
                 var chunk = Encoding.UTF8.GetString(buffer, 0, bytesRead);
 
-                capturedBody += chunk;
+                stringBuilder.Append(chunk);
 
                 // Write the unmodified chunk back to the response
                 await responseContext.HttpContext.Response.Body.WriteAsync(buffer, 0, bytesRead);
@@ -95,6 +95,7 @@ internal class OpenAIChargebackTransformProvider : ITransformProvider
             }
            
             bool firstChunck = true;
+            var capturedBody = stringBuilder.ToString();
             var chunks = capturedBody.Split("data:");
             foreach (var chunk in chunks)
             {

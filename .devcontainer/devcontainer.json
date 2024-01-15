@@ -4,7 +4,9 @@
     "image": "mcr.microsoft.com/devcontainers/dotnet:8.0",
     "features": {
         // See https://containers.dev/features for list of features
-        "ghcr.io/devcontainers/features/azure-cli:1": {},
+        "ghcr.io/devcontainers/features/azure-cli:1": {
+            "installBicep": true
+        },
         "ghcr.io/devcontainers/features/docker-in-docker:2": {},
         "ghcr.io/devcontainers/features/dotnet:2": {},
         "ghcr.io/devcontainers/features/github-cli:1": {},
@@ -13,6 +15,7 @@
     "customizations": {
         "vscode": {    
             "extensions": [
+                "ms-vscode.azurecli",
                 "ms-azuretools.azure-dev",
                 "ms-azuretools.vscode-bicep",
                 "ms-azuretools.vscode-docker",

@@ -42,16 +42,14 @@ azd init
 
 It will prompt you to provide a name that will later be used in the name of the deployed resources.
 
-### 2. Set some environment variables (optional)
+### 2. Enable optional features
 
-This repository uses some optional environment variables to configure the deployment, which can be used to enable certain features. You can set these variables with the `azd env set` command.
+This repository uses environment variables to configure the deployment, which can be used to enable optional features. You can set these variables with the `azd env set` command. Learn more about all [optional features here](#optional-features).
 
 ```shell
 azd env set USE_REDIS_CACHE_APIM '<true-or-false>'
 azd env set SECONDARY_OPENAI_LOCATION '<your-secondary-openai-location>'
 ```
-
-> Note. Because Azure OpenAI isn't available in all regions, you might get an error when you deploy the resources. You can find more information about the availability of Azure OpenAI [here](https://docs.microsoft.com/en-us/azure/openai/overview/regions).
 
 In the azd template, we automatically set an environment variable for your current IP address. During deployment, this allows traffic from your local machine to the Azure Container Registry for deploying the containerized application.
 
@@ -63,13 +61,32 @@ azd up
 
 It will prompt you to login, pick a subscription, and provide a location (like "eastus"). Then it will provision the resources in your account and deploy the latest code.
 
+> Note. Because Azure OpenAI isn't available in all regions, you might get an error when you deploy the resources. You can find more information about the availability of Azure OpenAI [here](https://docs.microsoft.com/en-us/azure/openai/overview/regions).
+
 For more details on the deployed services, see [additional details](#additional-details) below.
 
-> Note. It will take about 25 minutes to deploy Azure Redis Cache, that's why it's optional.
 
 > Note. Sometimes the DNS zones for the private endpoints aren't created correctly / in time. If you get an error when you deploy the resources, you can try to deploy the resources again.
 
 ## Optional features
+
+### Azure Redis Cache
+
+You can [enable Azure Redis Cache to improve the performance of Azure API Management](https://learn.microsoft.com/en-us/azure/api-management/api-management-howto-cache-external). To enable this feature, set the `USE_REDIS_CACHE_APIM` environment variable to `true`.
+
+```shell
+azd env set USE_REDIS_CACHE_APIM 'true'
+```
+> Note. Deployment of Azure Redis Cache can take up to 30 minutes.
+
+### Secondary Azure OpenAI location
+You can enable a secondary Azure OpenAI location to improve the availability of Azure OpenAI. To enable this feature, set the `SECONDARY_OPENAI_LOCATION` environment variable to the [location of your choice](https://learn.microsoft.com/en-us/azure/ai-services/openai/concepts/models).
+
+```shell
+azd env set SECONDARY_OPENAI_LOCATION '<your-secondary-openai-location>'
+```
+
+## Additional features
 
 ### CI/CD pipeline
 

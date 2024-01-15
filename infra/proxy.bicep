@@ -7,6 +7,7 @@ param containerAppsEnvironmentName string
 param containerRegistryName string
 param apimServiceName string
 param appConfigEndpoint string
+param appInsightsConnectionString string
 
 module app 'modules/host/container-app.bicep' = {
   name: 'container-app'
@@ -26,8 +27,12 @@ module app 'modules/host/container-app.bicep' = {
     external: true
     env: [
       {
-        name: 'APPCONFIGENDPOINT'
+        name: 'APPCONFIG_ENDPOINT'
         value: appConfigEndpoint
+      }
+      {
+        name: 'APPLICATIONINSIGHTS_CONNECTION_STRING'
+        value: appInsightsConnectionString
       }
     ]
     

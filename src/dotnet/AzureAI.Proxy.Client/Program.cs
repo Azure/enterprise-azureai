@@ -4,7 +4,6 @@ using Microsoft.Extensions.Configuration;
 
 IConfigurationRoot config = new ConfigurationBuilder()
     .AddJsonFile("appsettings.json")
-    .AddJsonFile("appsettings.Development.json", optional: true)
     .AddUserSecrets<Program>()
     .Build();
 
@@ -18,16 +17,10 @@ OpenAIClient client = new OpenAIClient(
 
 
 var deploymentName = "gpt-35-turbo";
-var chatMessages = new List<ChatMessage>();
+var chatMessages = new List<ChatRequestMessage>();
 
-var systemChatMessage = new ChatMessage();
-systemChatMessage.Content = "You are a helpful AI Assistant";
-systemChatMessage.Role = "system";
-
-
-var userChatMessage = new ChatMessage();
-userChatMessage.Content = "When was Microsoft Founded and what info can you give me on the founders in a maximum of 100 words";
-userChatMessage.Role = "user";
+var systemChatMessage = new ChatRequestSystemMessage("You are a helpful AI Assistant");
+var userChatMessage = new ChatRequestUserMessage("When was Microsoft Founded and what info can you give me on the founders in a maximum of 100 words");
 
 
 chatMessages.Add(systemChatMessage);
@@ -41,8 +34,6 @@ Console.WriteLine($"Using endpoint: {proxyEndpoint}");
 //{
    
     Console.WriteLine("Get answer to question: " + userChatMessage.Content);
-
-
 
     var response = await client.GetChatCompletionsAsync(completionOptions);
 
@@ -72,9 +63,7 @@ string embeddingDeploymentName = "text-embedding-ada-002";
 List<string> embeddingText = new List<string>();
 embeddingText.Add("When was Microsoft Founded?");
 
-var embeddingsOptions = new EmbeddingsOptions();
-embeddingsOptions.DeploymentName = embeddingDeploymentName;
-embeddingsOptions.Input = embeddingText;
+var embeddingsOptions = new EmbeddingsOptions(embeddingDeploymentName, embeddingText);
 var embeddings = await client.GetEmbeddingsAsync(embeddingsOptions);
 Console.WriteLine("Get Embeddings Result");
 foreach (float item in embeddings.Value.Data[0].Embedding.ToArray())
@@ -82,13 +71,6 @@ foreach (float item in embeddings.Value.Data[0].Embedding.ToArray())
     Console.WriteLine(item);
 }
 
-//Image Generation - proxy not done yet
-//ImageGenerationOptions imageGenerationOptions = new ImageGenerationOptions();
-//imageGenerationOptions.Prompt = "Logo of Microsoft projected on a map of the Netherlands";
-//imageGenerationOptions.ImageCount = 2;
-
-//Console.WriteLine("Get ImageGeneration Result");
-//var images = await client.GetImageGenerationsAsync(imageGenerationOptions);
 
 
 

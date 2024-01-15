@@ -340,6 +340,10 @@ module app './modules/host/container-app.bicep' = {
         name: 'CLIENT_ID'
         value: managedIdentityChargeBack.outputs.managedIdentityClientId
       }
+      {
+        name: 'APPLICATIONINSIGHTS_CONNECTION_STRING'
+        value: monitoring.outputs.applicationInsightsConnectionString
+      }
     ]
     pullFromPrivateRegistry: true
     azdServiceName: 'proxy'
@@ -378,3 +382,4 @@ output AZURE_CONTAINER_REGISTRY_ENDPOINT string = containerRegistry.outputs.logi
 output AZURE_PROXY_MANAGED_IDENTITY_NAME string = managedIdentityChargeBack.outputs.managedIdentityName
 output AZURE_APPCONFIG_ENDPOINT string = appconfig.outputs.appConfigEndPoint
 output AZURE_RESOURCE_GROUP string = resourceGroup.name
+output APPLICATIONINSIGHTS_CONNECTION_STRING string = monitoring.outputs.applicationInsightsConnectionString

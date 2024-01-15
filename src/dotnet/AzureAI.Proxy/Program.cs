@@ -1,8 +1,35 @@
+using Azure.Monitor.OpenTelemetry.AspNetCore;
 using AzureAI.Proxy.ReverseProxy;
 using AzureAI.Proxy.Services;
-using System.Reflection.Metadata.Ecma335;
+using OpenTelemetry.Resources;
+using OpenTelemetry.Trace;
+
 
 var builder = WebApplication.CreateBuilder(args);
+
+
+
+//Application Insights
+//Create a dictionary of resource attributes.
+var instanceId = Environment.GetEnvironmentVariable("CONTAINER_APP_REPLICA_NAME");
+if (instanceId == null)
+{
+    instanceId = "local";
+}
+
+var resourceAttributes = new Dictionary<string, object> {
+    { "service.name", "Proxy" },
+    { "service.namespace", "AzureAI" },
+    { "service.instance.id", instanceId }
+};
+
+builder.Services.AddOpenTelemetry().UseAzureMonitor();
+builder.Services.ConfigureOpenTelemetryTracerProvider((sp, builder) =>
+    builder.ConfigureResource(resourceBuilder =>
+        resourceBuilder.AddAttributes(resourceAttributes)));
+
+
+
 
 builder.Services.AddSingleton<IManagedIdentityService, ManagedIdentityService>();
 

@@ -79,10 +79,8 @@ param raiPolicies array = [
 ]
 
 
-
-
 resource deploymentScript 'Microsoft.Resources/deploymentScripts@2023-08-01' = [for raiPolicy in raiPolicies: {
-  name: 'CreateRAIPolicy_${raiPolicy.name}'
+  name: 'create_rai_policy_${raiPolicy.name}'
   location: location
   kind: 'AzureCLI'
   identity: {
@@ -92,7 +90,7 @@ resource deploymentScript 'Microsoft.Resources/deploymentScripts@2023-08-01' = [
     }
   }
   properties: {
-    azCliVersion: '2.9.1'
+    azCliVersion: '2.47.0'
     scriptContent: 'az rest --method put --url ${environment().resourceManager}/subscriptions/${subscription().subscriptionId}/resourceGroups/${resourceGroup().name}/providers/Microsoft.CognitiveServices/accounts/${account.name}/raiPolicies/${raiPolicy.name}?api-version=2023-10-01-preview --debug --body "${raiPolicy.payload}"'
     cleanupPreference: 'OnExpiration'
     retentionInterval: 'PT1H'

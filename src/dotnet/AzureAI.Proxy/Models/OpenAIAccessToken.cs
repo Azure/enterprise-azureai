@@ -21,7 +21,7 @@ public static class OpenAIAccessToken
     }
 
 
-    public static bool IsTokenExpired(string accessToken, string tenantId)
+    public static bool IsTokenExpired(string accessToken)
     {
         var tokenHandler = new JwtSecurityTokenHandler();
         var jwttoken = tokenHandler.ReadToken(accessToken);

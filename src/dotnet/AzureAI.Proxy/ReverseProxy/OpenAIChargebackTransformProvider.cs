@@ -46,7 +46,7 @@ internal class OpenAIChargebackTransformProvider : ITransformProvider
             requestContext.HttpContext.Request.EnableBuffering();
 
             //check accessToken before replacing the Auth Header
-            if (String.IsNullOrEmpty(accessToken) || OpenAIAccessToken.IsTokenExpired(accessToken, _config["EntraId:TenantId"]))
+            if (String.IsNullOrEmpty(accessToken) || OpenAIAccessToken.IsTokenExpired(accessToken))
             {
                 accessToken = await OpenAIAccessToken.GetAccessTokenAsync(_managedIdentityCredential, CancellationToken.None);
             }

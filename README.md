@@ -8,10 +8,11 @@ Unleash the power of Azure OpenAI in your company in a secure & manageable way w
 This repository provides guidance and tools for organizations looking to implement Azure OpenAI in a production environment with an emphasis on cost control, secure access, and usage monitoring. The aim is to enable organizations to effectively manage expenses while ensuring that the consuming application or team is accountable for the costs incurred.
 
 ## Key features
-- **Cost Control**: Strategies and tools for monitoring and controlling the costs associated with Azure OpenAI usage.
 - **Secure Access Management**: Best practices and configurations for managing secure access to Azure OpenAI services.
-- **Usage Monitoring**: Solutions for tracking the usage of Azure OpenAI services to facilitate accurate cost allocation.
-- **Load Balance**: Utilize & loadbalance the capacity of Azure OpenAI across your organization
+- **Usage Monitoring**: Solutions for tracking the usage of Azure OpenAI services to facilitate accurate cost allocation and team charge-back.
+- **Load Balance**: Utilize & loadbalance the capacity of Azure OpenAI across regions or provisioned throughput (PTU)
+-  **Cost Control**: Strategies and tools for monitoring and controlling the costs associated with Azure OpenAI usage.
+- **End-to-end sample**, e.g. including dashboards, content filters and policies
 
 ## Architecture
 

@@ -33,12 +33,12 @@ resource backend 'Microsoft.ApiManagement/service/backends@2023-03-01-preview' =
 }
 
 resource apimChargeBackApi 'Microsoft.ApiManagement/service/apis@2023-03-01-preview' = {
-  name: 'chargeback-proxy'
+  name: 'ai-proxy'
   parent: apimService
   properties: {
     path: 'openai'
     apiRevision: '1'
-    displayName: 'OpenAI Chargeback Proxy'
+    displayName: 'AI Proxy'
     format: 'openapi-link'
     protocols: [ 'https' ]
     value: 'https://raw.githubusercontent.com/Azure/azure-rest-api-specs/main/specification/cognitiveservices/data-plane/AzureOpenAI/inference/stable/2023-05-15/inference.json'

@@ -40,7 +40,11 @@ Read more: [Architecture in detail](#architecture-in-detail)
 azd init
 ```
 
-It will prompt you to provide a name that will later be used in the name of the deployed resources.
+It will prompt you to provide a name that will later be used in the name of the deployed resources. If your not logged into Azure, it will also prompt you to first login.
+
+```shell
+azd auth login
+```
 
 ### 2. Enable optional features
 
@@ -119,17 +123,15 @@ To open that dashboard, run this command once you've deployed:
 azd monitor --overview
 ```
 
-### Remove the APIM soft-delete
+### Clean up
 
-If you deleted the deployment via the Azure Portal, and you want to run this deployment again, you might run into the issue that the APIM name is still reserved because of the soft-delete feature. You can remove the soft-delete by using this az cli command:
+To clean up all the resources you've created, simply run:
 
-```bash
-location = "<your-location>"
-apimName = "<your-apim-name>"
-subscriptionId = "<your-subscription-id>"
-az account set --subscription $subscriptionId
-az apim deletedservice purge --location $location --service-name $apimName
+```shell
+azd down
 ```
+
+The resource group and all the resources will be deleted and you'll be prompted if you want the soft-deletes to be purged.
 
 ### Testing
 

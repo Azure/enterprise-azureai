@@ -7,8 +7,6 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "AzureAI.Proxy", "AzureAI.Pr
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "AzureAI.Proxy.Client", "AzureAI.Proxy.Client\AzureAI.Proxy.Client.csproj", "{6AC9FC04-2C0A-4D7D-95D0-127F0AF7AF5F}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ResourceManagerResearch", "ResourceManagerResearch\ResourceManagerResearch.csproj", "{D0AEE11D-2D91-4A02-919A-F4D0784A01CA}"
-EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -23,10 +21,6 @@ Global
 		{6AC9FC04-2C0A-4D7D-95D0-127F0AF7AF5F}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{6AC9FC04-2C0A-4D7D-95D0-127F0AF7AF5F}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{6AC9FC04-2C0A-4D7D-95D0-127F0AF7AF5F}.Release|Any CPU.Build.0 = Release|Any CPU
-		{D0AEE11D-2D91-4A02-919A-F4D0784A01CA}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{D0AEE11D-2D91-4A02-919A-F4D0784A01CA}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{D0AEE11D-2D91-4A02-919A-F4D0784A01CA}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{D0AEE11D-2D91-4A02-919A-F4D0784A01CA}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

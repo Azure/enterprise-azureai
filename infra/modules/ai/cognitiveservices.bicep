@@ -94,6 +94,7 @@ resource deploymentScript 'Microsoft.Resources/deploymentScripts@2023-08-01' = [
     scriptContent: 'az rest --method put --url ${environment().resourceManager}/subscriptions/${subscription().subscriptionId}/resourceGroups/${resourceGroup().name}/providers/Microsoft.CognitiveServices/accounts/${account.name}/raiPolicies/${raiPolicy.name}?api-version=2023-10-01-preview --debug --body "${raiPolicy.payload}"'
     cleanupPreference: 'OnExpiration'
     retentionInterval: 'PT1H'
+    forceUpdateTag: guid(raiPolicy.payload)
   }
 }]
 

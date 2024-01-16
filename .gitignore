@@ -414,3 +414,4 @@ local.tests.http
 /src/Azure.OpenAI.ChargebackProxy/appsettings.Development.json
 /src/Azure.OpenAI.ChargebackProxy.Client/appsettings.Development.json
 /src/.vscode
+/src/dotnet/AzureAI.Proxy/proxyconfig.json

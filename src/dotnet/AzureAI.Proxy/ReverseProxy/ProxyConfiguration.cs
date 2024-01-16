@@ -13,7 +13,10 @@ public class ProxyConfiguration
 
     public ProxyConfiguration(string configJson)
     {
-        _proxyConfig = JsonSerializer.Deserialize<ProxyConfig>(configJson);
+        JsonSerializerOptions options = new();
+        options.PropertyNameCaseInsensitive = true;
+
+        _proxyConfig = JsonSerializer.Deserialize<ProxyConfig>(configJson, options);
     }
 
     public IReadOnlyList<RouteConfig> GetRoutes()
@@ -21,15 +24,15 @@ public class ProxyConfiguration
 
         List<RouteConfig> routes = new();
 
-        foreach (var route in _proxyConfig.routes)
+        foreach (var route in _proxyConfig.Routes)
         {
             RouteConfig routeConfig = new()
             {
-                RouteId = route.name,
-                ClusterId = route.name,
+                RouteId = route.Name,
+                ClusterId = route.Name,
                 Match = new RouteMatch()
                 {
-                    Path = $"openai/deployments/{route.name}/" + "{**catch-all}"
+                    Path = $"openai/deployments/{route.Name}/" + "{**catch-all}"
                 }
             };
 
@@ -43,33 +46,33 @@ public class ProxyConfiguration
     public IReadOnlyList<ClusterConfig> GetClusters()
     {
         List<ClusterConfig> clusters = new();
-
-        Dictionary<string, DestinationConfig> destinations = new();
-
-        foreach (var route in _proxyConfig.routes)
+        
+        foreach (var route in _proxyConfig.Routes)
         {
-            foreach (var destination in route.endpoints)
+            Dictionary<string, DestinationConfig> destinations = new();
+
+            foreach (var destination in route.Endpoints)
             {
                 Dictionary<string, string> metadata = new()
                 {
-                    { "url", destination.address },
-                    { "priority", destination.priority.ToString() }
+                    { "url", destination.Address },
+                    { "priority", destination.Priority.ToString() }
                 };
 
                 DestinationConfig destinationConfig = new()
                 {
-                    Address = destination.address,
+                    Address = destination.Address,
                     Metadata = metadata
                 };
 
-                destinations[destination.address] = destinationConfig;
+                destinations[destination.Address] = destinationConfig;
 
                 
             }
 
             ClusterConfig clusterConfig = new()
             {
-                ClusterId = route.name,
+                ClusterId = route.Name,
                 Destinations = destinations,
                 HealthCheck = new HealthCheckConfig
                 {
@@ -79,8 +82,8 @@ public class ProxyConfiguration
                         Policy = ThrottlingHealthPolicy.ThrottlingPolicyName
                     }
                 },
-                LoadBalancingPolicy = LoadBalancingPolicies.RoundRobin,
-                HttpRequest = new ForwarderRequestConfig() // { ActivityTimeout = TimeSpan.FromSeconds(100) }
+                //LoadBalancingPolicy = LoadBalancingPolicies.RoundRobin,
+                HttpRequest = new ForwarderRequestConfig()
             };
 
             clusters.Add(clusterConfig);

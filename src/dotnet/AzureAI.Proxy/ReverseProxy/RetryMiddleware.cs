@@ -61,7 +61,13 @@ public class RetryMiddleware
     /// </summary>
     private DestinationState PickOneDestination(IReverseProxyFeature reverseProxyFeature)
     {
-        var allDestinations = reverseProxyFeature.AllDestinations;
+        List<DestinationState> allDestinations = new List<DestinationState>(reverseProxyFeature.AllDestinations);
+        allDestinations.Sort(delegate (DestinationState a, DestinationState b)
+        {
+            int prioA = int.Parse(a.Model.Config.Metadata["priority"]);
+            int prioB = int.Parse(b.Model.Config.Metadata["priority"]);
+            return prioA.CompareTo(prioB);
+        });
 
         var selectedPriority = int.MaxValue;
         var availableBackends = new List<int>();
@@ -108,7 +114,7 @@ public class RetryMiddleware
         }
 
         var pickedDestination = allDestinations[backendIndex];
-        _logger.LogWarning($"Retry picked backend: {pickedDestination.Model.Config.Address}");
+        _logger.LogInformation($"Picked backend: {pickedDestination.Model.Config.Address}");
 
         return pickedDestination;
     }

@@ -1,4 +1,5 @@
 using Azure.Monitor.OpenTelemetry.AspNetCore;
+using AzureAI.Proxy.Models;
 using AzureAI.Proxy.ReverseProxy;
 using AzureAI.Proxy.Services;
 using OpenTelemetry.Resources;
@@ -7,10 +8,7 @@ using OpenTelemetry.Trace;
 
 var builder = WebApplication.CreateBuilder(args);
 
-
-
 //Application Insights
-//Create a dictionary of resource attributes.
 var instanceId = Environment.GetEnvironmentVariable("CONTAINER_APP_REPLICA_NAME");
 if (instanceId == null)
 {
@@ -29,20 +27,20 @@ builder.Services.ConfigureOpenTelemetryTracerProvider((sp, builder) =>
         resourceBuilder.AddAttributes(resourceAttributes)));
 
 
-
-
+//Managed Identity Service
 builder.Services.AddSingleton<IManagedIdentityService, ManagedIdentityService>();
-
 var managedIdentityService = builder.Services.BuildServiceProvider().GetService<IManagedIdentityService>();
 
-
+//Azure App Configuration
 builder.Configuration.AddAzureAppConfiguration(options =>
     options.Connect(
         new Uri(builder.Configuration["APPCONFIG_ENDPOINT"]),
         managedIdentityService.GetTokenCredential()));
 
+
 var config = builder.Configuration;
 
+//Log Ingestion for charge back data
 builder.Services.AddSingleton<ILogIngestionService, LogIngestionService>((ctx) =>
 {
     var managedIdentityService = ctx.GetService<IManagedIdentityService>();
@@ -50,8 +48,10 @@ builder.Services.AddSingleton<ILogIngestionService, LogIngestionService>((ctx) =
     return new LogIngestionService(managedIdentityService, config, logger);
 });
 
-var routes = Routes.GetRoutes();
-var clusters = Clusters.GetClusterConfig(config);
+//Setup Reverse Proxy
+var proxyConfig = new ProxyConfiguration(config["ProxyConfig"]);
+var routes = proxyConfig.GetRoutes();
+var clusters = proxyConfig.GetClusters();
 
 builder.Services.AddReverseProxy()
     .LoadFromMemory(routes, clusters)

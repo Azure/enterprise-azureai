@@ -1,6 +1,5 @@
 ﻿using AsyncAwaitBestPractices;
 using Azure.Core;
-using AzureAI.Proxy.Models;
 using AzureAI.Proxy.OpenAIHandlers;
 using AzureAI.Proxy.Services;
 using System.Net;

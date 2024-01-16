@@ -1,8 +1,7 @@
 ﻿using Azure.Core;
-using Microsoft.IdentityModel.Tokens;
 using System.IdentityModel.Tokens.Jwt;
 
-namespace AzureAI.Proxy.Models;
+namespace AzureAI.Proxy.OpenAIHandlers;
 
 public static class OpenAIAccessToken
 {

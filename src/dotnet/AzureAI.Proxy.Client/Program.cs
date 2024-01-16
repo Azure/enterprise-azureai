@@ -30,7 +30,7 @@ ChatCompletionsOptions completionOptions = new ChatCompletionsOptions(deployment
 Console.WriteLine($"Using endpoint: {proxyEndpoint}");
 
 //run the loop to hit rate-limiter
-for (int i = 0; i < 10; i++)
+for (int i = 0; i < 7; i++)
 {
    
     Console.WriteLine("Get answer to question: " + userChatMessage.Content);
@@ -43,7 +43,11 @@ for (int i = 0; i < 10; i++)
         Console.WriteLine(choice.Message.Content);
     }
 
-    Console.WriteLine("Get StreamingChat Completion Result");
+}
+//end loop
+
+
+Console.WriteLine("Get StreamingChat Completion Result");
     await foreach (StreamingChatCompletionsUpdate chatUpdate in client.GetChatCompletionsStreaming(completionOptions))
     {
 
@@ -54,8 +58,6 @@ for (int i = 0; i < 10; i++)
     }
     Console.WriteLine();
 
-}
-//end loop
 
 
 //embedding

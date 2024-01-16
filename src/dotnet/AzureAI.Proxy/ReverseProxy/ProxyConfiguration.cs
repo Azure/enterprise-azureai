@@ -2,6 +2,7 @@
 using Yarp.ReverseProxy.Configuration;
 using System.Text.Json;
 using Yarp.ReverseProxy.LoadBalancing;
+using Yarp.ReverseProxy.Forwarder;
 
 namespace AzureAI.Proxy.ReverseProxy;
 
@@ -70,7 +71,16 @@ public class ProxyConfiguration
             {
                 ClusterId = route.name,
                 Destinations = destinations,
-                LoadBalancingPolicy = LoadBalancingPolicies.RoundRobin
+                HealthCheck = new HealthCheckConfig
+                {
+                    Passive = new PassiveHealthCheckConfig
+                    {
+                        Enabled = true,
+                        Policy = ThrottlingHealthPolicy.ThrottlingPolicyName
+                    }
+                },
+                LoadBalancingPolicy = LoadBalancingPolicies.RoundRobin,
+                HttpRequest = new ForwarderRequestConfig() // { ActivityTimeout = TimeSpan.FromSeconds(100) }
             };
 
             clusters.Add(clusterConfig);

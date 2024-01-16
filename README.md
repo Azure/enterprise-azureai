@@ -40,7 +40,7 @@ Read more: [Architecture in detail](#architecture-in-detail)
 azd init
 ```
 
-It will prompt you to provide a name that will later be used in the name of the deployed resources. If your not logged into Azure, it will also prompt you to first login.
+It will prompt you to provide a name that will later be used in the name of the deployed resources. If you're not logged into Azure, it will also prompt you to first login.
 
 ```shell
 azd auth login

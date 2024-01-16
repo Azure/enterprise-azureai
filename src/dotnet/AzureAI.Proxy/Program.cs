@@ -4,6 +4,7 @@ using AzureAI.Proxy.ReverseProxy;
 using AzureAI.Proxy.Services;
 using OpenTelemetry.Resources;
 using OpenTelemetry.Trace;
+using Yarp.ReverseProxy.Health;
 
 
 var builder = WebApplication.CreateBuilder(args);
@@ -53,6 +54,8 @@ var proxyConfig = new ProxyConfiguration(config["ProxyConfig"]);
 var routes = proxyConfig.GetRoutes();
 var clusters = proxyConfig.GetClusters();
 
+builder.Services.AddSingleton<IPassiveHealthCheckPolicy, ThrottlingHealthPolicy>();
+
 builder.Services.AddReverseProxy()
     .LoadFromMemory(routes, clusters)
     .ConfigureHttpClient((sp, options) =>
@@ -62,10 +65,18 @@ builder.Services.AddReverseProxy()
     })
     .AddTransforms<OpenAIChargebackTransformProvider>();
 
+builder.Services.AddHealthChecks();
 
 var app = builder.Build();
-app.MapReverseProxy();
-app.MapGet("/health", () => { return "Alive"; });
+
+app.MapHealthChecks("/health");
+
+app.MapReverseProxy(m =>
+{
+    m.UseMiddleware<RetryMiddleware>();
+    m.UsePassiveHealthChecks();
+});
+
 app.Run();
 
 

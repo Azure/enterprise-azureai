@@ -64,14 +64,7 @@ Use the provided devcontainer to set up a development environment or a GitHub Co
 [![Open in GitHub Codespaces](https://img.shields.io/static/v1?style=for-the-badge&label=GitHub+Codespaces&message=Open&color=lightgrey&logo=github)](https://codespaces.new/Azure/enterprise-azureai)
 [![Open in Dev Container](https://img.shields.io/static/v1?style=for-the-badge&label=Dev+Container&message=Open&color=blue&logo=visualstudiocode)](https://vscode.dev/redirect?url=vscode://ms-vscode-remote.remote-containers/cloneInVolume?url=https://github.com/Azure/enterprise-azureai)
 
-## <a name="unit-tests"></a> Running unit tests
-
-Run the tests:
-
-```
-dotnet test ~/src/dotnet/AzureAI.Proxy.IntegrationTests/AzureAI.Proxy.IntegrationTests.csproj --collect "Code Coverage"
-```
 
 ## <a name="style"></a> Code Style
 
-This codebase includes several languages: PowerShell, dotNet, Bicep, and Bash. Code should follow the standard conventions of each language.
+This codebase includes several languages: PowerShell, C#, Bicep, and Bash. Code should follow the standard conventions of each language.

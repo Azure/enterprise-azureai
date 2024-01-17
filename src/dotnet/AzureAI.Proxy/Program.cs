@@ -1,5 +1,4 @@
 using Azure.Monitor.OpenTelemetry.AspNetCore;
-using AzureAI.Proxy.Models;
 using AzureAI.Proxy.ReverseProxy;
 using AzureAI.Proxy.Services;
 using OpenTelemetry.Resources;
@@ -35,9 +34,10 @@ var managedIdentityService = builder.Services.BuildServiceProvider().GetService<
 //Azure App Configuration
 builder.Configuration.AddAzureAppConfiguration(options =>
     options.Connect(
-        new Uri(builder.Configuration["APPCONFIG_ENDPOINT"]),
-        managedIdentityService.GetTokenCredential()));
-
+                new Uri(builder.Configuration["APPCONFIG_ENDPOINT"]),
+                managedIdentityService.GetTokenCredential()
+            )
+);
 
 var config = builder.Configuration;
 
@@ -50,7 +50,7 @@ builder.Services.AddSingleton<ILogIngestionService, LogIngestionService>((ctx) =
 });
 
 //Setup Reverse Proxy
-var proxyConfig = new ProxyConfiguration(config["ProxyConfig"]);
+var proxyConfig = new ProxyConfiguration(config["AzureAIProxy:ProxyConfig"]);
 var routes = proxyConfig.GetRoutes();
 var clusters = proxyConfig.GetClusters();
 

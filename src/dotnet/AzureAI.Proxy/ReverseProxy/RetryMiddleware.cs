@@ -61,14 +61,8 @@ public class RetryMiddleware
     /// </summary>
     private DestinationState PickOneDestination(IReverseProxyFeature reverseProxyFeature)
     {
-        List<DestinationState> allDestinations = new List<DestinationState>(reverseProxyFeature.AllDestinations);
-        allDestinations.Sort(delegate (DestinationState a, DestinationState b)
-        {
-            int prioA = int.Parse(a.Model.Config.Metadata["priority"]);
-            int prioB = int.Parse(b.Model.Config.Metadata["priority"]);
-            return prioA.CompareTo(prioB);
-        });
-
+        var allDestinations = reverseProxyFeature.AllDestinations;
+        
         var selectedPriority = int.MaxValue;
         var availableBackends = new List<int>();
 
@@ -95,16 +89,19 @@ public class RetryMiddleware
 
         int backendIndex;
 
-        if (availableBackends.Count == 1)
-        {
-            //Returns the only available backend if we have only one available
-            backendIndex = availableBackends[0];
-        }
-        else
+       
         if (availableBackends.Count > 0)
         {
-            //Returns a random backend from the list if we have more than one available with the same priority
-            backendIndex = availableBackends[Random.Shared.Next(0, availableBackends.Count)];
+            if (availableBackends.Count == 1)
+            {
+                //Returns the only available backend if we have only one available
+                backendIndex = availableBackends[0];
+            }
+            else
+            {
+                //Returns a random backend from the list if we have more than one available with the same priority
+                backendIndex = availableBackends[Random.Shared.Next(0, availableBackends.Count)];
+            }
         }
         else
         {

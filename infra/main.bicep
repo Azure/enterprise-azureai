@@ -81,6 +81,8 @@ var privateDnsZoneNames = [
   appConfigPrivateDnsZoneName
 ]
 
+
+
 // Organize resources in a resource group
 resource resourceGroup 'Microsoft.Resources/resourceGroups@2021-04-01' = {
   name: !empty(resourceGroupName) ? resourceGroupName : '${abbrs.resourcesResourceGroups}${environmentName}'
@@ -110,7 +112,7 @@ module managedIdentityChargeBack './modules/security/managed-identity.bicep' = {
   name: 'managed-identity-chargeback'
   scope: resourceGroup
   params: {
-    name: !empty(chargeBackIdentityName) ? chargeBackIdentityName : '${abbrs.managedIdentityUserAssignedIdentities}${resourceToken}-cb'
+    name: !empty(chargeBackIdentityName) ? chargeBackIdentityName : '${abbrs.managedIdentityUserAssignedIdentities}${resourceToken}-proxy'
     location: location
     tags: tags
   }
@@ -120,7 +122,7 @@ module managedIdentityDeploymentScript './modules/security/managed-identity.bice
   name: 'managed-identity-deployment-script'
   scope: resourceGroup
   params: {
-    name: !empty(deploymentScriptIdentityName) ? deploymentScriptIdentityName : '${abbrs.managedIdentityUserAssignedIdentities}${resourceToken}-cb'
+    name: !empty(deploymentScriptIdentityName) ? deploymentScriptIdentityName : '${abbrs.managedIdentityUserAssignedIdentities}${resourceToken}-deploymentscript'
     location: location
     tags: tags
   }
@@ -284,6 +286,36 @@ module openAiSecondary './modules/ai/cognitiveservices.bicep' = if (secondaryOpe
   }
 }
 
+var primaryOpenAiEndpoint = {
+  address: openAi.outputs.openAIEndpointUriRaw
+  priority: 1
+  
+}
+var secondaryOpenAiEndpoint = secondaryOpenAILocation != '' ? {
+  address: openAiSecondary.outputs.openAIEndpointUriRaw
+  priority: 2
+} : {}
+
+var proxyConfig = {
+  routes: [
+    {
+      name: gptDeploymentName
+      endpoints:[
+        primaryOpenAiEndpoint
+        secondaryOpenAiEndpoint
+      ]
+    }
+    {
+      name: embeddingDeploymentName
+      endpoints:[
+        primaryOpenAiEndpoint
+        secondaryOpenAiEndpoint
+      ]
+    }
+  ]
+}
+
+
 module containerRegistry './modules/host/container-registry.bicep' = {
   name: 'container-registry'
   scope: resourceGroup
@@ -322,7 +354,7 @@ module app './modules/host/container-app.bicep' = {
   name: 'container-app'
   scope: resourceGroup
   params: {
-    name: !empty(chargeBackAppName) ? chargeBackAppName : '${abbrs.appContainerApps}${resourceToken}-cb'
+    name: !empty(chargeBackAppName) ? chargeBackAppName : '${abbrs.appContainerApps}${resourceToken}-proxy'
     location: location
     tags: tags
     identityName: managedIdentityChargeBack.outputs.managedIdentityName
@@ -368,7 +400,7 @@ module appconfig 'modules/appconfig/appconfiguration.bicep' = {
     location: location
     AzureOpenAIEndpoints: array(openAi.outputs.openAIEndpointUriRaw)
     proxyManagedIdentityName: managedIdentityChargeBack.outputs.managedIdentityName
-    
+    ProxyConfig: proxyConfig
   }
 }
 

@@ -286,36 +286,6 @@ module openAiSecondary './modules/ai/cognitiveservices.bicep' = if (secondaryOpe
   }
 }
 
-var primaryOpenAiEndpoint = {
-  address: openAi.outputs.openAIEndpointUriRaw
-  priority: 1
-  
-}
-var secondaryOpenAiEndpoint = secondaryOpenAILocation != '' ? {
-  address: openAiSecondary.outputs.openAIEndpointUriRaw
-  priority: 2
-} : {}
-
-var proxyConfig = {
-  routes: [
-    {
-      name: gptDeploymentName
-      endpoints:[
-        primaryOpenAiEndpoint
-        secondaryOpenAiEndpoint
-      ]
-    }
-    {
-      name: embeddingDeploymentName
-      endpoints:[
-        primaryOpenAiEndpoint
-        secondaryOpenAiEndpoint
-      ]
-    }
-  ]
-}
-
-
 module containerRegistry './modules/host/container-registry.bicep' = {
   name: 'container-registry'
   scope: resourceGroup
@@ -388,6 +358,39 @@ module app './modules/host/container-app.bicep' = {
     containerAppsEnvironment
   ]
 }
+
+
+//create the proxyconfig structure for appconfig
+//based of the endpoints we've created
+var primaryOpenAiEndpoint = {
+  address: openAi.outputs.openAIEndpointUriRaw
+  priority: 1
+  
+}
+var secondaryOpenAiEndpoint = secondaryOpenAILocation != '' ? {
+  address: openAiSecondary.outputs.openAIEndpointUriRaw
+  priority: 2
+} : {}
+
+var proxyConfig = {
+  routes: [
+    {
+      name: gptDeploymentName
+      endpoints:[
+        primaryOpenAiEndpoint
+        secondaryOpenAiEndpoint
+      ]
+    }
+    {
+      name: embeddingDeploymentName
+      endpoints:[
+        primaryOpenAiEndpoint
+        secondaryOpenAiEndpoint
+      ]
+    }
+  ]
+}
+
 
 module appconfig 'modules/appconfig/appconfiguration.bicep' = {
   name: 'appconfig'

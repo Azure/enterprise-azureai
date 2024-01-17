@@ -25,13 +25,5 @@
     <PackageReference Include="TiktokenSharp" Version="1.0.8" />
     <PackageReference Include="Yarp.ReverseProxy" Version="2.1.0" />
   </ItemGroup>
-
-  <ItemGroup>
-    <Content Update="proxyconfig.json">
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </Content>
-  </ItemGroup>
-
 	
-
 </Project>

@@ -23,7 +23,7 @@ public class ThrottlingHealthPolicy : IPassiveHealthCheckPolicy
         {
             var retryAfterSeconds = 10;
 
-            if (headers.TryGetValue("Retry-After", out var retryAfterHeader) && retryAfterHeader.Count > 0 && int.TryParse(retryAfterHeader[0], out var retryAfter))
+            if (headers.TryGetValue("retry-after", out var retryAfterHeader) && retryAfterHeader.Count > 0 && int.TryParse(retryAfterHeader[0], out var retryAfter))
             {
                 retryAfterSeconds = retryAfter;
             }

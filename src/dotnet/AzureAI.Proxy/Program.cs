@@ -9,11 +9,7 @@ using Yarp.ReverseProxy.Health;
 var builder = WebApplication.CreateBuilder(args);
 
 //Application Insights
-var instanceId = Environment.GetEnvironmentVariable("CONTAINER_APP_REPLICA_NAME");
-if (instanceId == null)
-{
-    instanceId = "local";
-}
+var instanceId = Environment.GetEnvironmentVariable("CONTAINER_APP_REPLICA_NAME") ?? "local";
 
 var resourceAttributes = new Dictionary<string, object> {
     { "service.name", "Proxy" },

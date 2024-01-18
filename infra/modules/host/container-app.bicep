@@ -124,8 +124,8 @@ module apim '../apim/apim-backend.bicep' = {
   name: 'apim-backend'
   params: {
     apimServiceName: apimServiceName
-    chargeBackApiBackendId: 'proxy-backend'
-    chargeBackAppUri: 'https://${hostname}.${containerAppsEnvironment.properties.defaultDomain}/openai'
+    proxyApiBackendId: 'proxy-backend'
+    proxyAppUri: 'https://${hostname}.${containerAppsEnvironment.properties.defaultDomain}/openai'
   }
 }
 

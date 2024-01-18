@@ -1,6 +1,6 @@
 param apimServiceName string
-param chargeBackApiBackendId string
-param chargeBackAppUri string
+param proxyApiBackendId string
+param proxyAppUri string
 param logBytes int = 8192
 
 var logSettings = {
@@ -18,11 +18,11 @@ resource apimLogger 'Microsoft.ApiManagement/service/loggers@2021-12-01-preview'
 }
 
 resource backend 'Microsoft.ApiManagement/service/backends@2023-03-01-preview' = {
-  name: chargeBackApiBackendId
+  name: proxyApiBackendId
   parent: apimService
   properties: {
-    description: chargeBackApiBackendId
-    url: chargeBackAppUri
+    description: proxyApiBackendId
+    url: proxyAppUri
     protocol: 'http'
     tls: {
       validateCertificateChain: true
@@ -32,7 +32,7 @@ resource backend 'Microsoft.ApiManagement/service/backends@2023-03-01-preview' =
   }
 }
 
-resource apimChargeBackApi 'Microsoft.ApiManagement/service/apis@2023-03-01-preview' = {
+resource apimProxyApi 'Microsoft.ApiManagement/service/apis@2023-03-01-preview' = {
   name: 'ai-proxy'
   parent: apimService
   properties: {
@@ -49,9 +49,9 @@ resource apimChargeBackApi 'Microsoft.ApiManagement/service/apis@2023-03-01-prev
   }
 }
 
-resource chargeBackApiPolicy 'Microsoft.ApiManagement/service/apis/policies@2023-03-01-preview' = {
+resource proxyApiPolicy 'Microsoft.ApiManagement/service/apis/policies@2023-03-01-preview' = {
   name: 'policy'
-  parent: apimChargeBackApi
+  parent: apimProxyApi
   properties: {
     value: loadTextContent('./policies/api_policy_chargeback.xml')
     format: 'rawxml'
@@ -63,7 +63,7 @@ resource chargeBackApiPolicy 'Microsoft.ApiManagement/service/apis/policies@2023
 
 resource diagnosticsPolicy 'Microsoft.ApiManagement/service/apis/diagnostics@2022-08-01' = if (!empty(apimLogger.name)) {
   name: 'applicationinsights'
-  parent: apimChargeBackApi
+  parent: apimProxyApi
   properties: {
     alwaysLog: 'allErrors'
     httpCorrelationProtocol: 'W3C'

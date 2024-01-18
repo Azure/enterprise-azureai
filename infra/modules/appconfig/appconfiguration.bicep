@@ -65,18 +65,6 @@ resource EntraIdTenantId 'Microsoft.AppConfiguration/configurationStores/keyValu
   }
 }
 
-
-
-var flatArray = replace(replace(string(AzureOpenAIEndpoints), '(', '['), ')', ']')
-
-resource azureOpenAIEndpoints 'Microsoft.AppConfiguration/configurationStores/keyValues@2023-03-01' = {
-  name: 'AzureOpenAI:Endpoints'
-  parent: appconfig
-  properties:{
-    value: flatArray
-  }
-}
-
 resource proxyConfig 'Microsoft.AppConfiguration/configurationStores/keyValues@2023-03-01' = {
   name: 'AzureAIProxy:ProxyConfig'
   parent: appconfig

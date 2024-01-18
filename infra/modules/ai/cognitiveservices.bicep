@@ -59,7 +59,7 @@ resource account 'Microsoft.CognitiveServices/accounts@2023-05-01' = {
 
 resource roleAssignmentDeploymentScript 'Microsoft.Authorization/roleAssignments@2022-04-01' = {
   scope: account
-  name: guid(managedIdentityDeploymentScript.id, roleDefinitionDeploymentScriptResourceId)
+  name: guid(managedIdentityDeploymentScript.id, roleDefinitionDeploymentScriptResourceId, account.name)
   properties: {
     roleDefinitionId: roleDefinitionDeploymentScriptResourceId
     principalId: managedIdentityDeploymentScript.properties.principalId
@@ -82,7 +82,10 @@ param raiPolicies array = [
 
 
 resource deploymentScript 'Microsoft.Resources/deploymentScripts@2023-08-01' = [for raiPolicy in raiPolicies: {
-  name: 'CreateRAIPolicy_${raiPolicy.name}'
+  dependsOn: [
+    roleAssignmentDeploymentScript
+  ]
+  name: 'create_rai_policy__${raiPolicy.name}_${account.name}'
   location: location
   kind: 'AzureCLI'
   identity: {
@@ -92,10 +95,11 @@ resource deploymentScript 'Microsoft.Resources/deploymentScripts@2023-08-01' = [
     }
   }
   properties: {
-    azCliVersion: '2.9.1'
+    azCliVersion: '2.47.0'
     scriptContent: 'az rest --method put --url ${environment().resourceManager}/subscriptions/${subscription().subscriptionId}/resourceGroups/${resourceGroup().name}/providers/Microsoft.CognitiveServices/accounts/${account.name}/raiPolicies/${raiPolicy.name}?api-version=2023-10-01-preview --debug --body "${raiPolicy.payload}"'
     cleanupPreference: 'OnExpiration'
     retentionInterval: 'PT1H'
+    forceUpdateTag: guid(raiPolicy.payload)
   }
 }]
 
@@ -132,7 +136,7 @@ module privateEndpoint '../networking/private-endpoint.bicep' = {
 
 resource roleAssignmentChargeBack 'Microsoft.Authorization/roleAssignments@2022-04-01' = {
   scope: account
-  name: guid(managedIdentityChargeBack.id, roleDefinitionResourceId)
+  name: guid(managedIdentityChargeBack.id, roleDefinitionResourceId, account.name)
   properties: {
     roleDefinitionId: roleDefinitionResourceId
     principalId: managedIdentityChargeBack.properties.principalId

@@ -9,56 +9,56 @@
                 "name": "hate",
                 "blocking": true,
                 "enabled": true,
-                "allowedContentLevel": "medium",
+                "allowedContentLevel": "low",
                 "source": "prompt"
             },
             {
                 "name": "sexual",
                 "blocking": true,
                 "enabled": true,
-                "allowedContentLevel": "medium",
+                "allowedContentLevel": "low",
                 "source": "prompt"
             },
             {
                 "name": "selfharm",
                 "blocking": true,
                 "enabled": true,
-                "allowedContentLevel": "medium",
+                "allowedContentLevel": "low",
                 "source": "prompt"
             },
             {
                 "name": "violence",
                 "blocking": true,
                 "enabled": true,
-                "allowedContentLevel": "medium",
+                "allowedContentLevel": "low",
                 "source": "prompt"
             },
             {
                 "name": "hate",
                 "blocking": true,
                 "enabled": true,
-                "allowedContentLevel": "medium",
+                "allowedContentLevel": "low",
                 "source": "completion"
             },
             {
                 "name": "sexual",
                 "blocking": true,
                 "enabled": true,
-                "allowedContentLevel": "medium",
+                "allowedContentLevel": "low",
                 "source": "completion"
             },
             {
                 "name": "selfharm",
                 "blocking": true,
                 "enabled": true,
-                "allowedContentLevel": "medium",
+                "allowedContentLevel": "low",
                 "source": "completion"
             },
             {
                 "name": "violence",
                 "blocking": true,
                 "enabled": true,
-                "allowedContentLevel": "medium",
+                "allowedContentLevel": "low",
                 "source": "completion"
             },
             {

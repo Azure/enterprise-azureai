@@ -411,6 +411,4 @@ FodyWeavers.xsd
 local.tests.http
 
 # src development files, cleanup needed
-/src/Azure.OpenAI.ChargebackProxy/appsettings.Development.json
-/src/Azure.OpenAI.ChargebackProxy.Client/appsettings.Development.json
-/src/.vscode
+

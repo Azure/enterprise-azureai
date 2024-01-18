@@ -26,7 +26,7 @@ param apimSku string = 'Developer'
 param resourceGroupName string = ''
 param openAiServiceName string = ''
 param apimIdentityName string = ''
-param chargeBackIdentityName string = ''
+param proxyIdentityName string = ''
 param deploymentScriptIdentityName string = ''
 param apimServiceName string = ''
 param logAnalyticsName string = ''
@@ -34,7 +34,7 @@ param dataCollectionEndpointName string = ''
 param dataCollectionRuleName string = ''
 param applicationInsightsDashboardName string = ''
 param applicationInsightsName string = ''
-param chargeBackAppName string = ''
+param proxyAppName string = ''
 param vnetName string = ''
 param apimSubnetName string = ''
 param apimNsgName string = ''
@@ -81,6 +81,8 @@ var privateDnsZoneNames = [
   appConfigPrivateDnsZoneName
 ]
 
+
+
 // Organize resources in a resource group
 resource resourceGroup 'Microsoft.Resources/resourceGroups@2021-04-01' = {
   name: !empty(resourceGroupName) ? resourceGroupName : '${abbrs.resourcesResourceGroups}${environmentName}'
@@ -106,11 +108,11 @@ module managedIdentityApim './modules/security/managed-identity.bicep' = {
   }
 }
 
-module managedIdentityChargeBack './modules/security/managed-identity.bicep' = {
+module managedIdentityProxy './modules/security/managed-identity.bicep' = {
   name: 'managed-identity-chargeback'
   scope: resourceGroup
   params: {
-    name: !empty(chargeBackIdentityName) ? chargeBackIdentityName : '${abbrs.managedIdentityUserAssignedIdentities}${resourceToken}-cb'
+    name: !empty(proxyIdentityName) ? proxyIdentityName : '${abbrs.managedIdentityUserAssignedIdentities}${resourceToken}-proxy'
     location: location
     tags: tags
   }
@@ -120,7 +122,7 @@ module managedIdentityDeploymentScript './modules/security/managed-identity.bice
   name: 'managed-identity-deployment-script'
   scope: resourceGroup
   params: {
-    name: !empty(deploymentScriptIdentityName) ? deploymentScriptIdentityName : '${abbrs.managedIdentityUserAssignedIdentities}${resourceToken}-cb'
+    name: !empty(deploymentScriptIdentityName) ? deploymentScriptIdentityName : '${abbrs.managedIdentityUserAssignedIdentities}${resourceToken}-deploymentscript'
     location: location
     tags: tags
   }
@@ -179,7 +181,7 @@ module monitoring './modules/monitor/monitoring.bicep' = {
     applicationInsightsDnsZoneName: monitorPrivateDnsZoneName
     applicationInsightsPrivateEndpointName: '${abbrs.insightsComponents}${abbrs.privateEndpoints}${resourceToken}'
     applicationInsightsDashboardName: !empty(applicationInsightsDashboardName) ? applicationInsightsDashboardName : '${abbrs.portalDashboards}${resourceToken}'
-    chargeBackManagedIdentityName: managedIdentityChargeBack.outputs.managedIdentityName
+    chargeBackManagedIdentityName: managedIdentityProxy.outputs.managedIdentityName
     
   }
 }
@@ -207,7 +209,7 @@ module openAi './modules/ai/cognitiveservices.bicep' = {
     name: !empty(openAiServiceName) ? openAiServiceName : '${abbrs.cognitiveServicesAccounts}${resourceToken}-${location}'
     location: location
     tags: tags
-    chargeBackManagedIdentityName: managedIdentityChargeBack.outputs.managedIdentityName
+    chargeBackManagedIdentityName: managedIdentityProxy.outputs.managedIdentityName
     deploymentScriptIdentityName: managedIdentityDeploymentScript.outputs.managedIdentityName
     logAnalyticsWorkspaceId: monitoring.outputs.logAnalyticsWorkspaceId
     sku: {
@@ -249,7 +251,7 @@ module openAiSecondary './modules/ai/cognitiveservices.bicep' = if (secondaryOpe
     location: secondaryOpenAILocation
     privateEndpointLocation: location
     tags: tags
-    chargeBackManagedIdentityName: managedIdentityChargeBack.outputs.managedIdentityName
+    chargeBackManagedIdentityName: managedIdentityProxy.outputs.managedIdentityName
     deploymentScriptIdentityName: managedIdentityDeploymentScript.outputs.managedIdentityName
     logAnalyticsWorkspaceId: monitoring.outputs.logAnalyticsWorkspaceId
     sku: {
@@ -291,7 +293,7 @@ module containerRegistry './modules/host/container-registry.bicep' = {
     name: !empty(containerRegistryName) ? containerRegistryName : '${abbrs.containerRegistryRegistries}${resourceToken}'
     location: location
     tags: tags
-    chargeBackManagedIdentityName: managedIdentityChargeBack.outputs.managedIdentityName
+    chargeBackManagedIdentityName: managedIdentityProxy.outputs.managedIdentityName
     myIpAddress: myIpAddress
     //needed for container app deployment
     adminUserEnabled: true
@@ -322,10 +324,10 @@ module app './modules/host/container-app.bicep' = {
   name: 'container-app'
   scope: resourceGroup
   params: {
-    name: !empty(chargeBackAppName) ? chargeBackAppName : '${abbrs.appContainerApps}${resourceToken}-cb'
+    name: !empty(proxyAppName) ? proxyAppName : '${abbrs.appContainerApps}${resourceToken}-proxy'
     location: location
     tags: tags
-    identityName: managedIdentityChargeBack.outputs.managedIdentityName
+    identityName: managedIdentityProxy.outputs.managedIdentityName
     //deploy sample image first - we need the endpoint already for APIM
     //real image will be deployed later
     imageName: ''
@@ -338,7 +340,11 @@ module app './modules/host/container-app.bicep' = {
       }
       {
         name: 'CLIENT_ID'
-        value: managedIdentityChargeBack.outputs.managedIdentityClientId
+        value: managedIdentityProxy.outputs.managedIdentityClientId
+      }
+      {
+        name: 'APPLICATIONINSIGHTS_CONNECTION_STRING'
+        value: monitoring.outputs.applicationInsightsConnectionString
       }
     ]
     pullFromPrivateRegistry: true
@@ -353,6 +359,39 @@ module app './modules/host/container-app.bicep' = {
   ]
 }
 
+
+//create the proxyconfig structure for appconfig
+//based of the endpoints we've created
+var primaryOpenAiEndpoint = {
+  address: openAi.outputs.openAIEndpointUriRaw
+  priority: 1
+  
+}
+var secondaryOpenAiEndpoint = secondaryOpenAILocation != '' ? {
+  address: openAiSecondary.outputs.openAIEndpointUriRaw
+  priority: 2
+} : {}
+
+var proxyConfig = {
+  routes: [
+    {
+      name: gptDeploymentName
+      endpoints:[
+        primaryOpenAiEndpoint
+        secondaryOpenAiEndpoint
+      ]
+    }
+    {
+      name: embeddingDeploymentName
+      endpoints:[
+        primaryOpenAiEndpoint
+        secondaryOpenAiEndpoint
+      ]
+    }
+  ]
+}
+
+
 module appconfig 'modules/appconfig/appconfiguration.bicep' = {
   name: 'appconfig'
   scope: resourceGroup
@@ -363,8 +402,8 @@ module appconfig 'modules/appconfig/appconfiguration.bicep' = {
     AzureMonitorDataCollectionRuleImmutableId: monitoring.outputs.dataCollectionRuleImmutableId
     location: location
     AzureOpenAIEndpoints: array(openAi.outputs.openAIEndpointUriRaw)
-    proxyManagedIdentityName: managedIdentityChargeBack.outputs.managedIdentityName
-    
+    proxyManagedIdentityName: managedIdentityProxy.outputs.managedIdentityName
+    ProxyConfig: proxyConfig
   }
 }
 
@@ -375,6 +414,7 @@ output RESOURCE_TOKEN string = resourceToken
 output AZURE_CONTAINER_ENVIRONMENT_NAME string = containerAppsEnvironment.outputs.name
 output AZURE_CONTAINER_REGISTRY_NAME string = containerRegistry.outputs.name
 output AZURE_CONTAINER_REGISTRY_ENDPOINT string = containerRegistry.outputs.loginServer
-output AZURE_PROXY_MANAGED_IDENTITY_NAME string = managedIdentityChargeBack.outputs.managedIdentityName
+output AZURE_PROXY_MANAGED_IDENTITY_NAME string = managedIdentityProxy.outputs.managedIdentityName
 output AZURE_APPCONFIG_ENDPOINT string = appconfig.outputs.appConfigEndPoint
 output AZURE_RESOURCE_GROUP string = resourceGroup.name
+output APPLICATIONINSIGHTS_CONNECTION_STRING string = monitoring.outputs.applicationInsightsConnectionString

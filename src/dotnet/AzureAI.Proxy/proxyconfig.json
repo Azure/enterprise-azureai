@@ -1,0 +1,41 @@
+{
+  "routes": [
+    {
+      "name": "gpt-35-turbo",
+      "endpoints": [
+        {
+          "address": "https://rbr-openai-sweden.openai.azure.com/",
+          "priority": 1
+        },
+        {
+          "address": "https://rbr-openai-frc.openai.azure.com/",
+          "priority": 2
+        }
+      ]
+    },
+    {
+      "name": "text-embedding-ada-002",
+      "endpoints": [
+        {
+          "address": "https://rbr-openai-sweden.openai.azure.com/",
+          "priority": 1
+        },
+        {
+          "address": "https://rbr-openai-frc.openai.azure.com/",
+          "priority": 1
+        }
+      ]
+    },
+    {
+      "name": "gpt-35-turbo-withpolicy",
+      "endpoints": [
+        {
+          "address": "https://rbr-openai-sweden.openai.azure.com/",
+          "priority": 1
+        }
+      ]
+    }
+  ]
+}
+
+

@@ -5,6 +5,7 @@ param AzureMonitorDataCollectionRuleImmutableId string
 param AzureMonitorDataCollectionRuleStream string
 param AzureOpenAIEndpoints array
 param proxyManagedIdentityName string
+param ProxyConfig object
 
 // App Configuration Data Reader role definition
 var roleDefinitionId = '516239f1-63e1-4d78-a4de-a74fb236a071'
@@ -73,6 +74,14 @@ resource azureOpenAIEndpoints 'Microsoft.AppConfiguration/configurationStores/ke
   parent: appconfig
   properties:{
     value: flatArray
+  }
+}
+
+resource proxyConfig 'Microsoft.AppConfiguration/configurationStores/keyValues@2023-03-01' = {
+  name: 'AzureAIProxy:ProxyConfig'
+  parent: appconfig
+  properties:{
+    value: replace(string(ProxyConfig),',{}', '')
   }
 }
 

@@ -1,3 +1,33 @@
+---
+page_type: sample
+languages:
+- azdeveloper
+- csharp
+- bicep
+- bash
+- powershell
+- dockerfile
+- json
+- xml
+products:
+- azure-api-management
+- azure-app-configuration
+- azure-cache-redis
+- azure-container-apps
+- azure-container-registry
+- azure-dns
+- azure-log-analytics
+- azure-monitor
+- azure-policy
+- azure-private-link
+- dotnet
+- azure-openai
+urlFragment: enterprise-azureai
+name: Azure OpenAI Service as a central capability with Azure API Management
+description: Unleash the power of Azure OpenAI in your company in a secure and manageable way with Azure API Management and Azure Developer CLI
+---
+<!-- YAML front-matter schema: https://review.learn.microsoft.com/en-us/help/contribute/samples/process/onboarding?branch=main#supported-metadata-fields-for-readmemd -->
+
 [![Open in GitHub Codespaces](https://img.shields.io/static/v1?style=for-the-badge&label=GitHub+Codespaces&message=Open&color=lightgrey&logo=github)](https://codespaces.new/Azure/enterprise-azureai)
 [![Open in Dev Container](https://img.shields.io/static/v1?style=for-the-badge&label=Dev+Container&message=Open&color=blue&logo=visualstudiocode)](https://vscode.dev/redirect?url=vscode://ms-vscode-remote.remote-containers/cloneInVolume?url=https://github.com/Azure/enterprise-azureai)
 
@@ -125,10 +155,10 @@ azd monitor --overview
 
 ### Clean up
 
-To clean up all the resources you've created, simply run:
+To clean up all the resources you've created and purge the soft-deletes, simply run:
 
 ```shell
-azd down
+azd down --purge
 ```
 
 The resource group and all the resources will be deleted and you'll be prompted if you want the soft-deletes to be purged.

@@ -1,7 +1,7 @@
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { FileText, MessageCircle } from "lucide-react";
 import { FC } from "react";
-import { ChatDeployment } from "../../chat-services/models";
+import { ChatApiKey } from "../../chat-services/models";
 import { useChatContext } from "../chat-context";
 import { Select, SelectContent, SelectGroup, SelectItem, SelectTrigger, SelectValue, SelectLabel } from "@/components/ui/select";
 
@@ -9,25 +9,25 @@ interface Prop {
   disable: boolean;
 }
 
-export const ChatDeploymentSelector: FC<Prop> = (props) => {
-  const { chatBody, onChatDeploymentChange } = useChatContext();
+export const ChatDepartmentSelector: FC<Prop> = (props) => {
+  const { chatBody, onChatDepartmentChange } = useChatContext();
 
   return (
     <Select 
-     defaultValue={chatBody.deployment}
+     defaultValue={chatBody.apiKey}
       disabled={props.disable}  
-      onValueChange={(value) => onChatDeploymentChange(value as ChatDeployment)}
+      onValueChange={(value) => onChatDepartmentChange(value as ChatApiKey)}
     >
       <SelectTrigger >
         <SelectValue 
-          placeholder="Select deployment"
+          placeholder="Select department"
         />
       </SelectTrigger>
       <SelectContent>
         <SelectGroup>
-          <SelectLabel>Deployments</SelectLabel>
-          <SelectItem value="gpt-35-turbo">gpt-35-turbo</SelectItem>
-          <SelectItem value="gpt-35-turbo-lowpolicy">gpt-35-turbo-lowpolicy</SelectItem>
+          <SelectLabel>Departments</SelectLabel>
+          <SelectItem value="Finance">Finance</SelectItem>
+          <SelectItem value="Marketing">Marketing</SelectItem>
         </SelectGroup>
       </SelectContent>
     </Select>

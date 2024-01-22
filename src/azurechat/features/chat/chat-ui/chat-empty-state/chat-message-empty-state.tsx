@@ -6,6 +6,7 @@ import { ChatFileUI } from "../chat-file/chat-file-ui";
 import { ChatStyleSelector } from "./chat-style-selector";
 import { ChatTypeSelector } from "./chat-type-selector";
 import { ChatDeploymentSelector } from "./chat-deployment-selector";
+import { ChatDepartmentSelector } from "./chat-department-selector";
 
 interface Prop {}
 
@@ -23,7 +24,7 @@ export const ChatMessageEmptyState: FC<Prop> = (props) => {
           personalise the chat by making changes to the settings on the right.
         </p>
       </div>
-      <Card className="col-span-3 flex flex-col gap-5 p-5 ">
+      <Card className="col-span-3 flex flex-col gap-3 p-5 ">
         <Typography variant="h4" className="text-primary">
           Personalise
         </Typography>
@@ -46,6 +47,12 @@ export const ChatMessageEmptyState: FC<Prop> = (props) => {
             Which deployment model would you like to use?
           </p>
           <ChatDeploymentSelector disable={false} />
+        </div>
+        <div className="flex flex-col gap-2">
+          <p className="text-sm text-muted-foreground">
+            Which department's Api-Key would you like to use?
+          </p>
+          <ChatDepartmentSelector disable={false} />
         </div>
         
       </Card>

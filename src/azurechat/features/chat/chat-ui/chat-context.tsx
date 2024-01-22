@@ -5,6 +5,7 @@ import { Message } from "ai";
 import { UseChatHelpers, useChat } from "ai/react";
 import React, { FC, createContext, useContext, useState } from "react";
 import {
+  ChatApiKey,
   ChatDeployment,
   ChatMessageModel,
   ChatThreadModel,
@@ -30,6 +31,7 @@ interface ChatContextProps extends UseChatHelpers {
   fileState: FileState;
   onChatTypeChange: (value: ChatType) => void;
   onChatDeploymentChange: (value: ChatDeployment) => void;
+  onChatDepartmentChange: (value: ChatApiKey) => void;
   onConversationStyleChange: (value: ConversationStyle) => void;
   speech: TextToSpeechProps & SpeechToTextProps;
 }
@@ -58,7 +60,8 @@ export const ChatProvider: FC<Prop> = (props) => {
   const [chatBody, setBody] = useState<PromptGPTBody>({
     id: props.chatThread.id,
     chatType: props.chatThread.chatType,
-    chatDeployment: props.chatThread.chatDeployment,
+    deployment: props.chatThread.deployment,
+    apiKey: props.chatThread.apiKey,
     conversationStyle: props.chatThread.conversationStyle,
     chatOverFileName: props.chatThread.chatOverFileName,
   });
@@ -91,7 +94,11 @@ export const ChatProvider: FC<Prop> = (props) => {
   };
 
   const onChatDeploymentChange = (value: ChatDeployment) => {
-    setChatBody({ ...chatBody, chatDeployment: value });
+    setChatBody({ ...chatBody, deployment: value });
+  };
+
+  const onChatDepartmentChange = (value: ChatApiKey) => {
+    setChatBody({ ...chatBody, apiKey: value });
   };
 
   const onConversationStyleChange = (value: ConversationStyle) => {
@@ -109,6 +116,7 @@ export const ChatProvider: FC<Prop> = (props) => {
         setChatBody,
         chatBody,
         onChatDeploymentChange,
+        onChatDepartmentChange,
         onChatTypeChange,
         onConversationStyleChange,
         fileState,

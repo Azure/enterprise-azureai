@@ -2,7 +2,7 @@ import { FC } from "react";
 import { useChatContext } from "./chat-context";
 import { ChatStyleSelector } from "./chat-empty-state/chat-style-selector";
 import { ChatTypeSelector } from "./chat-empty-state/chat-type-selector";
-
+import { Label } from "@/components/ui/label";
 interface Prop {}
 
 export const ChatHeader: FC<Prop> = (props) => {
@@ -12,6 +12,7 @@ export const ChatHeader: FC<Prop> = (props) => {
       <div className="flex gap-2">
         <ChatTypeSelector disable={true} />
         <ChatStyleSelector disable={true} />
+        <Label>{chatBody.deployment}</Label>
       </div>
       <div className="flex gap-2 h-2">
         <p className="text-xs">{chatBody.chatOverFileName}</p>

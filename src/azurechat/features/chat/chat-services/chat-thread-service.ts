@@ -11,6 +11,7 @@ import { FindAllChatDocuments } from "./chat-document-service";
 import {
   CHAT_THREAD_ATTRIBUTE,
   ChatDeployment,
+  ChatApiKey,
   ChatMessageModel,
   ChatThreadModel,
   ChatType,
@@ -149,6 +150,7 @@ export const updateChatThreadTitle = async (
   messages: ChatMessageModel[],
   chatType: ChatType,
   chatDeployment: ChatDeployment,
+  apiKey: string,
   conversationStyle: ConversationStyle,
   chatOverFileName: string,
   userMessage: string
@@ -157,7 +159,8 @@ export const updateChatThreadTitle = async (
     const updatedChatThread = await UpsertChatThread({
       ...chatThread,
       chatType: chatType,
-      chatDeployment: chatDeployment,
+      deployment: chatDeployment,
+      apiKey: apiKey,
       chatOverFileName: chatOverFileName,
       conversationStyle: conversationStyle,
       name: userMessage.substring(0, 30),
@@ -178,7 +181,8 @@ export const CreateChatThread = async () => {
     createdAt: new Date(),
     isDeleted: false,
     chatType: "simple",
-    chatDeployment: "",
+    deployment: "",
+    apiKey: "",
     conversationStyle: "precise",
     type: CHAT_THREAD_ATTRIBUTE,
     chatOverFileName: "",
@@ -190,7 +194,7 @@ export const CreateChatThread = async () => {
 };
 
 export const initAndGuardChatSession = async (props: PromptGPTProps) => {
-  const { messages, id, chatType, chatDeployment, conversationStyle, chatOverFileName } = props;
+  const { messages, id, chatType, deployment, apiKey, conversationStyle, chatOverFileName } = props;
 
   //last message
   const lastHumanMessage = messages[messages.length - 1];
@@ -202,7 +206,8 @@ export const initAndGuardChatSession = async (props: PromptGPTProps) => {
     currentChatThread,
     chats,
     chatType,
-    chatDeployment,
+    deployment,
+    apiKey,
     conversationStyle,
     chatOverFileName,
     lastHumanMessage.content

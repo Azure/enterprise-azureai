@@ -28,6 +28,7 @@ export const ChatAPISimple = async (props: PromptGPTProps) => {
   const topHistory = history.slice(history.length - 30, history.length);
 
   try {
+    openAI.baseURL = `${process.env.AZURE_OPENAI_API_INSTANCE_NAME}/openai/deployments/${chatThread.deployment}`
     const response = await openAI.chat.completions.create({
       messages: [
         {
@@ -38,7 +39,7 @@ export const ChatAPISimple = async (props: PromptGPTProps) => {
         },
         ...topHistory,
       ],
-      model: process.env.AZURE_OPENAI_API_DEPLOYMENT_NAME,
+      model: chatThread.deployment,
       stream: true,
     });
 
@@ -52,6 +53,7 @@ export const ChatAPISimple = async (props: PromptGPTProps) => {
     });
     return new StreamingTextResponse(stream);
   } catch (e: unknown) {
+    console.error(e);
     if (e instanceof Error) {
       return new Response(e.message, {
         status: 500,

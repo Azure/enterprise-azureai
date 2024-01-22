@@ -90,7 +90,12 @@ azd env set USE_REDIS_CACHE_APIM '<true-or-false>'
 azd env set SECONDARY_OPENAI_LOCATION '<your-secondary-openai-location>'
 ```
 
-In the azd template, we automatically set an environment variable for your current IP address. During deployment, this allows traffic from your local machine to the Azure Container Registry for deploying the containerized application.
+In the azd template, we automatically set an environment variable for your current IP address. During deployment, this allows traffic from your local machine to the Azure Container Registry for deploying the containerized application. 
+
+> [!NOTE]  
+> This should be an IPv4 address. We've noticed in some cases the current IP address script returns an IPv6 address, which is not supported. Please override the value in the .env file of your environment with an IPv4 address.
+
+
 
 ### 3. Provision and deploy all the resources
 

@@ -69,6 +69,11 @@ Read more: [Architecture in detail](#architecture-in-detail)
 ```shell
 azd init -t Azure/enterprise-azureai
 ```
+If you already cloned this repository to your local machine or run from a devcontainer or Github Code spaces you can run this command from the root folder.
+```shell
+azd init
+```
+
 
 It will prompt you to provide a name that will later be used in the name of the deployed resources. If you're not logged into Azure, it will also prompt you to first login.
 

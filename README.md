@@ -67,8 +67,13 @@ Read more: [Architecture in detail](#architecture-in-detail)
 ### 1. Initialize a new `azd` environment
 
 ```shell
+azd init -t Azure/enterprise-azureai
+```
+If you already cloned this repository to your local machine or run from a Dev Container or GitHub Codespaces you can run the following command from the root folder.
+```shell
 azd init
 ```
+
 
 It will prompt you to provide a name that will later be used in the name of the deployed resources. If you're not logged into Azure, it will also prompt you to first login.
 
@@ -199,7 +204,7 @@ We're also using [Azure Monitor Private Link Scope](https://learn.microsoft.com/
 
 ### Azure OpenAI
 
-[Azure OpenAI](https://azure.microsoft.com/en-us/services/openai/) is a service that provides AI models that are trained on a large amount of data. You can use these models to generate text, images, and more.
+[Azure OpenAI](https://learn.microsoft.com/en-us/azure/ai-services/openai/overview) is a service that provides AI models that are trained on a large amount of data. You can use these models to generate text, images, and more.
 
 ### Managed identities
 
@@ -243,4 +248,4 @@ We're also using [Azure Monitor Private Link Scope](https://learn.microsoft.com/
 
 ### Azure Container Environment
 
-[Azure Container Environment](https://docs.microsoft.com/en-us/azure/container-instances/container-instances-container-app) allows you to run containerized applications in Azure without having to manage any infrastructure.
+[Azure Container Environment](https://learn.microsoft.com/en-us/azure/container-apps/environment) allows you to run containerized applications in Azure without having to manage any infrastructure.

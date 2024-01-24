@@ -22,6 +22,9 @@ resource appconfig 'Microsoft.AppConfiguration/configurationStores@2023-03-01' =
   sku: {
     name: 'Standard'
   }
+  properties:  {
+    publicNetworkAccess: 'Enabled'
+  }
 }
 
 module roleAssignment '../roleassignments/roleassignment.bicep' = {

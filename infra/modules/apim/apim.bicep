@@ -109,6 +109,3 @@ resource apimLogger 'Microsoft.ApiManagement/service/loggers@2021-12-01-preview'
 }
 
 output apimName string = apimService.name
-output financeKey string = apiFinanceSubscription.listSecrets(apiFinanceSubscription.apiVersion).primaryKey
-output marketingKey string = apiMarketingSubscription.listSecrets(apiMarketingSubscription.apiVersion).primaryKey
-

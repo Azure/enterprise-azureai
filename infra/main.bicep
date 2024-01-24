@@ -49,6 +49,7 @@ param containerAppsEnvironmentName string = ''
 param appConfigurationName string = ''
 param myIpAddress string = ''
 param cosmosDbAccountName string = ''
+param keyVaultName string = ''
 
 //Determine the version of the chat model to deploy
 param arrayVersion0301Locations array = [
@@ -75,6 +76,7 @@ var redisCachePrivateDnsZoneName = 'privatelink.redis.cache.windows.net'
 var appConfigPrivateDnsZoneName = 'privatelink.azconfig.io'
 var containerRegistryPrivateDnsZoneName = 'privatelink.azurecr.io'
 var cosmosAccountPrivateDnsZoneName = 'privatelink.documents.azure.com'
+var keyvaultPrivateDnsZoneName = 'privatelink.vaultcore.azure.net'
 
 var privateDnsZoneNames = [
   openAiPrivateDnsZoneName
@@ -83,6 +85,7 @@ var privateDnsZoneNames = [
   containerRegistryPrivateDnsZoneName
   appConfigPrivateDnsZoneName
   cosmosAccountPrivateDnsZoneName
+  keyvaultPrivateDnsZoneName
 ]
 
 
@@ -446,6 +449,21 @@ module appconfig 'modules/appconfig/appconfiguration.bicep' = {
     vNetName: vnet.outputs.vnetName
     privateEndpointSubnetName: vnet.outputs.privateEndpointSubnetName
     appconfigPrivateEndpointName: '${abbrs.appConfigurationConfigurationStores}${abbrs.privateEndpoints}${resourceToken}'
+  }
+}
+
+module keyvault 'modules/keyvault/keyvault.bicep' = {
+  name: 'keyvault'
+  scope: resourceGroup
+  params: {
+    name: !empty(keyVaultName) ? keyVaultName : '${abbrs.keyVaultVaults}${resourceToken}'
+    location: location
+    chatappManagedIndentityName: managedIdentityChatApp.outputs.managedIdentityName
+    vNetName: vnet.outputs.vnetName
+    privateEndpointSubnetName: vnet.outputs.privateEndpointSubnetName
+    keyvaultPrivateEndpointName: '${abbrs.keyVaultVaults}${abbrs.privateEndpoints}${resourceToken}'
+    keyvaultPrivateDnsZoneName: keyvaultPrivateDnsZoneName
+    apimServiceName: apim.outputs.apimName
   }
 }
 

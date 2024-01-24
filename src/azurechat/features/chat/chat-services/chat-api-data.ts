@@ -6,6 +6,7 @@ import { similaritySearchVectorWithScore } from "./azure-cog-search/azure-cog-ve
 import { initAndGuardChatSession } from "./chat-thread-service";
 import { CosmosDBChatMessageHistory } from "./cosmosdb/cosmosdb";
 import { PromptGPTProps } from "./models";
+import { GetAPIKey } from "@/features/common/keyvault";
 
 const SYSTEM_PROMPT = `You are ${AI_NAME} who is a helpful AI Assistant.`;
 
@@ -33,7 +34,9 @@ export const ChatAPIData = async (props: PromptGPTProps) => {
     props
   );
 
-  const openAI = OpenAIInstance();
+  const realApiKey = await GetAPIKey(chatThread.apiKey) as string;
+
+  const openAI = OpenAIInstance(realApiKey);
 
   const userId = await userHashedId();
 

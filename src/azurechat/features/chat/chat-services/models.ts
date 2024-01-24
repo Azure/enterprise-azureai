@@ -65,3 +65,12 @@ export interface ServerActionResponse<T> {
   error: string;
   response: T;
 }
+
+export interface DeploymentConfig {
+  type: string;
+  deployment: string;
+}
+
+export interface DepartmentConfig {
+  name: string;
+}

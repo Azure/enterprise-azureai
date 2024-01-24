@@ -5,13 +5,17 @@ import { OpenAIStream, StreamingTextResponse } from "ai";
 import { initAndGuardChatSession } from "./chat-thread-service";
 import { CosmosDBChatMessageHistory } from "./cosmosdb/cosmosdb";
 import { PromptGPTProps } from "./models";
+import { GetAPIKey } from "@/features/common/keyvault";
 
 export const ChatAPISimple = async (props: PromptGPTProps) => {
   const { lastHumanMessage, chatThread } = await initAndGuardChatSession(props);
 
-  const openAI = OpenAIInstance();
+  const realApiKey = await GetAPIKey(chatThread.apiKey) as string;
+
+  const openAI = OpenAIInstance(realApiKey);
   console.log("openAI", openAI.baseURL);
 
+  
   const userId = await userHashedId();
 
   const chatHistory = new CosmosDBChatMessageHistory({
@@ -29,6 +33,7 @@ export const ChatAPISimple = async (props: PromptGPTProps) => {
 
   try {
     openAI.baseURL = `${process.env.AZURE_OPENAI_API_INSTANCE_NAME}/openai/deployments/${chatThread.deployment}`
+    
     const response = await openAI.chat.completions.create({
       messages: [
         {

@@ -1,18 +1,34 @@
-import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { FileText, MessageCircle } from "lucide-react";
 import { FC } from "react";
-import { ChatDeployment } from "../../chat-services/models";
+import { ChatDeployment, DeploymentConfig } from "../../chat-services/models";
 import { useChatContext } from "../chat-context";
 import { Select, SelectContent, SelectGroup, SelectItem, SelectTrigger, SelectValue, SelectLabel } from "@/components/ui/select";
 
 interface Prop {
   disable: boolean;
+  deployments: DeploymentConfig[];
 }
+
+export default function ListDeployments(deployments : DeploymentConfig[]) : any {
+    const chatDeployments = deployments.filter(d => d.type == "chat");
+    const listItems = chatDeployments.map((deployment) =>
+      <SelectItem 
+        value={deployment.deployment}>
+          {deployment.deployment}
+      </SelectItem>
+    );
+    return listItems;
+
+  };
+
+
+
+
 
 export const ChatDeploymentSelector: FC<Prop> = (props) => {
   const { chatBody, onChatDeploymentChange } = useChatContext();
 
   return (
+    
     <Select 
      defaultValue={chatBody.deployment}
       disabled={props.disable}  
@@ -23,13 +39,13 @@ export const ChatDeploymentSelector: FC<Prop> = (props) => {
           placeholder="Select deployment"
         />
       </SelectTrigger>
+
       <SelectContent>
-        <SelectGroup>
-          <SelectLabel>Deployments</SelectLabel>
-          <SelectItem value="gpt-35-turbo">gpt-35-turbo</SelectItem>
-          <SelectItem value="gpt-35-turbo-lowpolicy">gpt-35-turbo-lowpolicy</SelectItem>
-        </SelectGroup>
+        <SelectGroup>{ListDeployments(props.deployments)}</SelectGroup>
       </SelectContent>
+      
     </Select>
+    
   );
 };
+ 

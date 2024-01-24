@@ -13,6 +13,7 @@ export const ChatHeader: FC<Prop> = (props) => {
         <ChatTypeSelector disable={true} />
         <ChatStyleSelector disable={true} />
         <Label>{chatBody.deployment}</Label>
+        <Label>{chatBody.apiKey}</Label>
       </div>
       <div className="flex gap-2 h-2">
         <p className="text-xs">{chatBody.chatOverFileName}</p>

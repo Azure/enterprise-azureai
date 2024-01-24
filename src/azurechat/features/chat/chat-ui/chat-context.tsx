@@ -11,6 +11,7 @@ import {
   ChatThreadModel,
   ChatType,
   ConversationStyle,
+  DeploymentConfig,
   PromptGPTBody,
 } from "../chat-services/models";
 import { transformCosmosToAIModel } from "../chat-services/utils";
@@ -43,6 +44,7 @@ interface Prop {
   id: string;
   chats: Array<ChatMessageModel>;
   chatThread: ChatThreadModel;
+ 
 }
 
 export const ChatProvider: FC<Prop> = (props) => {

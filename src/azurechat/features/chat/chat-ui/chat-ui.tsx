@@ -5,10 +5,14 @@ import { useChatContext } from "./chat-context";
 import { ChatMessageEmptyState } from "./chat-empty-state/chat-message-empty-state";
 import ChatInput from "./chat-input/chat-input";
 import { ChatMessageContainer } from "./chat-message-container";
+import { DepartmentConfig, DeploymentConfig } from "../chat-services/models";
 
-interface Prop {}
+interface Prop {
+  deployments: DeploymentConfig[];
+  departments: DepartmentConfig[];
+}
 
-export const ChatUI: FC<Prop> = () => {
+export const ChatUI: FC<Prop> = (props) => {
   const { messages } = useChatContext();
   
   return (
@@ -16,7 +20,7 @@ export const ChatUI: FC<Prop> = () => {
       {messages.length !== 0 ? (
         <ChatMessageContainer />
       ) : (
-        <ChatMessageEmptyState />
+        <ChatMessageEmptyState deployments={props.deployments} departments={props.departments}/>
       )}
 
       <ChatInput />

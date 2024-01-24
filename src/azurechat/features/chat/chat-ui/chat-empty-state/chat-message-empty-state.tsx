@@ -7,8 +7,13 @@ import { ChatStyleSelector } from "./chat-style-selector";
 import { ChatTypeSelector } from "./chat-type-selector";
 import { ChatDeploymentSelector } from "./chat-deployment-selector";
 import { ChatDepartmentSelector } from "./chat-department-selector";
+import { DepartmentConfig, DeploymentConfig } from "../../chat-services/models";
 
-interface Prop {}
+
+interface Prop {
+  deployments: DeploymentConfig[];
+  departments: DepartmentConfig[];
+}
 
 export const ChatMessageEmptyState: FC<Prop> = (props) => {
   const { fileState } = useChatContext();
@@ -35,27 +40,30 @@ export const ChatMessageEmptyState: FC<Prop> = (props) => {
           </p>
           <ChatStyleSelector disable={false} />
         </div>
-        <div className="flex flex-col gap-2">
+        {/* for now we are not supporting files}
+        {/* <div className="flex flex-col gap-2">
           <p className="text-sm text-muted-foreground">
             How would you like to chat?
           </p>
-          <ChatTypeSelector disable={false} />
+          <ChatTypeSelector disable={true} />
         </div>
-        {showFileUpload === "data" && <ChatFileUI />}
+        {showFileUpload === "data" && <ChatFileUI />} */}
         <div className="flex flex-col gap-2">
           <p className="text-sm text-muted-foreground">
             Which deployment model would you like to use?
           </p>
-          <ChatDeploymentSelector disable={false} />
+          <ChatDeploymentSelector disable={false} deployments={props.deployments}/>
         </div>
         <div className="flex flex-col gap-2">
           <p className="text-sm text-muted-foreground">
             Which department's Api-Key would you like to use?
           </p>
-          <ChatDepartmentSelector disable={false} />
+          <ChatDepartmentSelector disable={false} departments={props.departments}/>
         </div>
         
       </Card>
     </div>
   );
 };
+
+

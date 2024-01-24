@@ -10,6 +10,7 @@ param vNetName string
 param privateEndpointSubnetName string
 param appconfigPrivateEndpointName string
 param appconfigPrivateDnsZoneName string
+param apimEndpoint string
 
 
 resource proxyIdentity 'Microsoft.ManagedIdentity/userAssignedIdentities@2018-11-30' existing = {
@@ -120,6 +121,14 @@ resource deployments 'Microsoft.AppConfiguration/configurationStores/keyValues@2
   parent: appconfig
   properties:{
     value: string(deploymentsConfig)
+  }
+}
+
+resource OpenAIEndpoint 'Microsoft.AppConfiguration/configurationStores/keyValues@2023-03-01' = {
+  name: 'AzureChat:ApimEndpoint'
+  parent: appconfig
+  properties:{
+    value: apimEndpoint
   }
 }
 

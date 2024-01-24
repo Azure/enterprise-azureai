@@ -449,6 +449,7 @@ module appconfig 'modules/appconfig/appconfiguration.bicep' = {
     vNetName: vnet.outputs.vnetName
     privateEndpointSubnetName: vnet.outputs.privateEndpointSubnetName
     appconfigPrivateEndpointName: '${abbrs.appConfigurationConfigurationStores}${abbrs.privateEndpoints}${resourceToken}'
+    apimEndpoint: apim.outputs.apimEndpoint
   }
 }
 

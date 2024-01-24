@@ -7,6 +7,7 @@ import { initAndGuardChatSession } from "./chat-thread-service";
 import { CosmosDBChatMessageHistory } from "./cosmosdb/cosmosdb";
 import { PromptGPTProps } from "./models";
 import { GetAPIKey } from "@/features/common/keyvault";
+import { GetSingleValue } from "@/features/common/appconfig";
 
 const SYSTEM_PROMPT = `You are ${AI_NAME} who is a helpful AI Assistant.`;
 
@@ -35,8 +36,11 @@ export const ChatAPIData = async (props: PromptGPTProps) => {
   );
 
   const realApiKey = await GetAPIKey(chatThread.apiKey) as string;
+  const apiVersion = await GetSingleValue("AzureChat:OpenAIApiVersion") as string;
+  const apimEndpoint = await GetSingleValue("AzureChat:ApimEndpoint") as string;
 
-  const openAI = OpenAIInstance(realApiKey);
+  const openAI = OpenAIInstance(realApiKey, apiVersion );
+  openAI.baseURL = `${apimEndpoint}/openai/deployments/${chatThread.deployment}`
 
   const userId = await userHashedId();
 
@@ -77,7 +81,7 @@ export const ChatAPIData = async (props: PromptGPTProps) => {
           }),
         },
       ],
-      model: process.env.AZURE_OPENAI_API_DEPLOYMENT_NAME,
+      model: chatThread.deployment,
       stream: true,
     });
 

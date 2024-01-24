@@ -2,15 +2,21 @@ import { Container, CosmosClient } from "@azure/cosmos";
 import { GetSingleValue } from "./appconfig";
 import { DefaultAzureCredential } from "@azure/identity";
 
-// Read Cosmos DB_NAME and CONTAINER_NAME from .env
-const DB_NAME = process.env.AZURE_COSMOSDB_DB_NAME || "chat";
-const CONTAINER_NAME = process.env.AZURE_COSMOSDB_CONTAINER_NAME || "history";
+
+const DB_NAME =  "chat";
+const CONTAINER_NAME = "history";
+
+const credential = new DefaultAzureCredential();
+
 
 export const initDBContainer = async () => {
 
   const endpoint = await GetSingleValue("AzureChat:CosmosDbEndPoint");
-  const credential = new DefaultAzureCredential();
-  const client = new CosmosClient({ endpoint, aadCredentials: credential});
+  console.log("Cosmos endpoint (init)", endpoint);
+  const client = new CosmosClient({
+    endpoint,
+    aadCredentials: credential
+  });
 
   const databaseResponse = await client.databases.createIfNotExists({
     id: DB_NAME,
@@ -31,12 +37,14 @@ export class CosmosDBContainer {
   private static instance: CosmosDBContainer;
   private container: Promise<Container>;
 
-  private constructor() {
-    const endpoint = process.env.AZURE_COSMOSDB_URI;
-    const key = process.env.AZURE_COSMOSDB_KEY;
+  private constructor(endpoint: string) {
+     console.log("Cosmos endpoint (constructor)", endpoint);
+    const client = new CosmosClient({
+      endpoint,
+      aadCredentials: credential
+    });
 
-    const client = new CosmosClient({ endpoint, key });
-
+   
     this.container = new Promise((resolve, reject) => {
       client.databases
         .createIfNotExists({
@@ -60,9 +68,11 @@ export class CosmosDBContainer {
     });
   }
 
-  public static getInstance(): CosmosDBContainer {
+  public static async getInstance(): Promise<CosmosDBContainer> {
     if (!CosmosDBContainer.instance) {
-      CosmosDBContainer.instance = new CosmosDBContainer();
+      const endpoint = await GetSingleValue("AzureChat:CosmosDbEndPoint");
+      console.log("Cosmos endpoint (instance)", endpoint);
+      CosmosDBContainer.instance = new CosmosDBContainer(endpoint);
     }
 
     return CosmosDBContainer.instance;

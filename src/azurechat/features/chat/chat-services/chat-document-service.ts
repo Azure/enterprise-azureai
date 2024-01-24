@@ -138,7 +138,9 @@ export const initDocumentIntelligence = () => {
 };
 
 export const FindAllChatDocuments = async (chatThreadID: string) => {
-  const container = await CosmosDBContainer.getInstance().getContainer();
+  const instance = await CosmosDBContainer.getInstance();
+  const container = await instance.getContainer();
+
 
   const querySpec: SqlQuerySpec = {
     query:
@@ -180,7 +182,9 @@ export const UpsertChatDocument = async (
     name: fileName,
   };
 
-  const container = await CosmosDBContainer.getInstance().getContainer();
+  const instance = await CosmosDBContainer.getInstance();
+  const container = await instance.getContainer();
+
   await container.items.upsert(modelToSave);
 };
 

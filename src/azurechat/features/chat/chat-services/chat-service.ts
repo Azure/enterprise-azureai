@@ -7,7 +7,8 @@ import { CosmosDBContainer } from "../../common/cosmos";
 import { ChatMessageModel, MESSAGE_ATTRIBUTE } from "./models";
 
 export const FindAllChats = async (chatThreadID: string) => {
-  const container = await CosmosDBContainer.getInstance().getContainer();
+  const instance = await CosmosDBContainer.getInstance();
+  const container = await instance.getContainer();
 
   const querySpec: SqlQuerySpec = {
     query:
@@ -44,7 +45,8 @@ export const UpsertChat = async (chatModel: ChatMessageModel) => {
     isDeleted: false,
   };
 
-  const container = await CosmosDBContainer.getInstance().getContainer();
+  const instance = await CosmosDBContainer.getInstance();
+  const container = await instance.getContainer();
   await container.items.upsert(modelToSave);
 };
 

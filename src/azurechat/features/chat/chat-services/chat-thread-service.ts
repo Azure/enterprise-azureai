@@ -20,7 +20,8 @@ import {
 } from "./models";
 
 export const FindAllChatThreadForCurrentUser = async () => {
-  const container = await CosmosDBContainer.getInstance().getContainer();
+  const instance = await CosmosDBContainer.getInstance();
+  const container = await instance.getContainer();
 
   const querySpec: SqlQuerySpec = {
     query:
@@ -50,7 +51,9 @@ export const FindAllChatThreadForCurrentUser = async () => {
 };
 
 export const FindChatThreadByID = async (id: string) => {
-  const container = await CosmosDBContainer.getInstance().getContainer();
+  const instance = await CosmosDBContainer.getInstance();
+  const container = await instance.getContainer();
+
 
   const querySpec: SqlQuerySpec = {
     query:
@@ -83,7 +86,8 @@ export const FindChatThreadByID = async (id: string) => {
 };
 
 export const SoftDeleteChatThreadByID = async (chatThreadID: string) => {
-  const container = await CosmosDBContainer.getInstance().getContainer();
+  const instance = await CosmosDBContainer.getInstance();
+  const container = await instance.getContainer();
   const threads = await FindChatThreadByID(chatThreadID);
 
   if (threads.length !== 0) {
@@ -133,7 +137,9 @@ export const EnsureChatThreadIsForCurrentUser = async (
 };
 
 export const UpsertChatThread = async (chatThread: ChatThreadModel) => {
-  const container = await CosmosDBContainer.getInstance().getContainer();
+  const instance = await CosmosDBContainer.getInstance();
+  const container = await instance.getContainer();
+
   const updatedChatThread = await container.items.upsert<ChatThreadModel>(
     chatThread
   );
@@ -188,7 +194,8 @@ export const CreateChatThread = async () => {
     chatOverFileName: "",
   };
 
-  const container = await CosmosDBContainer.getInstance().getContainer();
+  const instance = await CosmosDBContainer.getInstance();
+  const container = await instance.getContainer();
   const response = await container.items.create<ChatThreadModel>(modelToSave);
   return response.resource;
 };

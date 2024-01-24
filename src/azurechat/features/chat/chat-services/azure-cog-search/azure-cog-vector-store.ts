@@ -1,4 +1,9 @@
 import { OpenAIEmbeddingInstance } from "@/features/common/openai";
+import { GetAPIKey } from "@/features/common/keyvault";
+import { GetSingleValue } from "@/features/common/appconfig";
+
+//changed some stuff in this file, just to make the build work
+
 
 export interface AzureCogDocumentIndex {
   id: string;
@@ -75,7 +80,11 @@ export const similaritySearchVectorWithScore = async (
   k: number,
   filter?: AzureCogFilter
 ): Promise<Array<AzureCogDocumentIndex & DocumentSearchModel>> => {
-  const openai = OpenAIEmbeddingInstance();
+
+  const realApiKey = await GetAPIKey("marketing") as string;
+  const apiVersion = await GetSingleValue("AzureChat:OpenAIApiVersion") as string;
+  const apimEndpoint = await GetSingleValue("AzureChat:ApimEndpoint") as string;
+  const openai = OpenAIEmbeddingInstance(realApiKey, apiVersion);
 
   const embeddings = await openai.embeddings.create({
     input: query,
@@ -157,7 +166,11 @@ export const deleteDocuments = async (chatThreadId: string): Promise<void> => {
 export const embedDocuments = async (
   documents: Array<AzureCogDocumentIndex>
 ) => {
-  const openai = OpenAIEmbeddingInstance();
+
+  const realApiKey = await GetAPIKey("marketing") as string;
+  const apiVersion = await GetSingleValue("AzureChat:OpenAIApiVersion") as string;
+  const apimEndpoint = await GetSingleValue("AzureChat:ApimEndpoint") as string;
+  const openai = OpenAIEmbeddingInstance(realApiKey, apiVersion);
 
   try {
     const contentsToEmbed = documents.map((d) => d.pageContent);

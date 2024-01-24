@@ -30,7 +30,8 @@ export class CosmosDBChatMessageHistory {
   }
 
   async clear(): Promise<void> {
-    const container = await CosmosDBContainer.getInstance().getContainer();
+    const instance = await CosmosDBContainer.getInstance();
+    const container = await instance.getContainer();
     await container.delete();
   }
 

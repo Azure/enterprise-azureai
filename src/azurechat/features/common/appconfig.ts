@@ -17,7 +17,7 @@ const appConfigStore = appConfig();
 
 export async function GetDeployments() {
   const deploymentsJson = await appConfigStore.getConfigurationSetting({
-    key: "AzureChat:Endpoints"
+    key: "AzureChat:Deployments"
   });
 
   const deployments = JSON.parse(deploymentsJson.value as string) as DeploymentConfig[];

@@ -1,19 +1,20 @@
 param name string 
 param location string
-param AzureMonitorDataCollectionEndPointUrl string
-param AzureMonitorDataCollectionRuleImmutableId string
-param AzureMonitorDataCollectionRuleStream string
-param AzureOpenAIEndpoints array
+param azureMonitorDataCollectionEndPointUrl string
+param azureMonitorDataCollectionRuleImmutableId string
+param azureMonitorDataCollectionRuleStream string
 param proxyManagedIdentityName string
-param ProxyConfig object
+param proxyConfig object
+param cosmosDbEndPoint string
+param vNetName string
+param privateEndpointSubnetName string
+param appconfigPrivateEndpointName string
+param appconfigPrivateDnsZoneName string
 
-// App Configuration Data Reader role definition
-var roleDefinitionId = '516239f1-63e1-4d78-a4de-a74fb236a071'
 
 resource proxyIdentity 'Microsoft.ManagedIdentity/userAssignedIdentities@2018-11-30' existing = {
   name: proxyManagedIdentityName
 }
-
 
 resource appconfig 'Microsoft.AppConfiguration/configurationStores@2023-03-01' = {
   name: name
@@ -27,7 +28,7 @@ module roleAssignment '../roleassignments/roleassignment.bicep' = {
   name: 'roleAssignment'
   params: {
     principalId: proxyIdentity.properties.principalId
-    roleDefinitionId: roleDefinitionId
+    roleName: 'App Configuration Data Reader'
     targetResourceId: appconfig.id
     deploymentName: 'proxy-roleassignment-AppConfigurationDataReader'
   }
@@ -37,7 +38,7 @@ resource dataCollectionEndpoint 'Microsoft.AppConfiguration/configurationStores/
   name: 'AzureMonitor:DataCollectionEndPoint'
   parent: appconfig
   properties:{
-    value: AzureMonitorDataCollectionEndPointUrl
+    value: azureMonitorDataCollectionEndPointUrl
   }
 }
 
@@ -45,7 +46,7 @@ resource dataCollectionRuleImmutableId 'Microsoft.AppConfiguration/configuration
   name: 'AzureMonitor:DataCollectionRuleImmutableId'
   parent: appconfig
   properties:{
-    value: AzureMonitorDataCollectionRuleImmutableId
+    value: azureMonitorDataCollectionRuleImmutableId
   }
 }
 
@@ -53,7 +54,7 @@ resource dataCollectionRuleStream 'Microsoft.AppConfiguration/configurationStore
   name: 'AzureMonitor:DataCollectionRuleStream'
   parent: appconfig
   properties:{
-    value: AzureMonitorDataCollectionRuleStream
+    value: azureMonitorDataCollectionRuleStream
   }
 }
 
@@ -65,11 +66,83 @@ resource EntraIdTenantId 'Microsoft.AppConfiguration/configurationStores/keyValu
   }
 }
 
-resource proxyConfig 'Microsoft.AppConfiguration/configurationStores/keyValues@2023-03-01' = {
+resource proxyConfiguration 'Microsoft.AppConfiguration/configurationStores/keyValues@2023-03-01' = {
   name: 'AzureAIProxy:ProxyConfig'
   parent: appconfig
   properties:{
-    value: replace(string(ProxyConfig),',{}', '')
+    value: replace(string(proxyConfig),',{}', '')
+  }
+}
+
+resource cosmosDb 'Microsoft.AppConfiguration/configurationStores/keyValues@2023-03-01' = {
+  name: 'AzureChat:CosmosDbEndPoint'
+  parent: appconfig
+  properties:{
+    value: cosmosDbEndPoint
+  }
+}
+
+//this will be used to create the departments in the app config store for the chat app
+var departmentsConfig = [
+  {
+    name: 'Finance'
+  }
+  {
+    name: 'Marketing'
+  }
+]
+
+resource departments 'Microsoft.AppConfiguration/configurationStores/keyValues@2023-03-01' = {
+  name: 'AzureChat:Departments'
+  parent: appconfig
+  properties:{
+    value: string(departmentsConfig)
+  }
+}
+
+//this will be used to create the deployments in the app config store for the chat app
+var deploymentsConfig = [
+  {
+    type: 'chat'
+    deployment: 'gpt-35-turbo'
+  }
+  {
+    type: 'embeddings'
+    deployment: 'text-embeddings-ada-002'
+  }
+]
+
+resource deployments 'Microsoft.AppConfiguration/configurationStores/keyValues@2023-03-01' = {
+  name: 'AzureChat:Deployments'
+  parent: appconfig
+  properties:{
+    value: string(deploymentsConfig)
+  }
+}
+
+module privateEndpoint '../networking/private-endpoint.bicep' = {
+  //set config keys first
+  dependsOn: [
+    departments 
+    deployments 
+    proxyConfiguration
+    cosmosDb
+    EntraIdTenantId
+    dataCollectionRuleStream 
+    dataCollectionRuleImmutableId
+    dataCollectionEndpoint
+  ]
+  name: '${appconfig.name}-privateEndpoint-deployment'
+  params: {
+    groupIds: [
+      'configurationStores'
+    ]
+    dnsZoneName: appconfigPrivateDnsZoneName
+    name: appconfigPrivateEndpointName
+    subnetName: privateEndpointSubnetName
+    privateLinkServiceId: appconfig.id
+    vNetName: vNetName
+    location: location
   }
 }
 

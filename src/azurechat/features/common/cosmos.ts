@@ -1,14 +1,16 @@
 import { Container, CosmosClient } from "@azure/cosmos";
+import { GetSingleValue } from "./appconfig";
+import { DefaultAzureCredential } from "@azure/identity";
 
 // Read Cosmos DB_NAME and CONTAINER_NAME from .env
 const DB_NAME = process.env.AZURE_COSMOSDB_DB_NAME || "chat";
 const CONTAINER_NAME = process.env.AZURE_COSMOSDB_CONTAINER_NAME || "history";
 
 export const initDBContainer = async () => {
-  const endpoint = process.env.AZURE_COSMOSDB_URI;
-  const key = process.env.AZURE_COSMOSDB_KEY;
 
-  const client = new CosmosClient({ endpoint, key });
+  const endpoint = await GetSingleValue("AzureChat:CosmosDbEndPoint");
+  const credential = new DefaultAzureCredential();
+  const client = new CosmosClient({ endpoint, aadCredentials: credential});
 
   const databaseResponse = await client.databases.createIfNotExists({
     id: DB_NAME,

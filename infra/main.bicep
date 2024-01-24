@@ -27,6 +27,7 @@ param resourceGroupName string = ''
 param openAiServiceName string = ''
 param apimIdentityName string = ''
 param proxyIdentityName string = ''
+param chatappIdentityName string = ''
 param deploymentScriptIdentityName string = ''
 param apimServiceName string = ''
 param logAnalyticsName string = ''
@@ -47,6 +48,7 @@ param containerRegistryName string = ''
 param containerAppsEnvironmentName string = ''
 param appConfigurationName string = ''
 param myIpAddress string = ''
+param cosmosDbAccountName string = ''
 
 //Determine the version of the chat model to deploy
 param arrayVersion0301Locations array = [
@@ -72,6 +74,7 @@ var monitorPrivateDnsZoneName = 'privatelink.monitor.azure.com'
 var redisCachePrivateDnsZoneName = 'privatelink.redis.cache.windows.net'
 var appConfigPrivateDnsZoneName = 'privatelink.azconfig.io'
 var containerRegistryPrivateDnsZoneName = 'privatelink.azurecr.io'
+var cosmosAccountPrivateDnsZoneName = 'privatelink.documents.azure.com'
 
 var privateDnsZoneNames = [
   openAiPrivateDnsZoneName
@@ -79,6 +82,7 @@ var privateDnsZoneNames = [
   redisCachePrivateDnsZoneName
   containerRegistryPrivateDnsZoneName
   appConfigPrivateDnsZoneName
+  cosmosAccountPrivateDnsZoneName
 ]
 
 
@@ -109,10 +113,20 @@ module managedIdentityApim './modules/security/managed-identity.bicep' = {
 }
 
 module managedIdentityProxy './modules/security/managed-identity.bicep' = {
-  name: 'managed-identity-chargeback'
+  name: 'managed-identity-proxy'
   scope: resourceGroup
   params: {
     name: !empty(proxyIdentityName) ? proxyIdentityName : '${abbrs.managedIdentityUserAssignedIdentities}${resourceToken}-proxy'
+    location: location
+    tags: tags
+  }
+}
+
+module managedIdentityChatApp './modules/security/managed-identity.bicep' = {
+  name: 'managed-identity-chatapp'
+  scope: resourceGroup
+  params: {
+    name: !empty(chatappIdentityName) ? chatappIdentityName : '${abbrs.managedIdentityUserAssignedIdentities}${resourceToken}-chatapp'
     location: location
     tags: tags
   }
@@ -186,6 +200,15 @@ module monitoring './modules/monitor/monitoring.bicep' = {
   }
 }
 
+module apimPip 'modules/networking/publicip.bicep' = {
+  name: 'apim-pip'
+  scope: resourceGroup
+  params: {
+    name: !empty(apimServiceName) ? apimServiceName : '${abbrs.apiManagementService}${resourceToken}-pip'
+    location: location
+    tags: tags
+  }
+}
 
 module apim './modules/apim/apim.bicep' = {
   name: 'apim'
@@ -320,6 +343,7 @@ module containerAppsEnvironment './modules/host/container-app-environment.bicep'
   }
 }
 
+
 module app './modules/host/container-app.bicep' = {
   name: 'container-app'
   scope: resourceGroup
@@ -360,6 +384,8 @@ module app './modules/host/container-app.bicep' = {
 }
 
 
+
+
 //create the proxyconfig structure for appconfig
 //based of the endpoints we've created
 var primaryOpenAiEndpoint = {
@@ -391,19 +417,35 @@ var proxyConfig = {
   ]
 }
 
+module cosmosDb 'modules/cosmosdb/account.bicep' = {
+  name: 'cosmosdb'
+  scope: resourceGroup
+  params: {
+    name: !empty(cosmosDbAccountName) ? cosmosDbAccountName : '${abbrs.documentDBDatabaseAccounts}${resourceToken}'
+    location: location
+    cosmosAccountPrivateDnsZoneName: cosmosAccountPrivateDnsZoneName
+    vNetName: vnet.outputs.vnetName
+    privateEndpointSubnetName: vnet.outputs.privateEndpointSubnetName
+    cosmosPrivateEndpointName: '${abbrs.documentDBDatabaseAccounts}${abbrs.privateEndpoints}${resourceToken}'
+  }
+}
 
 module appconfig 'modules/appconfig/appconfiguration.bicep' = {
   name: 'appconfig'
   scope: resourceGroup
   params: {
     name: !empty(appConfigurationName) ? appConfigurationName : '${abbrs.appConfigurationConfigurationStores}${resourceToken}'
-    AzureMonitorDataCollectionEndPointUrl: monitoring.outputs.dataCollectionEndpointUrl
-    AzureMonitorDataCollectionRuleStream: monitoring.outputs.dataCollectionRuleStreamName
-    AzureMonitorDataCollectionRuleImmutableId: monitoring.outputs.dataCollectionRuleImmutableId
+    azureMonitorDataCollectionEndPointUrl: monitoring.outputs.dataCollectionEndpointUrl
+    azureMonitorDataCollectionRuleStream: monitoring.outputs.dataCollectionRuleStreamName
+    azureMonitorDataCollectionRuleImmutableId: monitoring.outputs.dataCollectionRuleImmutableId
     location: location
-    AzureOpenAIEndpoints: array(openAi.outputs.openAIEndpointUriRaw)
     proxyManagedIdentityName: managedIdentityProxy.outputs.managedIdentityName
-    ProxyConfig: proxyConfig
+    proxyConfig: proxyConfig
+    cosmosDbEndPoint: cosmosDb.outputs.cosmosDbEndPoint
+    appconfigPrivateDnsZoneName: appConfigPrivateDnsZoneName
+    vNetName: vnet.outputs.vnetName
+    privateEndpointSubnetName: vnet.outputs.privateEndpointSubnetName
+    appconfigPrivateEndpointName: '${abbrs.appConfigurationConfigurationStores}${abbrs.privateEndpoints}${resourceToken}'
   }
 }
 

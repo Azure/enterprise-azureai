@@ -15,12 +15,18 @@ param apimManagedIdentityName string
 param apimSubnetId string
 param virtualNetworkType string
 
+
 resource applicationInsights 'Microsoft.Insights/components@2020-02-02' existing = {
   name: applicationInsightsName
 }
 
 resource managedIdentityApim 'Microsoft.ManagedIdentity/userAssignedIdentities@2018-11-30' existing = {
   name: apimManagedIdentityName
+}
+
+//setting explicit public IP for APIM will force stV2 instance of APIM
+resource apimPublicIp 'Microsoft.Network/publicIPAddresses@2023-04-01' existing = {
+  name: '${name}-pip'
 }
 
 resource apimService 'Microsoft.ApiManagement/service@2023-03-01-preview' = {
@@ -41,6 +47,7 @@ resource apimService 'Microsoft.ApiManagement/service@2023-03-01-preview' = {
     publisherEmail: publisherEmail
     publisherName: publisherName
     virtualNetworkType: virtualNetworkType
+    publicIpAddressId: (virtualNetworkType == 'External') ? apimPublicIp.id : null
     virtualNetworkConfiguration: {
       subnetResourceId: apimSubnetId
     }
@@ -61,6 +68,7 @@ resource apimService 'Microsoft.ApiManagement/service@2023-03-01-preview' = {
       'Microsoft.WindowsAzure.ApiManagement.Gateway.Security.Backend.Protocols.Tls11': 'false'
       'Microsoft.WindowsAzure.ApiManagement.Gateway.Security.Backend.Protocols.Ssl30': 'false'
     }
+    
   }
 }
 
@@ -101,3 +109,6 @@ resource apimLogger 'Microsoft.ApiManagement/service/loggers@2021-12-01-preview'
 }
 
 output apimName string = apimService.name
+output financeKey string = apiFinanceSubscription.listSecrets(apiFinanceSubscription.apiVersion).primaryKey
+output marketingKey string = apiMarketingSubscription.listSecrets(apiMarketingSubscription.apiVersion).primaryKey
+

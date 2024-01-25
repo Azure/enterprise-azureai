@@ -410,5 +410,24 @@ FodyWeavers.xsd
 # Local Test scripts
 local.tests.http
 
-# src development files, cleanup needed
+# Azurechat / Node.js with Next
+# next.js
+**/.next/
+**/out/
+
+# production
+**/build
+
+# debug
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# local env files
+.env*.local
+.env
+
+# typescript
+*.tsbuildinfo
+next-env.d.ts
 

@@ -23,6 +23,8 @@ param secondaryOpenAILocation string = ''
 param apimSku string = 'Developer'
 
 //Leave blank to use default naming conventions
+//To utilize pre-existing resources such as VNET, OpenAI, Resource Groups, etc., simply fill in the fields below with the corresponding resource names.
+
 param resourceGroupName string = ''
 param openAiServiceName string = ''
 param apimIdentityName string = ''

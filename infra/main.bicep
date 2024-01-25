@@ -36,6 +36,7 @@ param dataCollectionRuleName string = ''
 param applicationInsightsDashboardName string = ''
 param applicationInsightsName string = ''
 param proxyAppName string = ''
+param chatAppName string = ''
 param vnetName string = ''
 param apimSubnetName string = ''
 param apimNsgName string = ''
@@ -203,13 +204,15 @@ module monitoring './modules/monitor/monitoring.bicep' = {
   }
 }
 
+var apimService = !empty(apimServiceName) ? apimServiceName : '${abbrs.apiManagementService}${resourceToken}'
 module apimPip 'modules/networking/publicip.bicep' = {
   name: 'apim-pip'
   scope: resourceGroup
   params: {
-    name: !empty(apimServiceName) ? apimServiceName : '${abbrs.apiManagementService}${resourceToken}-pip'
+    name: '${apimService}-pip'
     location: location
     tags: tags
+    fqdn:'${apimService}.${location}.cloudapp.azure.com'
   }
 }
 
@@ -217,7 +220,7 @@ module apim './modules/apim/apim.bicep' = {
   name: 'apim'
   scope: resourceGroup
   params: {
-    name: !empty(apimServiceName) ? apimServiceName : '${abbrs.apiManagementService}${resourceToken}'
+    name: apimService
     location: location
     tags: tags
     sku: apimSku
@@ -319,7 +322,8 @@ module containerRegistry './modules/host/container-registry.bicep' = {
     name: !empty(containerRegistryName) ? containerRegistryName : '${abbrs.containerRegistryRegistries}${resourceToken}'
     location: location
     tags: tags
-    chargeBackManagedIdentityName: managedIdentityProxy.outputs.managedIdentityName
+    proxyManagedIdentityName: managedIdentityProxy.outputs.managedIdentityName
+    chatappManagedIdentityName: managedIdentityChatApp.outputs.managedIdentityName
     myIpAddress: myIpAddress
     //needed for container app deployment
     adminUserEnabled: true
@@ -347,8 +351,8 @@ module containerAppsEnvironment './modules/host/container-app-environment.bicep'
 }
 
 
-module app './modules/host/container-app.bicep' = {
-  name: 'container-app'
+module proxyApp './modules/host/container-app.bicep' = {
+  name: 'container-app-proxy'
   scope: resourceGroup
   params: {
     name: !empty(proxyAppName) ? proxyAppName : '${abbrs.appContainerApps}${resourceToken}-proxy'
@@ -358,7 +362,6 @@ module app './modules/host/container-app.bicep' = {
     //deploy sample image first - we need the endpoint already for APIM
     //real image will be deployed later
     imageName: ''
-    apimServiceName: apim.outputs.apimName
     external: true
     env: [
       {
@@ -386,6 +389,53 @@ module app './modules/host/container-app.bicep' = {
   ]
 }
 
+
+module proxyApiBackend 'modules/apim/apim-backend.bicep' = {
+  dependsOn: [
+    apim
+  ]
+  name: 'apim-backend'
+  scope: resourceGroup
+  params: {
+    apimServiceName: apimService
+    proxyApiBackendId: 'proxy-backend'
+    proxyAppUri: 'https://${proxyApp.outputs.hostname}.${proxyApp.outputs.defaultDomain}/openai'
+  }
+}
+
+
+module chatApp './modules/host/container-app.bicep' = {
+  name: 'container-app-azurechat'
+  scope: resourceGroup
+  params: {
+    name: !empty(chatAppName) ? chatAppName : '${abbrs.appContainerApps}${resourceToken}-azurechat'
+    location: location
+    tags: tags
+    identityName: managedIdentityChatApp.outputs.managedIdentityName
+    imageName: ''
+    external: true
+    env: [
+      {
+        name: 'APPCONFIG_ENDPOINT'
+        value: appconfig.outputs.appConfigEndPoint
+      }
+      {
+        name: 'CLIENT_ID'
+        value: managedIdentityChatApp.outputs.managedIdentityClientId
+      }
+      
+    ]
+    pullFromPrivateRegistry: true
+    azdServiceName: 'azurechat'
+    containerAppsEnvironmentName: containerAppsEnvironment.outputs.name
+    containerRegistryName: containerRegistry.outputs.name
+    targetPort: 3000
+  }
+  dependsOn: [
+    containerRegistry
+    containerAppsEnvironment
+  ]
+}
 
 
 
@@ -443,6 +493,7 @@ module appconfig 'modules/appconfig/appconfiguration.bicep' = {
     azureMonitorDataCollectionRuleImmutableId: monitoring.outputs.dataCollectionRuleImmutableId
     location: location
     proxyManagedIdentityName: managedIdentityProxy.outputs.managedIdentityName
+    chatappIdentityName: managedIdentityChatApp.outputs.managedIdentityName
     proxyConfig: proxyConfig
     cosmosDbEndPoint: cosmosDb.outputs.cosmosDbEndPoint
     appconfigPrivateDnsZoneName: appConfigPrivateDnsZoneName
@@ -459,7 +510,7 @@ module keyvault 'modules/keyvault/keyvault.bicep' = {
   params: {
     name: !empty(keyVaultName) ? keyVaultName : '${abbrs.keyVaultVaults}${resourceToken}'
     location: location
-    chatappManagedIndentityName: managedIdentityChatApp.outputs.managedIdentityName
+    chatappIdentityName: managedIdentityChatApp.outputs.managedIdentityName
     vNetName: vnet.outputs.vnetName
     privateEndpointSubnetName: vnet.outputs.privateEndpointSubnetName
     keyvaultPrivateEndpointName: '${abbrs.keyVaultVaults}${abbrs.privateEndpoints}${resourceToken}'

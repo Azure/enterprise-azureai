@@ -6,7 +6,6 @@ param imageName string
 param containerAppsEnvironmentName string
 param containerRegistryName string
 param appConfigEndpoint string
-param appInsightsConnectionString string
 
 module app 'modules/host/container-app.bicep' = {
   name: 'container-app'
@@ -19,7 +18,7 @@ module app 'modules/host/container-app.bicep' = {
     containerAppsEnvironmentName: containerAppsEnvironmentName
     containerRegistryName: containerRegistryName
     containerName: imageName
-    azdServiceName: 'proxy'
+    azdServiceName: 'azurechat'
     pullFromPrivateRegistry: true
     targetPort: 8080
     external: true
@@ -28,10 +27,7 @@ module app 'modules/host/container-app.bicep' = {
         name: 'APPCONFIG_ENDPOINT'
         value: appConfigEndpoint
       }
-      {
-        name: 'APPLICATIONINSIGHTS_CONNECTION_STRING'
-        value: appInsightsConnectionString
-      }
+   
     ]
     
     

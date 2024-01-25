@@ -1,18 +1,18 @@
 import { Container, CosmosClient } from "@azure/cosmos";
 import { GetSingleValue } from "./appconfig";
-import { DefaultAzureCredential } from "@azure/identity";
+import { GetCredential } from "./managedIdentity";
 
 
 const DB_NAME =  "chat";
 const CONTAINER_NAME = "history";
 
-const credential = new DefaultAzureCredential();
+const credential = GetCredential();
 
 
 export const initDBContainer = async () => {
 
   const endpoint = await GetSingleValue("AzureChat:CosmosDbEndPoint");
-  console.log("Cosmos endpoint (init)", endpoint);
+  
   const client = new CosmosClient({
     endpoint,
     aadCredentials: credential
@@ -38,7 +38,7 @@ export class CosmosDBContainer {
   private container: Promise<Container>;
 
   private constructor(endpoint: string) {
-     console.log("Cosmos endpoint (constructor)", endpoint);
+     
     const client = new CosmosClient({
       endpoint,
       aadCredentials: credential
@@ -71,7 +71,7 @@ export class CosmosDBContainer {
   public static async getInstance(): Promise<CosmosDBContainer> {
     if (!CosmosDBContainer.instance) {
       const endpoint = await GetSingleValue("AzureChat:CosmosDbEndPoint");
-      console.log("Cosmos endpoint (instance)", endpoint);
+      
       CosmosDBContainer.instance = new CosmosDBContainer(endpoint);
     }
 

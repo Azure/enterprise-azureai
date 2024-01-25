@@ -4,6 +4,7 @@ param azureMonitorDataCollectionEndPointUrl string
 param azureMonitorDataCollectionRuleImmutableId string
 param azureMonitorDataCollectionRuleStream string
 param proxyManagedIdentityName string
+param chatappIdentityName string
 param proxyConfig object
 param cosmosDbEndPoint string
 param vNetName string
@@ -17,6 +18,10 @@ resource proxyIdentity 'Microsoft.ManagedIdentity/userAssignedIdentities@2018-11
   name: proxyManagedIdentityName
 }
 
+resource chatappIdentity 'Microsoft.ManagedIdentity/userAssignedIdentities@2018-11-30' existing = {
+  name: chatappIdentityName
+}
+
 resource appconfig 'Microsoft.AppConfiguration/configurationStores@2023-03-01' = {
   name: name
   location: location
@@ -28,8 +33,8 @@ resource appconfig 'Microsoft.AppConfiguration/configurationStores@2023-03-01' =
   }
 }
 
-module roleAssignment '../roleassignments/roleassignment.bicep' = {
-  name: 'roleAssignment'
+module proxyRoleAssignment '../roleassignments/roleassignment.bicep' = {
+  name: 'proxy-roleAssignment'
   params: {
     principalId: proxyIdentity.properties.principalId
     roleName: 'App Configuration Data Reader'
@@ -37,6 +42,17 @@ module roleAssignment '../roleassignments/roleassignment.bicep' = {
     deploymentName: 'proxy-roleassignment-AppConfigurationDataReader'
   }
 }
+
+module chatappRoleAssignment '../roleassignments/roleassignment.bicep' = {
+  name: 'chatapp-roleAssignment'
+  params: {
+    principalId: chatappIdentity.properties.principalId
+    roleName: 'App Configuration Data Reader'
+    targetResourceId: appconfig.id
+    deploymentName: 'chatapp-roleassignment-AppConfigurationDataReader'
+  }
+}
+
 
 resource dataCollectionEndpoint 'Microsoft.AppConfiguration/configurationStores/keyValues@2023-03-01' = {
   name: 'AzureMonitor:DataCollectionEndPoint'

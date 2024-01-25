@@ -53,7 +53,7 @@ param pullFromPrivateRegistry bool = true
 
 param azdServiceName string 
 
-param apimServiceName string
+
 
 resource userIdentity 'Microsoft.ManagedIdentity/userAssignedIdentities@2023-01-31' existing = if (!empty(identityName)) {
   name: identityName
@@ -120,15 +120,6 @@ resource app 'Microsoft.App/containerApps@2023-04-01-preview' = {
 var fqdnParts = split(app.properties.configuration.ingress.fqdn, '.')
 var hostname = fqdnParts[0]
 
-module apim '../apim/apim-backend.bicep' = {
-  name: 'apim-backend'
-  params: {
-    apimServiceName: apimServiceName
-    proxyApiBackendId: 'proxy-backend'
-    proxyAppUri: 'https://${hostname}.${containerAppsEnvironment.properties.defaultDomain}/openai'
-  }
-}
-
 
 resource containerAppsEnvironment 'Microsoft.App/managedEnvironments@2023-04-01-preview' existing = {
   name: containerAppsEnvironmentName
@@ -138,3 +129,6 @@ output defaultDomain string = containerAppsEnvironment.properties.defaultDomain
 output identityPrincipalId string = userIdentity.id
 output imageName string = imageName
 output name string = app.name
+output hostname string = hostname
+
+

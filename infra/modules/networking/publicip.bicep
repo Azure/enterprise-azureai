@@ -1,6 +1,7 @@
 param name string 
 param location string
 param tags object = {}
+param fqdn string
 
 
 resource publicIp 'Microsoft.Network/publicIPAddresses@2023-04-01' = {
@@ -21,7 +22,7 @@ resource publicIp 'Microsoft.Network/publicIPAddresses@2023-04-01' = {
     publicIPAddressVersion: 'IPv4'
     dnsSettings: {
       domainNameLabel: name
-      fqdn: '${name}.${location}.cloudapp.azure.com'
+      fqdn: fqdn 
     }
   }
 }

@@ -4,7 +4,7 @@ param keyvaultPrivateDnsZoneName string
 param keyvaultPrivateEndpointName string
 param privateEndpointSubnetName string
 param vNetName string
-param chatappManagedIndentityName string
+param chatappIdentityName string
 param apimServiceName string
 
 resource apimService 'Microsoft.ApiManagement/service@2023-03-01-preview' existing = {
@@ -22,6 +22,9 @@ resource apimFinanceSubscription 'Microsoft.ApiManagement/service/subscriptions@
   parent: apimService
 }
 
+resource chatappIdentity 'Microsoft.ManagedIdentity/userAssignedIdentities@2018-11-30' existing = {
+  name: chatappIdentityName
+}
 
 
 
@@ -38,6 +41,16 @@ resource keyvault 'Microsoft.KeyVault/vaults@2023-07-01' = {
     enableSoftDelete: false
     tenantId: subscription().tenantId
 
+  }
+}
+
+module chatappRoleAssignment '../roleassignments/roleassignment.bicep' = {
+  name: 'kv-chatapp-roleAssignment'
+  params: {
+    principalId: chatappIdentity.properties.principalId
+    roleName: 'Key Vault Secrets User'
+    targetResourceId: keyvault.id
+    deploymentName: 'chatapp-roleassignment-KeyvaultSecretsUser'
   }
 }
 

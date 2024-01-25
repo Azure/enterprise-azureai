@@ -1,9 +1,9 @@
-import { DefaultAzureCredential } from "@azure/identity"
 import { AppConfigurationClient } from "@azure/app-configuration"
 import { DepartmentConfig, DeploymentConfig } from "../chat/chat-services/models";
+import { GetCredential } from "./managedIdentity";
 
 const appConfig = (): AppConfigurationClient => {
-    const credential = new DefaultAzureCredential();
+    const credential = GetCredential();
     const configurationEndpoint = `${process.env.APPCONFIG_ENDPOINT}`
 
     const client = new AppConfigurationClient(

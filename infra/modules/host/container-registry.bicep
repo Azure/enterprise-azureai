@@ -1,7 +1,8 @@
 param name string
 param location string = resourceGroup().location
 param tags object = {}
-param chargeBackManagedIdentityName string
+param proxyManagedIdentityName string
+param chatappManagedIdentityName string
 param myIpAddress string = ''
 param containerRegistryDnsZoneName string = ''
 param containerRegistryPrivateEndpointName string = ''
@@ -43,8 +44,12 @@ param workspaceId string = ''
 // Acr Pull role definition
 var roleDefinitionResourceId = '/providers/Microsoft.Authorization/roleDefinitions/7f951dda-4ed3-4680-a7ca-43fe172d538d'
 
-resource managedIdentityChargeBack 'Microsoft.ManagedIdentity/userAssignedIdentities@2018-11-30' existing = {
-  name: chargeBackManagedIdentityName
+resource managedIdentityProxy 'Microsoft.ManagedIdentity/userAssignedIdentities@2018-11-30' existing = {
+  name: proxyManagedIdentityName
+}
+
+resource managedIdentityChatapp 'Microsoft.ManagedIdentity/userAssignedIdentities@2018-11-30' existing = {
+  name: chatappManagedIdentityName
 }
 
 // 2022-02-01-preview needed for anonymousPullEnabled
@@ -88,16 +93,25 @@ module privateEndpoint '../networking/private-endpoint.bicep' = {
   }
 }
 
-resource roleAssignmentChargeBack 'Microsoft.Authorization/roleAssignments@2022-04-01' = {
-  scope: containerRegistry
-  name: guid(managedIdentityChargeBack.id, roleDefinitionResourceId)
-  properties: {
-    roleDefinitionId: roleDefinitionResourceId
-    principalId: managedIdentityChargeBack.properties.principalId
-    principalType: 'ServicePrincipal'
+module proxyRoleAssignment '../roleassignments/roleassignment.bicep' = {
+  name: 'proxy-roleAssignment'
+  params: {
+    principalId: managedIdentityProxy.properties.principalId
+    roleName: 'AcrPull'
+    targetResourceId: containerRegistry.id
+    deploymentName: 'proxy-roleassignment-acrPull'
   }
 }
 
+module chatappRoleAssignment '../roleassignments/roleassignment.bicep' = {
+  name: 'chatapp-roleAssignment'
+  params: {
+    principalId: managedIdentityChatapp.properties.principalId
+    roleName: 'AcrPull'
+    targetResourceId: containerRegistry.id
+    deploymentName: 'chatapp-roleassignment-acrPull'
+  }
+}
 resource diagnostics 'Microsoft.Insights/diagnosticSettings@2021-05-01-preview' = if (!empty(workspaceId)) {
   name: 'registry-diagnostics'
   scope: containerRegistry

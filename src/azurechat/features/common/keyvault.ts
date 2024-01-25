@@ -1,11 +1,11 @@
 import { SecretClient } from "@azure/keyvault-secrets";
-import { DefaultAzureCredential } from "@azure/identity";
 import { GetSingleValue } from "./appconfig";
+import { GetCredential } from "./managedIdentity";
 
 
 
 const keyVault = (url: string): SecretClient => {
-    const credential = new DefaultAzureCredential();
+    const credential = GetCredential();
     const client = new SecretClient(
         url,
         credential

@@ -93,7 +93,7 @@ azd env set SECONDARY_OPENAI_LOCATION '<your-secondary-openai-location>'
 In the azd template, we automatically set an environment variable for your current IP address. During deployment, this allows traffic from your local machine to the Azure Container Registry for deploying the containerized application. 
 
 > [!NOTE]  
-> This should be an IPv4 address. We've noticed in some cases the current IP address script returns an IPv6 address, which is not supported. Please override the value in the .env file of your environment with an IPv4 address.
+> To determine your IPv4 address, the service icanhazip.com is being used. To control the IPv4 addresss used directly (without the service), edit the MY_IP_ADDRESS field in the .azure\<name>\.env file. This file is created after azd init. Without a properly configured IP address, azd up will fail.
 
 
 

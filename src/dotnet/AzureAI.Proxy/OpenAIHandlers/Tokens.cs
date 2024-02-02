@@ -17,15 +17,9 @@ public static class Tokens
         return nrTokens;
     }
 
-    public static LogAnalyticsRecord CalculateChatInputTokens(HttpRequest request, LogAnalyticsRecord record)
+    public static LogAnalyticsRecord CalculateChatInputTokens(string requestBody, LogAnalyticsRecord record)
     {
-        //Rewind to first position to read the stream again
-        request.Body.Position = 0;
-
-        StreamReader reader = new StreamReader(request.Body, true);
-        string bodyText = reader.ReadToEnd();
- 
-        JsonNode jsonNode = JsonSerializer.Deserialize<JsonNode>(bodyText);
+        JsonNode jsonNode = JsonSerializer.Deserialize<JsonNode>(requestBody);
         var modelName = jsonNode["model"].ToString();
 
         record.Model = modelName;
@@ -38,10 +32,6 @@ public static class Tokens
             record.InputTokens += GetTokensFromString(content, modelName);
         }
 
-
-
         return record;
-
-
     }
 }

@@ -78,7 +78,7 @@ internal class OpenAIChargebackTransformProvider : ITransformProvider
             }
             else
             {
-                var originalStream = await responseContext.ProxyResponse.Content.ReadAsStreamAsync();
+                using var originalStream = await responseContext.ProxyResponse.Content.ReadAsStreamAsync();
                 var stringBuilder = new StringBuilder();
 
                 // Buffer for reading chunks
@@ -140,7 +140,7 @@ internal class OpenAIChargebackTransformProvider : ITransformProvider
                                 case "chat.completion.chunk":
                                     if (firstChunck)
                                     {
-                                        record = Tokens.CalculateChatInputTokens(responseContext.HttpContext.Request, record);
+                                        record = Tokens.CalculateChatInputTokens(capturedBody, record);
                                         record.ObjectType = objectValue;
                                         firstChunck = false;
                                     }

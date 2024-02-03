@@ -19,12 +19,10 @@ services:
       context: ../
   azurechat:
     project: ./src/azurechat
-    host: containerapp
+    host: appservice
     language: ts
     
-    docker:
-      path: ./Dockerfile
-      context: .
+    
 hooks:
   preprovision: # Pull environment variable inline from local device and set in .env file
     posix:  

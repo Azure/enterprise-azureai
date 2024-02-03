@@ -47,7 +47,7 @@ resource apimService 'Microsoft.ApiManagement/service@2023-03-01-preview' = {
     publisherEmail: publisherEmail
     publisherName: publisherName
     virtualNetworkType: virtualNetworkType
-    publicIpAddressId: (virtualNetworkType == 'External') ? apimPublicIp.id : null
+    publicIpAddressId: apimPublicIp.id 
     virtualNetworkConfiguration: {
       subnetResourceId: apimSubnetId
     }

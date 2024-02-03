@@ -42,6 +42,8 @@ param apimSubnetName string = ''
 param apimNsgName string = ''
 param acaSubnetName string = ''
 param acaNsgName string = ''
+param appServiceSubnetName string = ''
+param appServiceNsgName string = ''
 param privateEndpointSubnetName string = ''
 param privateEndpointNsgName string = ''
 param redisCacheServiceName string = ''
@@ -175,6 +177,8 @@ module vnet './modules/networking/vnet.bicep' = {
     apimNsgName: !empty(apimNsgName) ? apimNsgName : '${abbrs.networkNetworkSecurityGroups}${abbrs.apiManagementService}${resourceToken}'
     acaSubnetName: !empty(acaSubnetName) ? acaSubnetName : '${abbrs.networkVirtualNetworksSubnets}${abbrs.appContainerApps}${resourceToken}'
     acaNsgName: !empty(acaNsgName) ? acaNsgName : '${abbrs.networkNetworkSecurityGroups}${abbrs.appContainerApps}${resourceToken}'
+    appServiceSubnetName: !empty(appServiceSubnetName) ? appServiceSubnetName : '${abbrs.networkVirtualNetworksSubnets}${abbrs.webServerFarms}${resourceToken}'
+    appServiceNsgName: !empty(appServiceNsgName) ? appServiceNsgName : '${abbrs.networkNetworkSecurityGroups}${abbrs.webServerFarms}${resourceToken}'
     privateEndpointSubnetName: !empty(privateEndpointSubnetName) ? privateEndpointSubnetName : '${abbrs.networkVirtualNetworksSubnets}${abbrs.privateEndpoints}${resourceToken}'
     privateEndpointNsgName: !empty(privateEndpointNsgName) ? privateEndpointNsgName : '${abbrs.networkNetworkSecurityGroups}${abbrs.privateEndpoints}${resourceToken}'
     location: location
@@ -404,37 +408,18 @@ module proxyApiBackend 'modules/apim/apim-backend.bicep' = {
 }
 
 
-module chatApp './modules/host/container-app.bicep' = {
-  name: 'container-app-azurechat'
+module chatApp 'modules/appservice/azurechat.bicep'= {
+  name: 'appservice-app-azurechat'
   scope: resourceGroup
   params: {
-    name: !empty(chatAppName) ? chatAppName : '${abbrs.appContainerApps}${resourceToken}-azurechat'
+    webapp_name: !empty(chatAppName) ? chatAppName : '${abbrs.webSitesAppService}${resourceToken}-azurechat'
+    appservice_name: !empty(chatAppName) ? '${abbrs.webServerFarms}${chatAppName}' : '${abbrs.webServerFarms}${resourceToken}-azurechat'
     location: location
     tags: tags
-    identityName: managedIdentityChatApp.outputs.managedIdentityName
-    imageName: ''
-    external: true
-    env: [
-      {
-        name: 'APPCONFIG_ENDPOINT'
-        value: appconfig.outputs.appConfigEndPoint
-      }
-      {
-        name: 'CLIENT_ID'
-        value: managedIdentityChatApp.outputs.managedIdentityClientId
-      }
-      
-    ]
-    pullFromPrivateRegistry: true
-    azdServiceName: 'azurechat'
-    containerAppsEnvironmentName: containerAppsEnvironment.outputs.name
-    containerRegistryName: containerRegistry.outputs.name
-    targetPort: 3000
+    azureChatIdentityName: managedIdentityChatApp.outputs.managedIdentityName
+    appConfigEndpoint: appconfig.outputs.appConfigEndPoint
+    subnetId: vnet.outputs.appServiceSubnetId
   }
-  dependsOn: [
-    containerRegistry
-    containerAppsEnvironment
-  ]
 }
 
 

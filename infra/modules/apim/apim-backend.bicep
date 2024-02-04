@@ -49,6 +49,47 @@ resource apimProxyApi 'Microsoft.ApiManagement/service/apis@2023-03-01-preview' 
   }
 }
 
+resource openAiMarketingLimitedProduct 'Microsoft.ApiManagement/service/products@2022-08-01' = {
+  parent: apimService
+  name: 'openAiMarketingLimited'
+  properties: {
+    displayName: 'Marketing OpenAI Limited'
+    description: 'Marketing team must subscribe for this Product to use the OpenAI API. They are limited to specific versions of the OpenAI API models. This is handled by Product specific Policies on APIM.'
+    approvalRequired: false
+    subscriptionRequired: true
+    state: 'published'
+  }
+}
+
+resource openAiMarketingLimitedProductPolicy 'Microsoft.ApiManagement/service/products/policies@2020-12-01' = {
+  name: 'policy'
+  parent: openAiMarketingLimitedProduct
+  properties: {
+    value: loadTextContent('./policies/product_policy_model_limit.xml')
+    format: 'rawxml'
+  }
+}
+
+resource openAiProductLink 'Microsoft.ApiManagement/service/products/apiLinks@2023-03-01-preview' = {
+  name: 'openai-product-apilink'
+  parent: openAiMarketingLimitedProduct
+  properties: {
+    apiId: apimProxyApi.id
+  }
+}
+
+resource productSubscription 'Microsoft.ApiManagement/service/subscriptions@2021-04-01-preview' = {
+  name: 'MarketingProductSubscription'
+  parent: apimService
+  properties: {
+    displayName: 'Marketing OpenAI Product Subscription'
+    scope: '/products/${openAiMarketingLimitedProduct.id}'
+    state: 'active'
+    allowTracing: true
+  }
+}
+
+
 resource proxyApiPolicy 'Microsoft.ApiManagement/service/apis/policies@2023-03-01-preview' = {
   name: 'policy'
   parent: apimProxyApi

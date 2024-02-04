@@ -1,0 +1,21 @@
+<policies>
+    <inbound>
+        <base />
+        <choose>
+            <when condition="@(!(Convert.ToString(context.Request.MatchedParameters["deployment-id"])??"").Equals("gpt-turbo-3.5"))">
+                <return-response>
+                    <set-status code="403" reason="Not Authorized" />
+                </return-response>
+            </when>
+        </choose>
+    </inbound>
+    <backend>
+        <base />
+    </backend>
+    <outbound>
+        <base />
+    </outbound>
+    <on-error>
+        <base />
+    </on-error>
+</policies>

@@ -61,6 +61,10 @@ resource webApp 'Microsoft.Web/sites@2023-01-01' = {
           name: 'NEXTAUTH_URL'
           value: 'https://${webapp_name}.azurewebsites.net'
         }
+        { 
+          name: 'SCM_DO_BUILD_DURING_DEPLOYMENT'
+          value: 'true'
+        }
         
       ]
     }

@@ -12,6 +12,12 @@ param environmentName string
 param location string
 
 @description('Use Redis Cache for Azure API Management.')
+@metadata({
+  azd: {
+    type: 'boolean'
+  }
+})
+
 param useRedisCacheForAPIM bool = false
 
 @description('Add Azure Open AI Service to secondary region for load balancing.')

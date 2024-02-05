@@ -49,21 +49,21 @@ resource apimProxyApi 'Microsoft.ApiManagement/service/apis@2023-03-01-preview' 
   }
 }
 
-resource openAiMarketingLimitedProduct 'Microsoft.ApiManagement/service/products@2022-08-01' = {
+resource openAiGpt35TurboProduct 'Microsoft.ApiManagement/service/products@2022-08-01' = {
   parent: apimService
-  name: 'openAiMarketingLimited'
+  name: 'openAiGpt35TurboProduct'
   properties: {
-    displayName: 'Marketing OpenAI Limited'
-    description: 'Marketing team must subscribe for this Product to use the OpenAI API. They are limited to specific versions of the OpenAI API models. This is handled by Product specific Policies on APIM.'
+    displayName: 'Gpt-35-Turbo'
+    description: 'Open AI model Gpt-35-Turbo.'
     approvalRequired: false
     subscriptionRequired: true
     state: 'published'
   }
 }
 
-resource openAiMarketingLimitedProductPolicy 'Microsoft.ApiManagement/service/products/policies@2020-12-01' = {
+resource openAiGpt35TurboProductPolicy 'Microsoft.ApiManagement/service/products/policies@2020-12-01' = {
   name: 'policy'
-  parent: openAiMarketingLimitedProduct
+  parent: openAiGpt35TurboProduct
   properties: {
     value: loadTextContent('./policies/product_policy_model_limit.xml')
     format: 'rawxml'
@@ -72,18 +72,18 @@ resource openAiMarketingLimitedProductPolicy 'Microsoft.ApiManagement/service/pr
 
 resource openAiProductLink 'Microsoft.ApiManagement/service/products/apiLinks@2023-03-01-preview' = {
   name: 'openai-product-apilink'
-  parent: openAiMarketingLimitedProduct
+  parent: openAiGpt35TurboProduct
   properties: {
     apiId: apimProxyApi.id
   }
 }
 
 resource productSubscription 'Microsoft.ApiManagement/service/subscriptions@2021-04-01-preview' = {
-  name: 'MarketingProductSubscription'
+  name: 'gpt35TurboProductSubscription'
   parent: apimService
   properties: {
-    displayName: 'Marketing OpenAI Product Subscription'
-    scope: '/products/${openAiMarketingLimitedProduct.id}'
+    displayName: 'Gtp-35-Turbo Subscription'
+    scope: '/products/${openAiGpt35TurboProduct.id}'
     state: 'active'
     allowTracing: true
   }

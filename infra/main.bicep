@@ -12,13 +12,15 @@ param environmentName string
 param location string
 
 @description('Use Redis Cache for Azure API Management.')
+param useRedisCacheForAPIM bool = false
+
+@description('Deploy Azure Chat demo app')
 @metadata({
   azd: {
     type: 'boolean'
   }
 })
-
-param useRedisCacheForAPIM bool = false
+param deployChatApp bool
 
 @description('Add Azure Open AI Service to secondary region for load balancing.')
 @allowed(['','westeurope','southcentralus','australiaeast', 'canadaeast', 'eastus', 'eastus2', 'francecentral', 'japaneast', 'northcentralus', 'swedencentral', 'switzerlandnorth', 'uksouth'])
@@ -214,17 +216,6 @@ module monitoring './modules/monitor/monitoring.bicep' = {
   }
 }
 
-var apimService = !empty(apimServiceName) ? apimServiceName : '${abbrs.apiManagementService}${resourceToken}'
-module apimPip 'modules/networking/publicip.bicep' = {
-  name: 'apim-pip'
-  scope: resourceGroup
-  params: {
-    name: '${apimService}-pip'
-    location: location
-    tags: tags
-    fqdn:'${apimService}.${location}.cloudapp.azure.com'
-  }
-}
 
 var apimService = !empty(apimServiceName) ? apimServiceName : '${abbrs.apiManagementService}${resourceToken}'
 module apimPip 'modules/networking/publicip.bicep' = {
@@ -483,6 +474,7 @@ module cosmosDb 'modules/cosmosdb/account.bicep' = {
     vNetName: vnet.outputs.vnetName
     privateEndpointSubnetName: vnet.outputs.privateEndpointSubnetName
     cosmosPrivateEndpointName: '${abbrs.documentDBDatabaseAccounts}${abbrs.privateEndpoints}${resourceToken}'
+    chatAppIdentityName: managedIdentityChatApp.outputs.managedIdentityName
   }
 }
 

@@ -226,6 +226,18 @@ module apimPip 'modules/networking/publicip.bicep' = {
   }
 }
 
+var apimService = !empty(apimServiceName) ? apimServiceName : '${abbrs.apiManagementService}${resourceToken}'
+module apimPip 'modules/networking/publicip.bicep' = {
+  name: 'apim-pip'
+  scope: resourceGroup
+  params: {
+    name: '${apimService}-pip'
+    location: location
+    tags: tags
+    fqdn:'${apimService}.${location}.cloudapp.azure.com'
+  }
+}
+
 module apim './modules/apim/apim.bicep' = {
   name: 'apim'
   scope: resourceGroup

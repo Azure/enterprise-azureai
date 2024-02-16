@@ -514,7 +514,7 @@ module keyvault 'modules/keyvault/keyvault.bicep' = {
   }
 }
 
-output TENTANT_ID string = subscription().tenantId
+output TENANT_ID string = subscription().tenantId
 output DEPLOYMENT_LOCATION string = location
 output APIM_NAME string = apim.outputs.apimName
 output RESOURCE_TOKEN string = resourceToken

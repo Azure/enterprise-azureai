@@ -26,16 +26,20 @@ const configureIdentityProvider = () => {
     );
   }
 
+  console.log(process.env.AUTH_ENTRA_CLIENT_ID );
+  console.log(process.env.AUTH_ENTRA_CLIENT_SECRET );
+  console.log(process.env.AZURE_TENANT_ID );
+  
   if (
-    process.env.AZURE_AD_CLIENT_ID &&
-    process.env.AZURE_AD_CLIENT_SECRET &&
-    process.env.AZURE_AD_TENANT_ID
+    process.env.AUTH_ENTRA_CLIENT_ID &&
+    process.env.AUTH_ENTRA_CLIENT_SECRET &&
+    process.env.AZURE_TENANT_ID
   ) {
     providers.push(
       AzureADProvider({
-        clientId: process.env.AZURE_AD_CLIENT_ID!,
-        clientSecret: process.env.AZURE_AD_CLIENT_SECRET!,
-        tenantId: process.env.AZURE_AD_TENANT_ID!,
+        clientId: process.env.AUTH_ENTRA_CLIENT_ID!,
+        clientSecret: process.env.AUTH_ENTRA_CLIENT_SECRET!,
+        tenantId: process.env.AZURE_TENANT_ID!,
         async profile(profile) {
 
           const newProfile = {
@@ -72,7 +76,7 @@ const configureIdentityProvider = () => {
               id: hashValue(email),
               name: username,
               email: email,
-              isAdmin: true,
+              isAdmin: false,
               image: "",
             };
           console.log("=== DEV USER LOGGED IN:\n", JSON.stringify(user, null, 2));

@@ -3,14 +3,15 @@ import { DepartmentConfig, DeploymentConfig } from "../chat/chat-services/models
 import { GetCredential } from "./managedIdentity";
 
 const appConfig = (): AppConfigurationClient => {
-    const credential = GetCredential();
-    const configurationEndpoint = `${process.env.APPCONFIG_ENDPOINT}`
+  const credential = GetCredential();
+  const configurationEndpoint = `${process.env.APPCONFIG_ENDPOINT}`
+   
+  const client = new AppConfigurationClient(
+    configurationEndpoint,
+    credential
+  );
 
-    const client = new AppConfigurationClient(
-        configurationEndpoint,
-        credential
-    );
-    return client;
+  return client;
 }
 
 const appConfigStore = appConfig();
@@ -37,7 +38,7 @@ export async function GetSingleValue(key: string) {
   const singleValue = await appConfigStore.getConfigurationSetting({
     key: key
   });
- 
+
   return singleValue.value as string;
 }
 

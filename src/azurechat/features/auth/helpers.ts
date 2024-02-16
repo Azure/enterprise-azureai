@@ -1,6 +1,9 @@
 import { createHash } from "crypto";
 import { getServerSession } from "next-auth";
 import { options } from "./auth-api";
+import { GetKey } from "../common/keyvault";
+import { GetSingleValue } from "../common/appconfig";
+import { resolve } from "path";
 
 export const userSession = async (): Promise<UserModel | null> => {
   const session = await getServerSession(options);
@@ -31,3 +34,24 @@ export const hashValue = (value: string): string => {
   hash.update(value);
   return hash.digest("hex");
 };
+
+export class EntraIdKeys  {
+  clientId: string;
+  clientSecret: string;
+  tenantId: string;
+
+  constructor() {
+      this.clientId = "";
+      this.clientSecret = "";
+      this.tenantId = "";
+  }
+}
+
+export async function initAad(keys: EntraIdKeys) {
+  
+  keys.clientId = await GetKey("AzureChatClientId");
+  keys.clientSecret = await GetKey("AzureChatClientSecret");
+  keys.tenantId = await GetSingleValue("EntraId:TenantId");
+
+  return keys;
+}

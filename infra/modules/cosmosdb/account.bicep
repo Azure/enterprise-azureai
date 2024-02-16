@@ -30,6 +30,7 @@ resource account 'Microsoft.DocumentDB/databaseAccounts@2022-05-15' = {
         isZoneRedundant: true
       }
     ]
+    disableKeyBasedMetadataWriteAccess: true
     databaseAccountOfferType:'Standard'
     enableAutomaticFailover: false
     enableMultipleWriteLocations: false
@@ -42,7 +43,7 @@ resource account 'Microsoft.DocumentDB/databaseAccounts@2022-05-15' = {
 }
 
 var CosmosDBBuiltInDataContributor = {
-  id: '/${subscription().subscriptionId}/resourceGroups/${resourceGroup().name}/providers/Microsoft.DocumentDB/databaseAccounts/${account.name}/sqlRoleDefinitions/00000000-0000-0000-0000-000000000002'
+  id: '/subscriptions/${subscription().subscriptionId}/resourceGroups/${resourceGroup().name}/providers/Microsoft.DocumentDB/databaseAccounts/${account.name}/sqlRoleDefinitions/00000000-0000-0000-0000-000000000002'
 }
 resource sqlRoleAssignment 'Microsoft.DocumentDB/databaseAccounts/sqlRoleAssignments@2023-11-15' = {
   name: guid('${account.name},${CosmosDBBuiltInDataContributor.id}, chatAppIdentity.properties.principalId')  

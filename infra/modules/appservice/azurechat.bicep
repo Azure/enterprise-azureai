@@ -42,6 +42,7 @@ resource webApp 'Microsoft.Web/sites@2023-01-01' = {
     serverFarmId: appServicePlan.id
     virtualNetworkSubnetId: subnetId
     httpsOnly: true
+    keyVaultReferenceIdentity: userIdentity.id
     siteConfig: {
       linuxFxVersion: 'node|18-lts'
       alwaysOn: true
@@ -64,6 +65,14 @@ resource webApp 'Microsoft.Web/sites@2023-01-01' = {
         { 
           name: 'SCM_DO_BUILD_DURING_DEPLOYMENT'
           value: 'true'
+        }
+        {
+          name: 'CLIENT_ID'
+          value: userIdentity.properties.clientId
+        }
+        {
+          name: 'TENANT_ID'
+          value: userIdentity.properties.tenantId
         }
         
       ]

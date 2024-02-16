@@ -19,3 +19,10 @@ export async function GetAPIKey(department: string) {
     const apiKey = await client.getSecret(department);
     return apiKey.value;
 }
+
+export async function GetKey(keyName: string) {
+    const url = await GetSingleValue("AzureChat:Keyvault");   
+    const client = keyVault(url);
+    const key = await client.getSecret(keyName);
+    return key.value as string;
+}

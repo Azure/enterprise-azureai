@@ -13,15 +13,14 @@ services:
     project: ./src/dotnet/AzureAI.Proxy
     host: containerapp
     language: dotnet
-    
     docker:
       path: ./Dockerfile
       context: ../
+
   azurechat:
     project: ./src/azurechat
     host: appservice
     language: ts
-    
     
 hooks:
   preprovision: # Pull environment variable inline from local device and set in .env file

@@ -94,3 +94,4 @@ module privateEndpoint '../networking/private-endpoint.bicep' = {
   }
 }
 
+output keyvaultName string = keyvault.name

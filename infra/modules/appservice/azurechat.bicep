@@ -5,6 +5,7 @@ param webapp_name string
 param appConfigEndpoint string
 param azureChatIdentityName string
 param subnetId string
+param keyvaultName string
 
 
 var nextAuthHash = uniqueString(azureChatIdentityName)
@@ -67,13 +68,22 @@ resource webApp 'Microsoft.Web/sites@2023-01-01' = {
           value: 'true'
         }
         {
-          name: 'CLIENT_ID'
+          name: 'AZURE_CLIENT_ID'
           value: userIdentity.properties.clientId
         }
         {
-          name: 'TENANT_ID'
+          name: 'AZURE_TENANT_ID'
           value: userIdentity.properties.tenantId
         }
+        {
+          name: 'AUTH_ENTRA_CLIENT_ID'
+          value: '@Microsoft.KeyVault(VaultName=${keyvaultName};SecretName=AzureChatClientId)'
+        }
+        {
+          name: 'AUTH_ENTRA_CLIENT_SECRET'
+          value: '@Microsoft.KeyVault(VaultName=${keyvaultName};SecretName=AzureChatClientSecret)'
+        }
+
         
       ]
     }
@@ -86,3 +96,5 @@ resource webApp 'Microsoft.Web/sites@2023-01-01' = {
     }
   }
 }
+
+output webAppUrl string = 'https://${webApp.properties.defaultHostName}'

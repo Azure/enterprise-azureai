@@ -1,0 +1,18 @@
+
+Deploying services (azd deploy)
+
+  (-) Skipped: Deploying service azurechat
+Deploying service proxy
+Deploying service proxy (Tagging container image)
+Deploying service proxy (Tagging container image)
+Deploying service proxy (Logging into container registry)
+Deploying service proxy (Pushing container image)
+Deploying service proxy (Updating container app revision)
+Deploying service proxy (Fetching endpoints for container app service)
+  (✓) Done: Deploying service proxy
+  - Endpoint: https://ca-d2zff763zvpfy-proxy.nicepond-5e0ead5c.francecentral.azurecontainerapps.io/
+
+
+SUCCESS: Your application was deployed to Azure in 23 seconds.
+You can view the resources created under the resource group rg-rbr-test-entai in Azure Portal:
+https://portal.azure.com/#@/resource/subscriptions/0865ebb3-1889-4871-8119-562cc313d111/resourceGroups/rg-rbr-test-entai/overview

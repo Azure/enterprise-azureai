@@ -428,6 +428,7 @@ module chatApp 'modules/appservice/azurechat.bicep'= {
     azureChatIdentityName: managedIdentityChatApp.outputs.managedIdentityName
     appConfigEndpoint: appconfig.outputs.appConfigEndPoint
     subnetId: vnet.outputs.appServiceSubnetId
+    keyvaultName: keyvault.outputs.keyvaultName
   }
 }
 
@@ -475,6 +476,7 @@ module cosmosDb 'modules/cosmosdb/account.bicep' = {
     privateEndpointSubnetName: vnet.outputs.privateEndpointSubnetName
     cosmosPrivateEndpointName: '${abbrs.documentDBDatabaseAccounts}${abbrs.privateEndpoints}${resourceToken}'
     chatAppIdentityName: managedIdentityChatApp.outputs.managedIdentityName
+    myIpAddress: myIpAddress
   }
 }
 
@@ -525,3 +527,6 @@ output AZURE_PROXY_MANAGED_IDENTITY_NAME string = managedIdentityProxy.outputs.m
 output AZURE_APPCONFIG_ENDPOINT string = appconfig.outputs.appConfigEndPoint
 output AZURE_RESOURCE_GROUP string = resourceGroup.name
 output APPLICATIONINSIGHTS_CONNECTION_STRING string = monitoring.outputs.applicationInsightsConnectionString
+output DEPLOY_AZURE_CHATAPP bool = deployChatApp
+output AZURE_CHATAPP_URL string = chatApp.outputs.webAppUrl
+output AZURE_CHATAPP_KEYVAULT_NAME string = keyvault.outputs.keyvaultName

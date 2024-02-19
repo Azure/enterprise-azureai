@@ -14,12 +14,12 @@ $displayName = "Enterprise-AzureAI-ChatApp-" + $azdenv.RESOURCE_TOKEN
 $app = Get-AzADApplication -DisplayName $displayName
 
 if ($app) {
-    Write-Host "Application already exists"
+    Write-Host "Application already exists - using it..."
     Write-Host $app.ApplicationId
 }
 else {
     $localReplyUrl = "http://localhost:3000/api/auth/callback/azure-ad"
-    $azureReplyUrl = $azdenv.CHATAPP_URL + "api/auth/callback/azure-ad"
+    $azureReplyUrl = $azdenv.AZURE_CHATAPP_URL + "/api/auth/callback/azure-ad"
     $redirectUris = @($localReplyUrl, $azureReplyUrl)
 
     $app = New-AzADApplication -SignInAudience AzureADMyOrg `
@@ -29,7 +29,7 @@ else {
 
 $creds = Get-AzADAppCredential -ObjectId $app.Id 
 if ($creds.DisplayName -contains 'azurechat-secret') {
-    Write-Host "Credentials already exist"
+    Write-Host "Secret Credentials already exist - not changing them..."
 } else {
     $PasswordCedentials = @(
         @{
@@ -48,12 +48,12 @@ Write-Host $secret
 
 if ($secret) {
     $secretValue = ConvertTo-SecureString $secret.SecretText -AsPlainText -Force
-    Set-AzKeyVaultSecret -VaultName "kv-d2zff763zvpfy" `
+    Set-AzKeyVaultSecret -VaultName $azdenv.AZURE_CHATAPP_KEYVAULT_NAME `
                          -Name "AzureChatClientSecret" `
                          -SecretValue $secretValue
 
     $secretValue = ConvertTo-SecureString $app.AppId -AsPlainText -Force
-    Set-AzKeyVaultSecret -VaultName "kv-d2zff763zvpfy" `
+    Set-AzKeyVaultSecret -VaultName $azdenv.AZURE_CHATAPP_KEYVAULT_NAME `
                          -Name "AzureChatClientId" `
                          -SecretValue $secretValue
 }

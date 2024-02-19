@@ -5,6 +5,7 @@ param privateEndpointSubnetName string
 param cosmosPrivateEndpointName string
 param cosmosAccountPrivateDnsZoneName string
 param chatAppIdentityName string
+param myIpAddress string = ''
 
 
 var defaultConsistencyLevel = 'Session'
@@ -39,6 +40,13 @@ resource account 'Microsoft.DocumentDB/databaseAccounts@2022-05-15' = {
         name: 'EnableServerless'
       }
     ]
+    publicNetworkAccess: 'Enabled' //to be able to run azurechat app locally
+    ipRules:[
+      {
+        ipAddressOrRange: myIpAddress
+      }
+    ]
+
   }
 }
 

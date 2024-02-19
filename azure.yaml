@@ -16,17 +16,33 @@ services:
     docker:
       path: ./Dockerfile
       context: ../
-
   azurechat:
     project: ./src/azurechat
     host: appservice
     language: ts
     
+    
 hooks:
-  preprovision: # Pull environment variable inline from local device and set in .env file
+  preprovision: #determine "MY_IP" and write to .env file | whitelist IP during deployment
     posix:  
       shell: sh
       run: ./scripts/set-env.sh
     windows:
       shell: pwsh
       run: ./scripts/set-env.ps1
+  postdeploy:
+    shell: pwsh
+    continueOnError: false
+    interactive: false
+    run: ./scripts/deploy-azurechat.ps1
+workflows:
+  up: # Deploy the application to Azure / proxy only
+      # post-deploy hook will deploy azurechat if parameter 
+      # DEPLOY_AZURE_CHATAPP is set to true
+    - azd: provision
+    - azd: package proxy
+    - azd: deploy proxy
+  
+
+      
+  

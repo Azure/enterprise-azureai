@@ -7,6 +7,9 @@ while IFS='=' read -r key value; do
             azd package azurechat
             azd deploy azurechat
             exit
+        else
+            echo "Azure ChatApp deployment is disabled"
+            exit
         fi
     fi
 done <<EOF

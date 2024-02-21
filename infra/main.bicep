@@ -417,7 +417,7 @@ module proxyApiBackend 'modules/apim/apim-backend.bicep' = {
 }
 
 
-module chatApp 'modules/appservice/azurechat.bicep'= {
+module chatApp 'modules/appservice/azurechat.bicep'= if(deployChatApp){
   name: 'appservice-app-azurechat'
   scope: resourceGroup
   params: {
@@ -465,7 +465,7 @@ var proxyConfig = {
   ]
 }
 
-module cosmosDb 'modules/cosmosdb/account.bicep' = {
+module cosmosDb 'modules/cosmosdb/account.bicep' = if(deployChatApp){
   name: 'cosmosdb'
   scope: resourceGroup
   params: {
@@ -498,10 +498,11 @@ module appconfig 'modules/appconfig/appconfiguration.bicep' = {
     privateEndpointSubnetName: vnet.outputs.privateEndpointSubnetName
     appconfigPrivateEndpointName: '${abbrs.appConfigurationConfigurationStores}${abbrs.privateEndpoints}${resourceToken}'
     apimEndpoint: apim.outputs.apimEndpoint
+    deployChatApp: deployChatApp
   }
 }
 
-module keyvault 'modules/keyvault/keyvault.bicep' = {
+module keyvault 'modules/keyvault/keyvault.bicep' = if(deployChatApp){
   name: 'keyvault'
   scope: resourceGroup
   params: {

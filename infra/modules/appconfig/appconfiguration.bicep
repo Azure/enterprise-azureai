@@ -12,6 +12,7 @@ param privateEndpointSubnetName string
 param appconfigPrivateEndpointName string
 param appconfigPrivateDnsZoneName string
 param apimEndpoint string
+param deployChatApp bool
 
 
 resource proxyIdentity 'Microsoft.ManagedIdentity/userAssignedIdentities@2018-11-30' existing = {
@@ -94,7 +95,7 @@ resource proxyConfiguration 'Microsoft.AppConfiguration/configurationStores/keyV
   }
 }
 
-resource cosmosDb 'Microsoft.AppConfiguration/configurationStores/keyValues@2023-03-01' = {
+resource cosmosDb 'Microsoft.AppConfiguration/configurationStores/keyValues@2023-03-01' = if(deployChatApp) {
   name: 'AzureChat:CosmosDbEndPoint'
   parent: appconfig
   properties:{
@@ -112,7 +113,7 @@ var departmentsConfig = [
   }
 ]
 
-resource departments 'Microsoft.AppConfiguration/configurationStores/keyValues@2023-03-01' = {
+resource departments 'Microsoft.AppConfiguration/configurationStores/keyValues@2023-03-01' =  if(deployChatApp){
   name: 'AzureChat:Departments'
   parent: appconfig
   properties:{
@@ -132,7 +133,7 @@ var deploymentsConfig = [
   }
 ]
 
-resource deployments 'Microsoft.AppConfiguration/configurationStores/keyValues@2023-03-01' = {
+resource deployments 'Microsoft.AppConfiguration/configurationStores/keyValues@2023-03-01' = if(deployChatApp) {
   name: 'AzureChat:Deployments'
   parent: appconfig
   properties:{
@@ -140,7 +141,7 @@ resource deployments 'Microsoft.AppConfiguration/configurationStores/keyValues@2
   }
 }
 
-resource OpenAIEndpoint 'Microsoft.AppConfiguration/configurationStores/keyValues@2023-03-01' = {
+resource OpenAIEndpoint 'Microsoft.AppConfiguration/configurationStores/keyValues@2023-03-01' = if(deployChatApp) {
   name: 'AzureChat:ApimEndpoint'
   parent: appconfig
   properties:{

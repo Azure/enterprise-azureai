@@ -26,9 +26,6 @@ const configureIdentityProvider = () => {
     );
   }
 
-  console.log(process.env.AUTH_ENTRA_CLIENT_ID );
-  console.log(process.env.AUTH_ENTRA_CLIENT_SECRET );
-  console.log(process.env.AZURE_TENANT_ID );
   
   if (
     process.env.AUTH_ENTRA_CLIENT_ID &&

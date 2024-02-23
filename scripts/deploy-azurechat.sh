@@ -4,6 +4,7 @@ while IFS='=' read -r key value; do
     then
         if [ $value == '"true"' ];
         then
+            ./scripts/appreg.sh
             azd package azurechat
             azd deploy azurechat
             exit

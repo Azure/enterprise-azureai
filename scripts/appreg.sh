@@ -35,7 +35,7 @@ then
     echo "App registration $displayName does not exist..."
     localReplyUrl="http://localhost:3000/api/auth/callback/azure-ad"
     azureReplyUrl="$AZURE_CHATAPP_URL/api/auth/callback/azure-ad"
-    redirectUris=($localReplyUrl $azureReplyUrl)
+    redirectUris="$localReplyUrl $azureReplyUrl"
 
     app=$(az ad app create --display-name $displayName \
                         --web-redirect-uris $redirectUris \

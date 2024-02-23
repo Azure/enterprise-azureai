@@ -7,8 +7,9 @@
 # Name of the application.
 name: enterprise-azureai
 metadata:
-  template: enterprise-azureai@1.0.0
+  template: enterprise-azureai@1.2.0
 services:
+
   proxy:
     project: ./src/dotnet/AzureAI.Proxy
     host: containerapp
@@ -16,6 +17,7 @@ services:
     docker:
       path: ./Dockerfile
       context: ../
+
   azurechat:
     project: ./src/azurechat
     host: appservice
@@ -30,15 +32,14 @@ hooks:
     windows:
       shell: pwsh
       run: ./scripts/set-env.ps1
-  postprovision:
+  postprovision: # Deploy the azurechat app if DEPLOY_AZURE_CHATAPP is set to true
     posix:  
       shell: sh
       run: ./scripts/deploy-azurechat.sh
     windows:
       shell: pwsh
-      run: ./scripts/deploy-azurechat.ps1
-  
-    
+      run: ./scripts/deploy-azurechat.ps1 
+
 workflows:
   up: # Deploy the application to Azure / Proxy only
       # post-deploy hook will deploy azurechat if parameter 

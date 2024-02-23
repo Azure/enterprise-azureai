@@ -13,6 +13,8 @@ param appconfigPrivateEndpointName string
 param appconfigPrivateDnsZoneName string
 param apimEndpoint string
 param deployChatApp bool
+param keyVaultUrl string
+param openAIApiVersion string
 
 
 resource proxyIdentity 'Microsoft.ManagedIdentity/userAssignedIdentities@2018-11-30' existing = {
@@ -146,6 +148,22 @@ resource OpenAIEndpoint 'Microsoft.AppConfiguration/configurationStores/keyValue
   parent: appconfig
   properties:{
     value: apimEndpoint
+  }
+}
+
+resource KeyVaultEndpoint 'Microsoft.AppConfiguration/configurationStores/keyValues@2023-03-01' = if(deployChatApp) {
+  name: 'AzureChat:Keyvault'
+  parent: appconfig
+  properties:{
+    value: keyVaultUrl
+  }
+}
+
+resource OpenAIAPIVersion 'Microsoft.AppConfiguration/configurationStores/keyValues@2023-03-01' = if(deployChatApp) {
+  name: 'AzureChat:OpenAIAPiVersion'
+  parent: appconfig
+  properties:{
+    value: openAIApiVersion
   }
 }
 

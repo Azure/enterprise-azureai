@@ -6,6 +6,7 @@ param privateEndpointSubnetName string
 param vNetName string
 param chatappIdentityName string
 param apimServiceName string
+param myIpAddress string = ''
 
 resource apimService 'Microsoft.ApiManagement/service@2023-03-01-preview' existing = {
   name: apimServiceName
@@ -40,6 +41,17 @@ resource keyvault 'Microsoft.KeyVault/vaults@2023-07-01' = {
     enableRbacAuthorization: true
     enableSoftDelete: false
     tenantId: subscription().tenantId
+    networkAcls:{
+      bypass: 'AzureServices'
+      defaultAction: 'Deny'
+      ipRules: [
+        {
+          value: myIpAddress
+        }
+      ]
+    }
+  
+
 
   }
 }
@@ -95,3 +107,4 @@ module privateEndpoint '../networking/private-endpoint.bicep' = {
 }
 
 output keyvaultName string = keyvault.name
+output keyvaultUrl string = keyvault.properties.vaultUri

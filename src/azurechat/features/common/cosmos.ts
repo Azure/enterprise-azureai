@@ -18,19 +18,10 @@ export const initDBContainer = async () => {
     aadCredentials: credential
   });
 
-  const databaseResponse = await client.databases.createIfNotExists({
-    id: DB_NAME,
-  });
+  const database = (await client.database(DB_NAME).read()).database;
+  const container = (await database.container(CONTAINER_NAME).read()).container;
 
-  const containerResponse =
-    await databaseResponse.database.containers.createIfNotExists({
-      id: CONTAINER_NAME,
-      partitionKey: {
-        paths: ["/userId"],
-      },
-    });
-
-  return containerResponse.container;
+  return container;
 };
 
 export class CosmosDBContainer {
@@ -44,20 +35,10 @@ export class CosmosDBContainer {
       aadCredentials: credential
     });
 
-   
     this.container = new Promise((resolve, reject) => {
-      client.databases
-        .createIfNotExists({
-          id: DB_NAME,
-        })
+      client.database(DB_NAME).read()
         .then((databaseResponse) => {
-          databaseResponse.database.containers
-            .createIfNotExists({
-              id: CONTAINER_NAME,
-              partitionKey: {
-                paths: ["/userId"],
-              },
-            })
+          databaseResponse.database.container(CONTAINER_NAME).read()
             .then((containerResponse) => {
               resolve(containerResponse.container);
             });

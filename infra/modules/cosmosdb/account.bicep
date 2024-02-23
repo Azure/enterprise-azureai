@@ -1,4 +1,4 @@
-param name string 
+param name string
 param location string
 param vNetName string
 param privateEndpointSubnetName string
@@ -7,14 +7,11 @@ param cosmosAccountPrivateDnsZoneName string
 param chatAppIdentityName string
 param myIpAddress string = ''
 
-
 var defaultConsistencyLevel = 'Session'
 
-
-resource chatAppIdentity 'Microsoft.ManagedIdentity/userAssignedIdentities@2018-11-30' existing ={
+resource chatAppIdentity 'Microsoft.ManagedIdentity/userAssignedIdentities@2018-11-30' existing = {
   name: chatAppIdentityName
 }
-
 
 resource account 'Microsoft.DocumentDB/databaseAccounts@2022-05-15' = {
   name: toLower(name)
@@ -32,7 +29,7 @@ resource account 'Microsoft.DocumentDB/databaseAccounts@2022-05-15' = {
       }
     ]
     disableKeyBasedMetadataWriteAccess: true
-    databaseAccountOfferType:'Standard'
+    databaseAccountOfferType: 'Standard'
     enableAutomaticFailover: false
     enableMultipleWriteLocations: false
     capabilities: [
@@ -41,7 +38,7 @@ resource account 'Microsoft.DocumentDB/databaseAccounts@2022-05-15' = {
       }
     ]
     publicNetworkAccess: 'Enabled' //to be able to run azurechat app locally
-    ipRules:[
+    ipRules: [
       {
         ipAddressOrRange: myIpAddress
       }
@@ -50,18 +47,44 @@ resource account 'Microsoft.DocumentDB/databaseAccounts@2022-05-15' = {
   }
 }
 
+resource database 'Microsoft.DocumentDB/databaseAccounts/sqlDatabases@2022-05-15' = {
+  name: 'chat'
+  parent: account
+  properties:{
+    resource: {
+      id: 'chat'
+    }
+  }
+}
+
+resource container 'Microsoft.DocumentDB/databaseAccounts/sqlDatabases/containers@2022-05-15' = {
+  name: 'history'
+  parent: database
+  properties:{
+    resource: {
+      id: 'history'
+      partitionKey: {
+        paths: [
+          '/userId'
+        ]
+        kind: 'Hash'
+      }
+    }
+  }
+}
+
 var CosmosDBBuiltInDataContributor = {
   id: '/subscriptions/${subscription().subscriptionId}/resourceGroups/${resourceGroup().name}/providers/Microsoft.DocumentDB/databaseAccounts/${account.name}/sqlRoleDefinitions/00000000-0000-0000-0000-000000000002'
 }
 resource sqlRoleAssignment 'Microsoft.DocumentDB/databaseAccounts/sqlRoleAssignments@2023-11-15' = {
-  name: guid('${account.name},${CosmosDBBuiltInDataContributor.id}, chatAppIdentity.properties.principalId')  
+  name: guid('${account.name},${CosmosDBBuiltInDataContributor.id}, chatAppIdentity.properties.principalId')
   parent: account
   properties: {
     principalId: chatAppIdentity.properties.principalId
     roleDefinitionId: CosmosDBBuiltInDataContributor.id
     scope: account.id
   }
-  
+
 }
 
 module privateEndpoint '../networking/private-endpoint.bicep' = {
@@ -78,6 +101,5 @@ module privateEndpoint '../networking/private-endpoint.bicep' = {
     location: location
   }
 }
-
 
 output cosmosDbEndPoint string = account.properties.documentEndpoint

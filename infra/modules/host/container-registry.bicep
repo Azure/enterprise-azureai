@@ -41,8 +41,6 @@ param zoneRedundancy string = 'Disabled'
 @description('The log analytics workspace ID used for logging and monitoring')
 param workspaceId string = ''
 
-// Acr Pull role definition
-var roleDefinitionResourceId = '/providers/Microsoft.Authorization/roleDefinitions/7f951dda-4ed3-4680-a7ca-43fe172d538d'
 
 resource managedIdentityProxy 'Microsoft.ManagedIdentity/userAssignedIdentities@2018-11-30' existing = {
   name: proxyManagedIdentityName

@@ -19,14 +19,13 @@ if ($? -eq $false) {
     exit 1
 }
 
-Write-Host "Current Subscription: $currentSubscription"
 
 #check if registration exists
 $displayName = "Enterprise-AzureAI-ChatApp-" + $azdenv.RESOURCE_TOKEN
 $app = az ad app list --display-name $displayName --output json | ConvertFrom-Json
 
 if (!$app) {
-    Write-Host "Creating new app"
+    Write-Host "Creating new app registration $displayName..."
     
     $localReplyUrl = "http://localhost:3000/api/auth/callback/azure-ad"
     $azureReplyUrl = $azdenv.AZURE_CHATAPP_URL + "/api/auth/callback/azure-ad"
@@ -59,5 +58,5 @@ if (!$app) {
     
 }
 else {
-    Write-Host "Application already exists"
+    Write-Host "Application $displayName already exists"
 }

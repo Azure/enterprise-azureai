@@ -21,6 +21,7 @@ param useRedisCacheForAPIM bool = false
   }
 })
 param deployChatApp bool
+param OpenAIApiVersion string = '2023-03-15-preview'
 
 @description('Add Azure Open AI Service to secondary region for load balancing.')
 @allowed(['','westeurope','southcentralus','australiaeast', 'canadaeast', 'eastus', 'eastus2', 'francecentral', 'japaneast', 'northcentralus', 'swedencentral', 'switzerlandnorth', 'uksouth'])
@@ -499,6 +500,8 @@ module appconfig 'modules/appconfig/appconfiguration.bicep' = {
     appconfigPrivateEndpointName: '${abbrs.appConfigurationConfigurationStores}${abbrs.privateEndpoints}${resourceToken}'
     apimEndpoint: apim.outputs.apimEndpoint
     deployChatApp: deployChatApp
+    keyVaultUrl: deployChatApp ? keyvault.outputs.keyvaultUrl : ''
+    openAIApiVersion: deployChatApp ? OpenAIApiVersion : ''
   }
 }
 
@@ -514,6 +517,7 @@ module keyvault 'modules/keyvault/keyvault.bicep' = if(deployChatApp){
     keyvaultPrivateEndpointName: '${abbrs.keyVaultVaults}${abbrs.privateEndpoints}${resourceToken}'
     keyvaultPrivateDnsZoneName: keyvaultPrivateDnsZoneName
     apimServiceName: apim.outputs.apimName
+    myIpAddress: myIpAddress
   }
 }
 

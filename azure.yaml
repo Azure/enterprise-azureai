@@ -39,6 +39,14 @@ hooks:
     windows:
       shell: pwsh
       run: ./scripts/deploy-azurechat.ps1 
+  postdown:
+    posix:  
+      shell: sh
+      run: ./scripts/cleanup.sh
+    windows:
+      shell: pwsh
+      run: ./scripts/cleanup.ps1
+    
 
 workflows:
   up: # Deploy the application to Azure / Proxy only

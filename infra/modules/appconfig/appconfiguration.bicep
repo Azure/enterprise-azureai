@@ -160,7 +160,7 @@ resource KeyVaultEndpoint 'Microsoft.AppConfiguration/configurationStores/keyVal
 }
 
 resource OpenAIAPIVersion 'Microsoft.AppConfiguration/configurationStores/keyValues@2023-03-01' = if(deployChatApp) {
-  name: 'AzureChat:OpenAIAPiVersion'
+  name: 'AzureChat:OpenAIApiVersion'
   parent: appconfig
   properties:{
     value: openAIApiVersion

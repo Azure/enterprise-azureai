@@ -60,3 +60,5 @@ if (!$app) {
 else {
     Write-Host "Application $displayName already exists"
 }
+
+azd env set AZURE_CHATAPP_CLIENT_ID $app.appId 

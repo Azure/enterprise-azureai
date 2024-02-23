@@ -65,3 +65,5 @@ then
 else
     echo "Application already exists"
 fi
+
+azd env set AZURE_CHATAPP_CLIENT_ID $(echo $app | jq -r '.appId')

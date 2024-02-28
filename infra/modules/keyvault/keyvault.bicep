@@ -7,7 +7,7 @@ param vNetName string
 param chatappIdentityName string
 param apimServiceName string
 param myIpAddress string = ''
-param myPrincipalId string = ''
+param myPrincipalId string
 param dnsResourceGroupName string
 param vnetResourceGroupName string
 param apimResourceGroupName string
@@ -74,7 +74,7 @@ module chatappRoleAssignment '../roleassignments/roleassignment.bicep' = {
     principalId: chatappIdentity.properties.principalId
     roleName: 'Key Vault Secrets User'
     targetResourceId: keyvault.id
-    deploymentName: 'kv-chatapp-roleAssignment'
+    deploymentName: 'kv-chatapp-roleAssignment-SecretsUser'
   }
 }
 
@@ -84,7 +84,7 @@ module currentUserRoleAssignment '../roleassignments/roleassignment.bicep' = {
     principalId: myPrincipalId
     roleName: 'Key Vault Secrets Officer'
     targetResourceId: keyvault.id
-    deploymentName: 'kv-currentuser-roleAssignment'
+    deploymentName: 'kv-currentuser-roleAssignment-SecretOfficer'
     principalType: 'User'
   }
 }

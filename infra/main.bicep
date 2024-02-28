@@ -566,6 +566,7 @@ module keyvault 'modules/keyvault/keyvault.bicep' = if(deployChatApp){
     keyvaultPrivateDnsZoneName: keyvaultPrivateDnsZoneName
     apimServiceName: apim.outputs.apimName
     myIpAddress: myIpAddress
+    myPrincipalId: myPrincipalId
     dnsResourceGroupName: mainResourceGroup.name
     vnetResourceGroupName: mainResourceGroup.name
     apimResourceGroupName: mainResourceGroup.name
@@ -586,4 +587,5 @@ output AZURE_RESOURCE_GROUP string = mainResourceGroup.name
 output APPLICATIONINSIGHTS_CONNECTION_STRING string = monitoring.outputs.applicationInsightsConnectionString
 output DEPLOY_AZURE_CHATAPP bool = deployChatApp
 output AZURE_CHATAPP_URL string = chatApp.outputs.webAppUrl
+output AZURE_CHATAPP_RESOURCE string = chatApp.outputs.name
 output AZURE_CHATAPP_KEYVAULT_NAME string = keyvault.outputs.keyvaultName

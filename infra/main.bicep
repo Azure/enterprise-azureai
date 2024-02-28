@@ -589,3 +589,5 @@ output DEPLOY_AZURE_CHATAPP bool = deployChatApp
 output AZURE_CHATAPP_URL string = chatApp.outputs.webAppUrl
 output AZURE_CHATAPP_RESOURCE string = chatApp.outputs.name
 output AZURE_CHATAPP_KEYVAULT_NAME string = keyvault.outputs.keyvaultName
+output MAIN_RESOURCE_GROUP string = mainResourceGroup.name
+output AZURECHAT_RESOURCE_GROUP string = chatappResourceGroup.name

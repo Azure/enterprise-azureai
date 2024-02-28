@@ -4,7 +4,8 @@ $targetSubscription = $azdenv.AZURE_SUBSCRIPTION_ID
 $currentSubscription= az account show --query id -o tsv
 if ($? -eq $false) {
     Write-Host "AZ CLI Login to the Entra ID tenant used by AZD"
-    az login --tenant $azdenv.TENANT_ID
+    #az login --tenant $azdenv.TENANT_ID
+    az login --scope https://graph.microsoft.com//.default
     az account set --subscription $targetSubscription
     $currentSubscription=(az account show --query id -o tsv)
 }

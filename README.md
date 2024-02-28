@@ -3,6 +3,7 @@ page_type: sample
 languages:
 - azdeveloper
 - csharp
+- nodejs
 - bicep
 - bash
 - powershell
@@ -21,6 +22,9 @@ products:
 - azure-policy
 - azure-private-link
 - dotnet
+- azure-app-service
+- azure-key-vault
+- azure-cosmos-db
 - azure-openai
 urlFragment: enterprise-azureai
 name: Azure OpenAI Service as a central capability with Azure API Management
@@ -43,11 +47,12 @@ This repository provides guidance and tools for organizations looking to impleme
 
 ## Key features
 - **Infrastructure-as-code**: Bicep templates for provisioning and deploying the resources.
+- **CI/CD pipeline**: GitHub Actions and Azure DevOps Pipelines for continuous deployment of the resources to Azure.
 - **Secure Access Management**: Best practices and configurations for managing secure access to Azure OpenAI services.
 - **Usage Monitoring & Cost Control**: Solutions for tracking the usage of Azure OpenAI services to facilitate accurate cost allocation and team charge-back.
 - **Load Balance**: Utilize & loadbalance the capacity of Azure OpenAI across regions or provisioned throughput (PTU)
 - **Streaming requests**: Support for streaming requests to Azure OpenAI, for all features (e.g. additional logging and charge-back)
-- **End-to-end sample**: Including dashboards, content filters and policies
+- **End-to-end sample**: Including Sample ChatApp, Azure Dashboards, content filters and policies
 
 ## Architecture
 
@@ -59,6 +64,7 @@ Read more: [Architecture in detail](#architecture-in-detail)
 - A [dev container](https://containers.dev) configuration file under the `.devcontainer` directory that installs infrastructure tooling by default. This can be readily used to create cloud-hosted developer environments such as [GitHub Codespaces](https://aka.ms/codespaces) or a local environment via a [VSCode DevContainer](https://code.visualstudio.com/docs/devcontainers/containers).
 - Continuous deployment workflows for CI providers such as GitHub Actions under the `.github` directory, and Azure Pipelines under the `.azdo` directory that work for most use-cases.
 - The .NET 8.0 chargeback proxy application under the `src` folder.
+- The NodeJS Sample ChatApp application under the `src` folder.
 
 ## Getting started
 
@@ -67,6 +73,7 @@ Read more: [Architecture in detail](#architecture-in-detail)
 - [Azure Developer CLI](https://docs.microsoft.com/en-us/azure/developer/azure-developer-cli/)
 - [.NET 8.0 SDK](https://dotnet.microsoft.com/download/dotnet/8.0)
 - [Docker Desktop](https://www.docker.com/products/docker-desktop)
+- [Node.js](https://nodejs.org/en/download/)
 
 ### 1. Initialize a new `azd` environment
 
@@ -107,7 +114,14 @@ In the azd template, we automatically set an environment variable for your curre
 azd up
 ```
 
-It will prompt you to login, pick a subscription, and provide a location (like "eastus"). Then it will provision the resources in your account and deploy the latest code.
+It will prompt you to login, pick a subscription, and provide a location (like "eastus"). We've added a extra conditional parameter to deploy the Sample ChatApp, for demo-ing purposes.
+
+![enterprise-azureai](docs/images/deploy_chatapp.png)
+Read more: [Sample ChatApp](#sample-chatapp)
+
+Then it will provision the resources in your account and deploy the latest code.
+
+
 
 > [!NOTE]  
 > Because Azure OpenAI isn't available in all regions, you might get an error when you deploy the resources. You can find more information about the availability of Azure OpenAI [here](https://docs.microsoft.com/en-us/azure/openai/overview/regions).
@@ -155,6 +169,15 @@ You can configure `azd` to provision and deploy resources to your deployment env
  azd config set platform.type devcenter
 ```
 
+### Sample ChatApp
+
+The Sample ChatApp is a simple NodeJS application that uses the API Management endpoints, exposing Azure OpenAI service, to test the deployment and see how the Azure OpenAI service works. In the ChatApp you can configure which API Management Subscription you want to use and with which deployment model, creating an end-to-end experience.
+
+![enterprise-azureai](docs/images/config_chatapp.png)
+
+![enterprise-azureai](docs/images/chatapp.png)
+
+
 ### Monitoring
 
 The deployed resources include a Log Analytics workspace with an Application Insights based dashboard to measure metrics like server response time and failed requests. We also included some custom visuals in the dashboard to visualize the token usage per consumer of the Azure OpenAI service.
@@ -172,12 +195,12 @@ azd monitor --overview
 To clean up all the resources you've created and purge the soft-deletes, simply run:
 
 ```shell
-azd down --purge
+azd down --purge --force
 ```
 
 The resource group and all the resources will be deleted and you'll be prompted if you want the soft-deletes to be purged.
 
-### Testing
+### Testing API
 
 A [tests.http](tests.http) file with relevant tests you can perform is included, to check if your deployment is successful. You need the 2 subcription keys for Marketing and Finance, created in API Management in order to test the API. You can find more information about how to create subscription keys [here](https://docs.microsoft.com/en-us/azure/api-management/api-management-howto-create-subscriptions#add-a-subscription-key-to-a-user).
 
@@ -206,6 +229,8 @@ The best practices we've followed for this architecture are: [Azure Integration 
 When it comes to security, there are recommendations mentioned for securing your Azure API Management instance in the accelerators above. For example, with the use of Front Door or Application Gateway (see [this](https://github.com/pascalvanderheiden/ais-sync-pattern-la-std-vnet) repository), proving Layer 7 protection and WAF capabilities, and by implementing OAuth authentication on the API Management instance. How to implement OAuth authentication on API Management (see [here](https://github.com/pascalvanderheiden/ais-apim-oauth-flow) repository).
 
 We're also using [Azure Monitor Private Link Scope](https://learn.microsoft.com/en-us/azure/azure-monitor/logs/private-link-security#configure-access-to-your-resources). This allows us to define the boundaries of my monitoring network, and only allow traffic from within that network to my Log Analytics workspace. This is a great way to secure your monitoring network.
+
+In order to provide an end-to-end experience and enabling user to demo from a GUI, we've included a Sample ChatApp. This is a simple NodeJS application based on the [Azure Chat Solution Accelerator](https://github.com/microsoft/azurechat). It uses Azure Cosmos DB to store the chat messages and leverages Azure Key Vault to store the secrets used in the appliction. 
 
 ### Azure API Management
 
@@ -258,3 +283,11 @@ We're also using [Azure Monitor Private Link Scope](https://learn.microsoft.com/
 ### Azure Container Environment
 
 [Azure Container Environment](https://learn.microsoft.com/en-us/azure/container-apps/environment) allows you to run containerized applications in Azure without having to manage any infrastructure.
+
+### Azure Cosmos DB
+
+[Azure Cosmos DB](https://azure.microsoft.com/en-us/services/cosmos-db/) allows you to use a fully managed NoSQL database for modern app development.
+
+### Azure Key Vault
+
+[Azure Key Vault](https://azure.microsoft.com/en-us/services/key-vault/) allows you to safeguard cryptographic keys and other secrets used by cloud apps and services.

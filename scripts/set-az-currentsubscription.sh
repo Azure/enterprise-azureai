@@ -7,16 +7,16 @@ EOF
 
 targetSubscription=$AZURE_SUBSCRIPTION_ID
 currentSubscription=$(az account show --query id -o tsv)
-if [ $? -eq 1 ];
+if [ $? -eq 1 ]
 then
     echo "AZ CLI Login to the Entra ID tenant used by AZD"
     az login --scope https://graph.microsoft.com//.default
     az account set --subscription $targetSubscription
-    currentSubscription=(az account show --query id -o tsv)
+    currentSubscription=$(az account show --query id -o tsv)
 fi
 
 az account set --subscription $targetSubscription
-if [ $? -eq 1 ];
+if [ $? -eq 1 ]
 then
     echo "Failed to set the subscription.."
     echo "Make sure you have access and are logged in with the right tenant"

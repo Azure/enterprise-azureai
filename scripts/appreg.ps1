@@ -40,11 +40,10 @@ if ($? -eq $true) {
             --vault-name $azdenv.AZURE_CHATAPP_KEYVAULT_NAME `
             --value $app.appId `
             --output json | ConvertFrom-Json
-    
+        
+        azd env set AZURE_CHATAPP_CLIENT_ID $app.appId 
     }
     else {
         Write-Host "Application registration $displayName already exists"
     }
-
-    azd env set AZURE_CHATAPP_CLIENT_ID $app.appId 
 }

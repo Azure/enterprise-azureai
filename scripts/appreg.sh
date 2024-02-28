@@ -6,12 +6,12 @@ $(azd env get-values)
 EOF
 
 #run az login and set correct subscription if needed
-./scripts/set-az-currentsubscription.ps1
+./scripts/set-az-currentsubscription.sh
 if [ $? -eq 0 ];
 then
 
     displayName="Enterprise-AzureAI-ChatApp-$RESOURCE_TOKEN"
-    app=$(az ad app list --display-name $displayName )
+    app=$(az ad app list --display-name $displayName --output json)
 
 
     if [ "$app" == "[]" ];
@@ -46,9 +46,11 @@ then
                                     --vault-name $AZURE_CHATAPP_KEYVAULT_NAME \
                                     --value $(echo $app | jq -r '.appId') \
                                     --output json | jq -r '.')
+                                    
+        azd env set AZURE_CHATAPP_CLIENT_ID $($app | jq -r '.appId')
     else
-        echo "Application already exists"
+        echo "Application registration already exists"
     fi
-
-    azd env set AZURE_CHATAPP_CLIENT_ID $(echo $app | jq -r '.appId')
+    
+    
 fi

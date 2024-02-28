@@ -10,7 +10,7 @@ currentSubscription=$(az account show --query id -o tsv)
 if [ $? -eq 1 ];
 then
     echo "AZ CLI Login to the Entra ID tenant used by AZD"
-    az login --tenant $TENANT_ID
+    az login --scope https://graph.microsoft.com//.default
     az account set --subscription $targetSubscription
     currentSubscription=(az account show --query id -o tsv)
 fi

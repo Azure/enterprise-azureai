@@ -101,15 +101,6 @@ module proxyRoleAssignment '../roleassignments/roleassignment.bicep' = {
   }
 }
 
-module chatappRoleAssignment '../roleassignments/roleassignment.bicep' = {
-  name: 'chatapp-roleAssignment'
-  params: {
-    principalId: managedIdentityChatapp.properties.principalId
-    roleName: 'AcrPull'
-    targetResourceId: containerRegistry.id
-    deploymentName: 'chatapp-roleassignment-acrPull'
-  }
-}
 resource diagnostics 'Microsoft.Insights/diagnosticSettings@2021-05-01-preview' = if (!empty(workspaceId)) {
   name: 'registry-diagnostics'
   scope: containerRegistry

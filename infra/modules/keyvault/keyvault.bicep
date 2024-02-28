@@ -7,9 +7,21 @@ param vNetName string
 param chatappIdentityName string
 param apimServiceName string
 param myIpAddress string = ''
+param myPrincipalId string = ''
+param dnsResourceGroupName string
+param vnetResourceGroupName string
+param apimResourceGroupName string
+
+
+resource rgApim 'Microsoft.Resources/resourceGroups@2023-07-01' existing = {
+  name: apimResourceGroupName
+  scope: subscription()
+}
+
 
 resource apimService 'Microsoft.ApiManagement/service@2023-03-01-preview' existing = {
   name: apimServiceName
+  scope: rgApim
 }
 
 resource apimMarketingSubscription 'Microsoft.ApiManagement/service/subscriptions@2021-08-01' existing = {
@@ -62,7 +74,18 @@ module chatappRoleAssignment '../roleassignments/roleassignment.bicep' = {
     principalId: chatappIdentity.properties.principalId
     roleName: 'Key Vault Secrets User'
     targetResourceId: keyvault.id
-    deploymentName: 'chatapp-roleassignment-KeyvaultSecretsUser'
+    deploymentName: 'kv-chatapp-roleAssignment'
+  }
+}
+
+module currentUserRoleAssignment '../roleassignments/roleassignment.bicep' = {
+  name: 'kv-currentuser-roleAssignment'
+  params: {
+    principalId: myPrincipalId
+    roleName: 'Key Vault Secrets Officer'
+    targetResourceId: keyvault.id
+    deploymentName: 'kv-currentuser-roleAssignment'
+    principalType: 'User'
   }
 }
 
@@ -103,6 +126,8 @@ module privateEndpoint '../networking/private-endpoint.bicep' = {
     privateLinkServiceId: keyvault.id
     vNetName: vNetName
     location: location
+    dnsResourceGroupName: dnsResourceGroupName
+    vnetResourceGroupName: vnetResourceGroupName
   }
 }
 

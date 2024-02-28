@@ -6,6 +6,9 @@ param cosmosPrivateEndpointName string
 param cosmosAccountPrivateDnsZoneName string
 param chatAppIdentityName string
 param myIpAddress string = ''
+param myPrincipalId string = ''
+param dnsResourceGroupName string
+param vnetResourceGroupName string
 
 var defaultConsistencyLevel = 'Session'
 
@@ -77,14 +80,22 @@ var CosmosDBBuiltInDataContributor = {
   id: '/subscriptions/${subscription().subscriptionId}/resourceGroups/${resourceGroup().name}/providers/Microsoft.DocumentDB/databaseAccounts/${account.name}/sqlRoleDefinitions/00000000-0000-0000-0000-000000000002'
 }
 resource sqlRoleAssignment 'Microsoft.DocumentDB/databaseAccounts/sqlRoleAssignments@2023-11-15' = {
-  name: guid('${account.name},${CosmosDBBuiltInDataContributor.id}, chatAppIdentity.properties.principalId')
+  name: guid(account.name, CosmosDBBuiltInDataContributor.id, chatAppIdentityName)
   parent: account
   properties: {
     principalId: chatAppIdentity.properties.principalId
     roleDefinitionId: CosmosDBBuiltInDataContributor.id
     scope: account.id
   }
-
+}
+resource sqlRoleAssignmentCurrentUser 'Microsoft.DocumentDB/databaseAccounts/sqlRoleAssignments@2023-11-15' = {
+  name: guid(account.name,CosmosDBBuiltInDataContributor.id, myPrincipalId)
+  parent: account
+  properties: {
+    principalId: myPrincipalId
+    roleDefinitionId: CosmosDBBuiltInDataContributor.id
+    scope: account.id
+  }
 }
 
 module privateEndpoint '../networking/private-endpoint.bicep' = {
@@ -99,6 +110,8 @@ module privateEndpoint '../networking/private-endpoint.bicep' = {
     privateLinkServiceId: account.id
     vNetName: vNetName
     location: location
+    dnsResourceGroupName : dnsResourceGroupName
+    vnetResourceGroupName: vnetResourceGroupName
   }
 }
 

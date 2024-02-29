@@ -593,8 +593,8 @@ output AZURE_APPCONFIG_ENDPOINT string = appconfigProxy.outputs.appConfigEndPoin
 output AZURE_RESOURCE_GROUP string = mainResourceGroup.name
 output APPLICATIONINSIGHTS_CONNECTION_STRING string = monitoring.outputs.applicationInsightsConnectionString
 output DEPLOY_AZURE_CHATAPP bool = deployChatApp
-output AZURE_CHATAPP_URL string = chatApp.outputs.webAppUrl
-output AZURE_CHATAPP_RESOURCE string = chatApp.outputs.name
-output AZURE_CHATAPP_KEYVAULT_NAME string = keyvault.outputs.keyvaultName
-output MAIN_RESOURCE_GROUP string = mainResourceGroup.name
-output AZURECHAT_RESOURCE_GROUP string = chatappResourceGroup.name
+output AZURE_CHATAPP_URL string = deployChatApp ? chatApp.outputs.webAppUrl : ''
+output AZURE_CHATAPP_KEYVAULT_NAME string = deployChatApp ? keyvault.outputs.keyvaultName : ''
+output AZURE_CLIENT_ID string = deployChatApp ? managedIdentityChatApp.outputs.managedIdentityClientId : ''
+output AZURE_TENANT_ID string = subscription().tenantId
+

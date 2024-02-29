@@ -47,7 +47,7 @@ then
                                     --value $(echo $app | jq -r '.appId') \
                                     --output json | jq -r '.')
                                     
-        azd env set AZURE_CHATAPP_CLIENT_ID $($app | jq -r '.appId')
+        azd env set AZURE_CHATAPP_CLIENT_ID $(echo $app | jq -r '.appId')
     else
         echo "Application registration already exists"
     fi

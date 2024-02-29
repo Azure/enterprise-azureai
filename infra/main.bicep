@@ -113,11 +113,18 @@ resource mainResourceGroup 'Microsoft.Resources/resourceGroups@2021-04-01' = {
   tags: tags
 }
 
-resource chatappResourceGroup 'Microsoft.Resources/resourceGroups@2021-04-01' = if(deployChatApp) {
-  name: '${mainResourceGroup.name}-chatapp'
-  location: location
-  tags: tags
+//revert change ChatApp in own resourcegroup. Due to cross RG network connections, AZD DOWN
+//will not work
+// resource chatappResourceGroup 'Microsoft.Resources/resourceGroups@2021-04-01' = if(deployChatApp) {
+//   name: '${mainResourceGroup.name}-chatapp'
+//   location: location
+//   tags: tags
+// }
+// for now we will be using the same RG
+resource chatappResourceGroup 'Microsoft.Resources/resourceGroups@2021-04-01' existing = if(deployChatApp) {
+  name: mainResourceGroup.name
 }
+
 
 
 module dnsDeployment './modules/networking/dns.bicep' = [for privateDnsZoneName in privateDnsZoneNames: {
@@ -499,17 +506,17 @@ module appconfigProxy 'modules/appconfig/configurationStore.bicep' = {
   name: 'appconfigProxy-deployment'
   scope: mainResourceGroup
   params: {
-    name: !empty(appConfigurationName) ? appConfigurationName : '${abbrs.appConfigurationConfigurationStores}${resourceToken}'
+    name: !empty(appConfigurationName) ? appConfigurationName : '${abbrs.appConfigurationConfigurationStores}${resourceToken}-proxy'
     location: location
     appconfigPrivateDnsZoneName: appConfigPrivateDnsZoneName
     vnetName: vnet.outputs.vnetName
     privateEndpointSubnetName: vnet.outputs.privateEndpointSubnetName
-    appconfigPrivateEndpointName: '${abbrs.appConfigurationConfigurationStores}${abbrs.privateEndpoints}${resourceToken}'
+    appconfigPrivateEndpointName: '${abbrs.appConfigurationConfigurationStores}${abbrs.privateEndpoints}${resourceToken}-proxy'
   }
 }
 
 module appconfigProxySettings 'modules/appconfig/appconfig-proxy.bicep' = {
-  name: 'appconfig'
+  name: 'appconfigProxy-setting'
   scope: mainResourceGroup
   params: {
     name: appconfigProxy.outputs.appConfigName
@@ -532,7 +539,7 @@ module appconfigChatApp 'modules/appconfig/configurationStore.bicep' = if(deploy
     appconfigPrivateDnsZoneName: appConfigPrivateDnsZoneName
     vnetName: vnet.outputs.vnetName
     privateEndpointSubnetName: vnet.outputs.privateEndpointSubnetName
-    appconfigPrivateEndpointName: '${abbrs.appConfigurationConfigurationStores}${abbrs.privateEndpoints}${resourceToken}'
+    appconfigPrivateEndpointName: '${abbrs.appConfigurationConfigurationStores}${abbrs.privateEndpoints}${resourceToken}-chatapp'
     dnsResourceGroupName: mainResourceGroup.name
     vnetResourceGroupName: mainResourceGroup.name
   }

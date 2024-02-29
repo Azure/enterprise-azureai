@@ -1,3 +1,4 @@
+# to run the script outside of the azd context, we need to set the env vars
 while IFS='=' read -r key value; do
     value=$(echo "$value" | sed 's/^"//' | sed 's/"$//')
     export "$key=$value"

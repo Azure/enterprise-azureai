@@ -1,3 +1,4 @@
+# to run the script outside of the azd context, we need to set the env vars
 while IFS='=' read -r key value; do
         value=$(echo "$value" | sed 's/^"//' | sed 's/"$//')
         export "$key=$value"
@@ -11,10 +12,9 @@ if [ $? -eq 0 ];
 then
 
     displayName="Enterprise-AzureAI-ChatApp-$RESOURCE_TOKEN"
-    app=$(az ad app list --display-name $displayName --output json)
+    app=$(az ad app list --display-name $displayName --output json | jq -r .[0].appId)
 
-
-    if [ "$app" == "[]" ];
+    if [ $app == null ];
     then
         echo "App registration $displayName does not exist..."
         localReplyUrl="http://localhost:3000/api/auth/callback/azure-ad"
@@ -49,8 +49,6 @@ then
                                     
         azd env set AZURE_CHATAPP_CLIENT_ID $(echo $app | jq -r '.appId')
     else
-        echo "Application registration already exists"
+        echo "Application registration $displayName already exists"
     fi
-    
-    
 fi

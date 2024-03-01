@@ -14,7 +14,7 @@ then
     displayName="Enterprise-AzureAI-ChatApp-$RESOURCE_TOKEN"
     app=$(az ad app list --display-name $displayName --output json | jq -r '.[0].appId // empty')
 
-    if [ ! -z $app ];
+    if [ -z $app ];
     then
         echo "App registration $displayName does not exist..."
         localReplyUrl="http://localhost:3000/api/auth/callback/azure-ad"

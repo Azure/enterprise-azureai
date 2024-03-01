@@ -71,9 +71,11 @@ Read more: [Architecture in detail](#architecture-in-detail)
 ### Prerequisites
 
 - [Azure Developer CLI](https://docs.microsoft.com/en-us/azure/developer/azure-developer-cli/)
+- [Azure CLI](https://docs.microsoft.com/en-us/cli/azure/install-azure-cli)
 - [.NET 8.0 SDK](https://dotnet.microsoft.com/download/dotnet/8.0)
 - [Docker Desktop](https://www.docker.com/products/docker-desktop)
-- [Node.js](https://nodejs.org/en/download/)
+- [Node.js](https://nodejs.org/en/download/) v18.17 or higher
+- [jq](https://jqlang.github.io/jq/download/) required on Mac and Linux
 
 ### 1. Initialize a new `azd` environment
 
@@ -114,7 +116,7 @@ In the azd template, we automatically set an environment variable for your curre
 azd up
 ```
 
-It will prompt you to login, pick a subscription, and provide a location (like "eastus"). We've added a extra conditional parameter to deploy the Sample ChatApp, for demo-ing purposes.
+It will prompt you to login, pick a subscription, and provide a location (like "eastus"). We've added an extra conditional parameter to deploy the Sample ChatApp, for demo-ing purposes.
 
 ![enterprise-azureai](docs/images/deploy_chatapp.png)
 Read more: [Sample ChatApp](#sample-chatapp)

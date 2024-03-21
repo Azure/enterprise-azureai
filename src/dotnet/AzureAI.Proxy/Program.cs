@@ -4,6 +4,10 @@ using AzureAI.Proxy.Services;
 using OpenTelemetry.Resources;
 using OpenTelemetry.Trace;
 using Yarp.ReverseProxy.Health;
+using Microsoft.Extensions.Azure;
+using Microsoft.Extensions.Configuration;
+using Azure.Identity;
+
 
 
 var builder = WebApplication.CreateBuilder(args);
@@ -22,7 +26,6 @@ builder.Services.ConfigureOpenTelemetryTracerProvider((sp, builder) =>
     builder.ConfigureResource(resourceBuilder =>
         resourceBuilder.AddAttributes(resourceAttributes)));
 
-
 //Managed Identity Service
 builder.Services.AddSingleton<IManagedIdentityService, ManagedIdentityService>();
 var managedIdentityService = builder.Services.BuildServiceProvider().GetService<IManagedIdentityService>();
@@ -37,13 +40,16 @@ builder.Configuration.AddAzureAppConfiguration(options =>
 
 var config = builder.Configuration;
 
-//Log Ingestion for charge back data
-builder.Services.AddSingleton<ILogIngestionService, LogIngestionService>((ctx) =>
+var endpoint = new Uri(config.GetSection("AzureMonitor")["DataCollectionEndpoint"].ToString());
+
+builder.Services.AddAzureClients(clientBuilder =>
 {
-    var managedIdentityService = ctx.GetService<IManagedIdentityService>();
-    ILogger logger = builder.Services.BuildServiceProvider().GetRequiredService<ILogger<LogIngestionService>>();
-    return new LogIngestionService(managedIdentityService, config, logger);
+    clientBuilder.AddLogsIngestionClient(endpoint);
+    clientBuilder.UseCredential(managedIdentityService.GetTokenCredential());
 });
+
+//Log Ingestion for charge back data
+builder.Services.AddTransient<ILogIngestionService, LogIngestionService>();
 
 //Setup Reverse Proxy
 var proxyConfig = new ProxyConfiguration(config["AzureAIProxy:ProxyConfig"]);

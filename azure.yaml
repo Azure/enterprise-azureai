@@ -7,21 +7,60 @@
 # Name of the application.
 name: enterprise-azureai
 metadata:
-  template: enterprise-azureai@1.0.0
+  template: enterprise-azureai@1.2.0
 services:
+
   proxy:
     project: ./src/dotnet/AzureAI.Proxy
     host: containerapp
     language: dotnet
-    
     docker:
       path: ./Dockerfile
       context: ../
+
+  azurechat:
+    project: ./src/azurechat
+    host: appservice
+    language: ts
+   
 hooks:
-  preprovision: # Pull environment variable inline from local device and set in .env file
+  preprovision: #determine "MY_IP" and write to .env file | whitelist IP during deployment
     posix:  
       shell: sh
       run: ./scripts/set-env.sh
+      interactive: true
     windows:
       shell: pwsh
       run: ./scripts/set-env.ps1
+      interactive: true
+  postprovision: # Deploy the azurechat app if DEPLOY_AZURE_CHATAPP is set to true
+    posix:  
+      shell: sh
+      run: ./scripts/deploy-azurechat.sh
+      interactive: true
+    windows:
+      shell: pwsh
+      run: ./scripts/deploy-azurechat.ps1 
+      interactive: true
+  postdown:
+    posix:  
+      shell: sh
+      run: ./scripts/cleanup.sh
+      interactive: true
+    windows:
+      shell: pwsh
+      run: ./scripts/cleanup.ps1
+      interactive: true
+    
+
+workflows:
+  up: # Deploy the application to Azure / Proxy only
+      # post-provision hook will deploy azurechat if parameter 
+      # DEPLOY_AZURE_CHATAPP is set to true
+    - azd: provision
+    - azd: package proxy
+    - azd: deploy proxy
+  
+
+      
+  

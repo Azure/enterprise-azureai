@@ -3,6 +3,9 @@
     "Monitoring Metrics Publisher" : "3913510d-42f4-4e42-8a64-420c390055eb",
     "AcrPull":"7f951dda-4ed3-4680-a7ca-43fe172d538d",
     "Cognitive Services OpenAI Contributor": "a001fd3d-188f-4b5d-821b-7da978bf7442",
-    "Cognitive Services OpenAI User" : "5e0bd9bd-7b93-4f28-af87-19fc36ad61bd"
+    "Cognitive Services OpenAI User" : "5e0bd9bd-7b93-4f28-af87-19fc36ad61bd",
+    "Key Vault Secrets User": "4633458b-17de-408a-b874-0445c86b69e6",
+    "Key Vault Secrets Officer": "b86a8fe4-44ce-4948-aee5-eccb2c155cd7"
+
 
 }

@@ -1,8 +1,12 @@
 param targetResourceId string
 param deploymentName string
-param roleDefinitionId string
+param roleName string = ''
+param roleDefinitionId string = ''
 param principalId string
 param principalType string = 'ServicePrincipal'
+
+
+var rolesIds = loadJsonContent('./roles.json')
 
 resource ResourceRoleAssignment 'Microsoft.Resources/deployments@2023-07-01' = {
   name: deploymentName
@@ -14,7 +18,7 @@ resource ResourceRoleAssignment 'Microsoft.Resources/deployments@2023-07-01' = {
         value: targetResourceId
       }
       roleDefinitionId: {
-        value: roleDefinitionId
+        value: roleName == '' ? roleDefinitionId : rolesIds[roleName]
       }
       principalId: {
         value: principalId

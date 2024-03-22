@@ -14,6 +14,15 @@ param location string
 @description('Use Redis Cache for Azure API Management.')
 param useRedisCacheForAPIM bool = false
 
+@description('Deploy Azure Chat demo app')
+@metadata({
+  azd: {
+    type: 'boolean'
+  }
+})
+param deployChatApp bool
+param OpenAIApiVersion string = '2023-03-15-preview'
+
 @description('Add Azure Open AI Service to secondary region for load balancing.')
 @allowed(['','westeurope','southcentralus','australiaeast', 'canadaeast', 'eastus', 'eastus2', 'francecentral', 'japaneast', 'northcentralus', 'swedencentral', 'switzerlandnorth', 'uksouth'])
 param secondaryOpenAILocation string = ''
@@ -27,6 +36,7 @@ param resourceGroupName string = ''
 param openAiServiceName string = ''
 param apimIdentityName string = ''
 param proxyIdentityName string = ''
+param chatappIdentityName string = ''
 param deploymentScriptIdentityName string = ''
 param apimServiceName string = ''
 param logAnalyticsName string = ''
@@ -35,18 +45,27 @@ param dataCollectionRuleName string = ''
 param applicationInsightsDashboardName string = ''
 param applicationInsightsName string = ''
 param proxyAppName string = ''
+param chatAppName string = ''
 param vnetName string = ''
 param apimSubnetName string = ''
 param apimNsgName string = ''
 param acaSubnetName string = ''
 param acaNsgName string = ''
+param appServiceSubnetName string = ''
+param appServiceNsgName string = ''
 param privateEndpointSubnetName string = ''
 param privateEndpointNsgName string = ''
 param redisCacheServiceName string = ''
 param containerRegistryName string = ''
 param containerAppsEnvironmentName string = ''
 param appConfigurationName string = ''
+param chatappConfigurationName string = ''
 param myIpAddress string = ''
+param myPrincipalId string = ''
+param cosmosDbAccountName string = ''
+param keyVaultName string = ''
+
+
 
 //Determine the version of the chat model to deploy
 param arrayVersion0301Locations array = [
@@ -72,6 +91,8 @@ var monitorPrivateDnsZoneName = 'privatelink.monitor.azure.com'
 var redisCachePrivateDnsZoneName = 'privatelink.redis.cache.windows.net'
 var appConfigPrivateDnsZoneName = 'privatelink.azconfig.io'
 var containerRegistryPrivateDnsZoneName = 'privatelink.azurecr.io'
+var cosmosAccountPrivateDnsZoneName = 'privatelink.documents.azure.com'
+var keyvaultPrivateDnsZoneName = 'privatelink.vaultcore.azure.net'
 
 var privateDnsZoneNames = [
   openAiPrivateDnsZoneName
@@ -79,20 +100,36 @@ var privateDnsZoneNames = [
   redisCachePrivateDnsZoneName
   containerRegistryPrivateDnsZoneName
   appConfigPrivateDnsZoneName
+  cosmosAccountPrivateDnsZoneName
+  keyvaultPrivateDnsZoneName
 ]
 
 
 
 // Organize resources in a resource group
-resource resourceGroup 'Microsoft.Resources/resourceGroups@2021-04-01' = {
+resource mainResourceGroup 'Microsoft.Resources/resourceGroups@2021-04-01' = {
   name: !empty(resourceGroupName) ? resourceGroupName : '${abbrs.resourcesResourceGroups}${environmentName}'
   location: location
   tags: tags
 }
 
+//revert change ChatApp in own resourcegroup. Due to cross RG network connections, AZD DOWN
+//will not work
+// resource chatappResourceGroup 'Microsoft.Resources/resourceGroups@2021-04-01' = if(deployChatApp) {
+//   name: '${mainResourceGroup.name}-chatapp'
+//   location: location
+//   tags: tags
+// }
+// for now we will be using the same RG
+resource chatappResourceGroup 'Microsoft.Resources/resourceGroups@2021-04-01' existing = if(deployChatApp) {
+  name: mainResourceGroup.name
+}
+
+
+
 module dnsDeployment './modules/networking/dns.bicep' = [for privateDnsZoneName in privateDnsZoneNames: {
   name: 'dns-deployment-${privateDnsZoneName}'
-  scope: resourceGroup
+  scope: mainResourceGroup
   params: {
     name: privateDnsZoneName
   }
@@ -100,7 +137,7 @@ module dnsDeployment './modules/networking/dns.bicep' = [for privateDnsZoneName 
 
 module managedIdentityApim './modules/security/managed-identity.bicep' = {
   name: 'managed-identity-apim'
-  scope: resourceGroup
+  scope: mainResourceGroup
   params: {
     name: !empty(apimIdentityName) ? apimIdentityName : '${abbrs.managedIdentityUserAssignedIdentities}${resourceToken}-apim'
     location: location
@@ -109,8 +146,8 @@ module managedIdentityApim './modules/security/managed-identity.bicep' = {
 }
 
 module managedIdentityProxy './modules/security/managed-identity.bicep' = {
-  name: 'managed-identity-chargeback'
-  scope: resourceGroup
+  name: 'managed-identity-proxy'
+  scope: mainResourceGroup
   params: {
     name: !empty(proxyIdentityName) ? proxyIdentityName : '${abbrs.managedIdentityUserAssignedIdentities}${resourceToken}-proxy'
     location: location
@@ -118,9 +155,19 @@ module managedIdentityProxy './modules/security/managed-identity.bicep' = {
   }
 }
 
+module managedIdentityChatApp './modules/security/managed-identity.bicep' = if(deployChatApp) {
+  name: 'managed-identity-chatapp'
+  scope: chatappResourceGroup
+  params: {
+    name: !empty(chatappIdentityName) ? chatappIdentityName : '${abbrs.managedIdentityUserAssignedIdentities}${resourceToken}-chatapp'
+    location: location
+    tags: tags
+  }
+}
+
 module managedIdentityDeploymentScript './modules/security/managed-identity.bicep' = {
   name: 'managed-identity-deployment-script'
-  scope: resourceGroup
+  scope: mainResourceGroup
   params: {
     name: !empty(deploymentScriptIdentityName) ? deploymentScriptIdentityName : '${abbrs.managedIdentityUserAssignedIdentities}${resourceToken}-deploymentscript'
     location: location
@@ -130,7 +177,7 @@ module managedIdentityDeploymentScript './modules/security/managed-identity.bice
 
 module redisCache './modules/cache/redis.bicep' = if(useRedisCacheForAPIM){
   name: 'redis-cache'
-  scope: resourceGroup
+  scope: mainResourceGroup
   params: {
     name: !empty(redisCacheServiceName) ? redisCacheServiceName : '${abbrs.cacheRedis}${resourceToken}'
     location: location
@@ -147,7 +194,7 @@ module redisCache './modules/cache/redis.bicep' = if(useRedisCacheForAPIM){
 
 module vnet './modules/networking/vnet.bicep' = {
   name: 'vnet'
-  scope: resourceGroup
+  scope: mainResourceGroup
   dependsOn: [
     dnsDeployment
   ]
@@ -157,6 +204,8 @@ module vnet './modules/networking/vnet.bicep' = {
     apimNsgName: !empty(apimNsgName) ? apimNsgName : '${abbrs.networkNetworkSecurityGroups}${abbrs.apiManagementService}${resourceToken}'
     acaSubnetName: !empty(acaSubnetName) ? acaSubnetName : '${abbrs.networkVirtualNetworksSubnets}${abbrs.appContainerApps}${resourceToken}'
     acaNsgName: !empty(acaNsgName) ? acaNsgName : '${abbrs.networkNetworkSecurityGroups}${abbrs.appContainerApps}${resourceToken}'
+    appServiceSubnetName: !empty(appServiceSubnetName) ? appServiceSubnetName : '${abbrs.networkVirtualNetworksSubnets}${abbrs.webServerFarms}${resourceToken}'
+    appServiceNsgName: !empty(appServiceNsgName) ? appServiceNsgName : '${abbrs.networkNetworkSecurityGroups}${abbrs.webServerFarms}${resourceToken}'
     privateEndpointSubnetName: !empty(privateEndpointSubnetName) ? privateEndpointSubnetName : '${abbrs.networkVirtualNetworksSubnets}${abbrs.privateEndpoints}${resourceToken}'
     privateEndpointNsgName: !empty(privateEndpointNsgName) ? privateEndpointNsgName : '${abbrs.networkNetworkSecurityGroups}${abbrs.privateEndpoints}${resourceToken}'
     location: location
@@ -168,7 +217,7 @@ module vnet './modules/networking/vnet.bicep' = {
 
 module monitoring './modules/monitor/monitoring.bicep' = {
   name: 'monitoring'
-  scope: resourceGroup
+  scope: mainResourceGroup
   params: {
     location: location
     tags: tags
@@ -190,7 +239,7 @@ module monitoring './modules/monitor/monitoring.bicep' = {
 var apimService = !empty(apimServiceName) ? apimServiceName : '${abbrs.apiManagementService}${resourceToken}'
 module apimPip 'modules/networking/publicip.bicep' = {
   name: 'apim-pip'
-  scope: resourceGroup
+  scope: mainResourceGroup
   params: {
     name: '${apimService}-pip'
     location: location
@@ -201,7 +250,7 @@ module apimPip 'modules/networking/publicip.bicep' = {
 
 module apim './modules/apim/apim.bicep' = {
   name: 'apim'
-  scope: resourceGroup
+  scope: mainResourceGroup
   params: {
     name: apimService
     location: location
@@ -216,7 +265,7 @@ module apim './modules/apim/apim.bicep' = {
 
 module openAi './modules/ai/cognitiveservices.bicep' = {
   name: 'openai'
-  scope: resourceGroup
+  scope: mainResourceGroup
   params: {
     name: !empty(openAiServiceName) ? openAiServiceName : '${abbrs.cognitiveServicesAccounts}${resourceToken}-${location}'
     location: location
@@ -257,7 +306,7 @@ module openAi './modules/ai/cognitiveservices.bicep' = {
 
 module openAiSecondary './modules/ai/cognitiveservices.bicep' = if (secondaryOpenAILocation != '') {
   name: 'openai-secondary'
-  scope: resourceGroup
+  scope: mainResourceGroup
   params: {
     name: !empty(openAiServiceName) ? openAiServiceName : '${abbrs.cognitiveServicesAccounts}${resourceToken}-${secondaryOpenAILocation}'
     location: secondaryOpenAILocation
@@ -300,12 +349,13 @@ module openAiSecondary './modules/ai/cognitiveservices.bicep' = if (secondaryOpe
 
 module containerRegistry './modules/host/container-registry.bicep' = {
   name: 'container-registry'
-  scope: resourceGroup
+  scope: mainResourceGroup
   params: {
     name: !empty(containerRegistryName) ? containerRegistryName : '${abbrs.containerRegistryRegistries}${resourceToken}'
     location: location
     tags: tags
-    chargeBackManagedIdentityName: managedIdentityProxy.outputs.managedIdentityName
+    proxyManagedIdentityName: managedIdentityProxy.outputs.managedIdentityName
+    chatappManagedIdentityName: managedIdentityChatApp.outputs.managedIdentityName
     myIpAddress: myIpAddress
     //needed for container app deployment
     adminUserEnabled: true
@@ -320,7 +370,7 @@ module containerRegistry './modules/host/container-registry.bicep' = {
 
 module containerAppsEnvironment './modules/host/container-app-environment.bicep' = {
   name: 'container-apps-environment'
-  scope: resourceGroup
+  scope: mainResourceGroup
   params: {
     name: !empty(containerAppsEnvironmentName) ? containerAppsEnvironmentName : '${abbrs.appManagedEnvironments}${resourceToken}' 
     location: location
@@ -332,9 +382,10 @@ module containerAppsEnvironment './modules/host/container-app-environment.bicep'
   }
 }
 
-module app './modules/host/container-app.bicep' = {
-  name: 'container-app'
-  scope: resourceGroup
+
+module proxyApp './modules/host/container-app.bicep' = {
+  name: 'container-app-proxy'
+  scope: mainResourceGroup
   params: {
     name: !empty(proxyAppName) ? proxyAppName : '${abbrs.appContainerApps}${resourceToken}-proxy'
     location: location
@@ -343,12 +394,11 @@ module app './modules/host/container-app.bicep' = {
     //deploy sample image first - we need the endpoint already for APIM
     //real image will be deployed later
     imageName: ''
-    apimServiceName: apim.outputs.apimName
     external: true
     env: [
       {
         name: 'APPCONFIG_ENDPOINT'
-        value: appconfig.outputs.appConfigEndPoint
+        value: appconfigProxy.outputs.appConfigEndPoint
       }
       {
         name: 'CLIENT_ID'
@@ -370,6 +420,37 @@ module app './modules/host/container-app.bicep' = {
     containerAppsEnvironment
   ]
 }
+
+
+module proxyApiBackend 'modules/apim/apim-backend.bicep' = {
+  dependsOn: [
+    apim
+  ]
+  name: 'apim-backend'
+  scope: mainResourceGroup
+  params: {
+    apimServiceName: apimService
+    proxyApiBackendId: 'proxy-backend'
+    proxyAppUri: 'https://${proxyApp.outputs.hostname}.${proxyApp.outputs.defaultDomain}/openai'
+  }
+}
+
+
+module chatApp 'modules/appservice/azurechat.bicep'= if(deployChatApp){
+  name: 'appservice-app-azurechat'
+  scope: chatappResourceGroup
+  params: {
+    webapp_name: !empty(chatAppName) ? chatAppName : '${abbrs.webSitesAppService}${resourceToken}-azurechat'
+    appservice_name: !empty(chatAppName) ? '${abbrs.webServerFarms}${chatAppName}' : '${abbrs.webServerFarms}${resourceToken}-azurechat'
+    location: location
+    tags: tags
+    azureChatIdentityName: managedIdentityChatApp.outputs.managedIdentityName
+    appConfigEndpoint: appconfigChatApp.outputs.appConfigEndPoint
+    subnetId: vnet.outputs.appServiceSubnetId
+    keyvaultName: keyvault.outputs.keyvaultName
+  }
+}
+
 
 
 //create the proxyconfig structure for appconfig
@@ -403,23 +484,104 @@ var proxyConfig = {
   ]
 }
 
-
-module appconfig 'modules/appconfig/appconfiguration.bicep' = {
-  name: 'appconfig'
-  scope: resourceGroup
+module cosmosDb 'modules/cosmosdb/account.bicep' = if(deployChatApp){
+  name: 'cosmosdb'
+  scope: chatappResourceGroup
   params: {
-    name: !empty(appConfigurationName) ? appConfigurationName : '${abbrs.appConfigurationConfigurationStores}${resourceToken}'
-    AzureMonitorDataCollectionEndPointUrl: monitoring.outputs.dataCollectionEndpointUrl
-    AzureMonitorDataCollectionRuleStream: monitoring.outputs.dataCollectionRuleStreamName
-    AzureMonitorDataCollectionRuleImmutableId: monitoring.outputs.dataCollectionRuleImmutableId
+    name: !empty(cosmosDbAccountName) ? cosmosDbAccountName : '${abbrs.documentDBDatabaseAccounts}${resourceToken}'
     location: location
-    AzureOpenAIEndpoints: array(openAi.outputs.openAIEndpointUriRaw)
-    proxyManagedIdentityName: managedIdentityProxy.outputs.managedIdentityName
-    ProxyConfig: proxyConfig
+    cosmosAccountPrivateDnsZoneName: cosmosAccountPrivateDnsZoneName
+    vNetName: vnet.outputs.vnetName
+    privateEndpointSubnetName: vnet.outputs.privateEndpointSubnetName
+    cosmosPrivateEndpointName: '${abbrs.documentDBDatabaseAccounts}${abbrs.privateEndpoints}${resourceToken}'
+    chatAppIdentityName: managedIdentityChatApp.outputs.managedIdentityName
+    myIpAddress: myIpAddress
+    myPrincipalId: myPrincipalId
+    dnsResourceGroupName: mainResourceGroup.name
+    vnetResourceGroupName: mainResourceGroup.name
   }
 }
 
-output TENTANT_ID string = subscription().tenantId
+module appconfigProxy 'modules/appconfig/configurationStore.bicep' = {
+  name: 'appconfigProxy-deployment'
+  scope: mainResourceGroup
+  params: {
+    name: !empty(appConfigurationName) ? appConfigurationName : '${abbrs.appConfigurationConfigurationStores}${resourceToken}-proxy'
+    location: location
+    appconfigPrivateDnsZoneName: appConfigPrivateDnsZoneName
+    vnetName: vnet.outputs.vnetName
+    privateEndpointSubnetName: vnet.outputs.privateEndpointSubnetName
+    appconfigPrivateEndpointName: '${abbrs.appConfigurationConfigurationStores}${abbrs.privateEndpoints}${resourceToken}-proxy'
+  }
+}
+
+module appconfigProxySettings 'modules/appconfig/appconfig-proxy.bicep' = {
+  name: 'appconfigProxy-setting'
+  scope: mainResourceGroup
+  params: {
+    name: appconfigProxy.outputs.appConfigName
+    azureMonitorDataCollectionEndPointUrl: monitoring.outputs.dataCollectionEndpointUrl
+    azureMonitorDataCollectionRuleStream: monitoring.outputs.dataCollectionRuleStreamName
+    azureMonitorDataCollectionRuleImmutableId: monitoring.outputs.dataCollectionRuleImmutableId
+    proxyManagedIdentityName: managedIdentityProxy.outputs.managedIdentityName
+    proxyConfig: proxyConfig
+    myPrincipalId: myPrincipalId 
+    
+  }
+}
+
+module appconfigChatApp 'modules/appconfig/configurationStore.bicep' = if(deployChatApp) {
+  name: 'appconfigChatApp-deployment'
+  scope: chatappResourceGroup
+  params: {
+    name: !empty(chatappConfigurationName) ? chatappConfigurationName : '${abbrs.appConfigurationConfigurationStores}${resourceToken}-chatapp'
+    location: location
+    appconfigPrivateDnsZoneName: appConfigPrivateDnsZoneName
+    vnetName: vnet.outputs.vnetName
+    privateEndpointSubnetName: vnet.outputs.privateEndpointSubnetName
+    appconfigPrivateEndpointName: '${abbrs.appConfigurationConfigurationStores}${abbrs.privateEndpoints}${resourceToken}-chatapp'
+    dnsResourceGroupName: mainResourceGroup.name
+    vnetResourceGroupName: mainResourceGroup.name
+  }
+}
+
+module appconfigChatAppSettings 'modules/appconfig/appconfig-chatapp.bicep' = {
+  name: 'appconfigChatApp-setting'
+  scope: chatappResourceGroup
+  params:{
+    name: appconfigChatApp.outputs.appConfigName
+    apimEndpoint: apim.outputs.apimEndpoint
+    chatappIdentityName: managedIdentityChatApp.outputs.managedIdentityName
+    cosmosDbEndPoint: cosmosDb.outputs.cosmosDbEndPoint
+    keyVaultUrl: keyvault.outputs.keyvaultUrl
+    openAIApiVersion: OpenAIApiVersion
+    myPrincipalId: myPrincipalId
+  }
+}
+
+
+module keyvault 'modules/keyvault/keyvault.bicep' = if(deployChatApp){
+  name: 'keyvault'
+  scope: chatappResourceGroup
+  params: {
+    name: !empty(keyVaultName) ? keyVaultName : '${abbrs.keyVaultVaults}${resourceToken}'
+    location: location
+    chatappIdentityName: managedIdentityChatApp.outputs.managedIdentityName
+    vNetName: vnet.outputs.vnetName
+    privateEndpointSubnetName: vnet.outputs.privateEndpointSubnetName
+    keyvaultPrivateEndpointName: '${abbrs.keyVaultVaults}${abbrs.privateEndpoints}${resourceToken}'
+    keyvaultPrivateDnsZoneName: keyvaultPrivateDnsZoneName
+    apimServiceName: apim.outputs.apimName
+    myIpAddress: myIpAddress
+    myPrincipalId: myPrincipalId
+    dnsResourceGroupName: mainResourceGroup.name
+    vnetResourceGroupName: mainResourceGroup.name
+    apimResourceGroupName: mainResourceGroup.name
+    
+  }
+}
+
+output TENANT_ID string = subscription().tenantId
 output DEPLOYMENT_LOCATION string = location
 output APIM_NAME string = apim.outputs.apimName
 output RESOURCE_TOKEN string = resourceToken
@@ -427,6 +589,12 @@ output AZURE_CONTAINER_ENVIRONMENT_NAME string = containerAppsEnvironment.output
 output AZURE_CONTAINER_REGISTRY_NAME string = containerRegistry.outputs.name
 output AZURE_CONTAINER_REGISTRY_ENDPOINT string = containerRegistry.outputs.loginServer
 output AZURE_PROXY_MANAGED_IDENTITY_NAME string = managedIdentityProxy.outputs.managedIdentityName
-output AZURE_APPCONFIG_ENDPOINT string = appconfig.outputs.appConfigEndPoint
-output AZURE_RESOURCE_GROUP string = resourceGroup.name
+output AZURE_APPCONFIG_ENDPOINT string = appconfigProxy.outputs.appConfigEndPoint
+output AZURE_RESOURCE_GROUP string = mainResourceGroup.name
 output APPLICATIONINSIGHTS_CONNECTION_STRING string = monitoring.outputs.applicationInsightsConnectionString
+output DEPLOY_AZURE_CHATAPP bool = deployChatApp
+output AZURE_CHATAPP_URL string = deployChatApp ? chatApp.outputs.webAppUrl : ''
+output AZURE_CHATAPP_KEYVAULT_NAME string = deployChatApp ? keyvault.outputs.keyvaultName : ''
+output AZURE_CLIENT_ID string = deployChatApp ? managedIdentityChatApp.outputs.managedIdentityClientId : ''
+output AZURE_TENANT_ID string = subscription().tenantId
+

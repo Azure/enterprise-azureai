@@ -4,6 +4,9 @@ param apimSubnetName string
 param apimNsgName string
 param acaSubnetName string
 param acaNsgName string
+param appServiceSubnetName string
+param appServiceNsgName string
+
 param privateEndpointSubnetName string
 param privateEndpointNsgName string
 param privateDnsZoneNames array
@@ -77,6 +80,14 @@ resource acaNsg 'Microsoft.Network/networkSecurityGroups@2022-09-01' = {
   }
 }
 
+resource appServiceNsg 'Microsoft.Network/networkSecurityGroups@2022-09-01' = {
+  name: appServiceNsgName
+  location: location
+  properties: {
+    securityRules: []
+  }
+}
+
 resource privateEndpointNsg 'Microsoft.Network/networkSecurityGroups@2020-07-01' = {
   name: privateEndpointNsgName
   location: location
@@ -142,6 +153,16 @@ resource virtualNetwork 'Microsoft.Network/virtualNetworks@2019-11-01' = {
           
         }
       }
+      {
+        name: appServiceSubnetName
+        properties: {
+          addressPrefix: '10.0.4.0/24'
+          networkSecurityGroup: appServiceNsg.id == '' ? null : {
+            id: appServiceNsg.id
+          }
+          delegations: webServerFarmDelegation
+        }
+      }
     ]
   }
 
@@ -155,6 +176,10 @@ resource virtualNetwork 'Microsoft.Network/virtualNetworks@2019-11-01' = {
   
   resource acaSubnet 'subnets' existing = {
     name: acaSubnetName
+  }
+  
+  resource appServiceSubnet 'subnets' existing = {
+    name: appServiceSubnetName
   }
   
   resource privateEndpointSubnet 'subnets' existing = {
@@ -179,5 +204,7 @@ output apimSubnetName string = virtualNetwork::apimSubnet.name
 output apimSubnetId string = virtualNetwork::apimSubnet.id
 output acaSubnetName string = virtualNetwork::acaSubnet.name
 output acaSubnetId string = virtualNetwork::acaSubnet.id
+output appServiceSubnetName string = virtualNetwork::appServiceSubnet.name
+output appServiceSubnetId string = virtualNetwork::appServiceSubnet.id
 output privateEndpointSubnetName string = virtualNetwork::privateEndpointSubnet.name
 output privateEndpointSubnetId string = virtualNetwork::privateEndpointSubnet.id

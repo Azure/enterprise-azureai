@@ -8,25 +8,21 @@ namespace AzureAI.Proxy.Services
     public class LogIngestionService : ILogIngestionService
     {
         private readonly IConfiguration _config;
-        private readonly IManagedIdentityService _managedIdentityService;
+        //private readonly IManagedIdentityService _managedIdentityService;
+        private readonly LogsIngestionClient _logsIngestionClient;
         private readonly ILogger _logger;
-        private TokenCredential _credential;
-        private LogsIngestionClient _logsIngestionClient;
+        
+        
 
         public LogIngestionService(
-            IManagedIdentityService managedIdentityService, 
+          //  IManagedIdentityService managedIdentityService, 
+            LogsIngestionClient logsIngestionClient,
             IConfiguration config
-,           ILogger logger
+,           ILogger<LogIngestionService> logger
             )
         {
             _config = config;
-            
-
-            _credential = managedIdentityService.GetTokenCredential();
-            var endpoint = new Uri(_config.GetSection("AzureMonitor")["DataCollectionEndpoint"].ToString());
-
-
-            _logsIngestionClient = new LogsIngestionClient(endpoint, _credential);
+            _logsIngestionClient = logsIngestionClient;
             _logger = logger;
          }
 

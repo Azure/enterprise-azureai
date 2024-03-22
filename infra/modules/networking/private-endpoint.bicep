@@ -5,13 +5,27 @@ param privateLinkServiceId string
 param groupIds array
 param dnsZoneName string
 param location string
+param vnetResourceGroupName string = resourceGroup().name
+param dnsResourceGroupName string = resourceGroup().name
+
+resource rgNetwork 'Microsoft.Resources/resourceGroups@2023-07-01' existing = {
+  name: vnetResourceGroupName
+  scope: subscription()
+}
+
+resource rgDns 'Microsoft.Resources/resourceGroups@2023-07-01' existing = {
+  name: dnsResourceGroupName
+  scope: subscription()
+}
 
 resource privateEndpointSubnet 'Microsoft.Network/virtualNetworks/subnets@2022-09-01' existing = {
   name: '${vNetName}/${subnetName}'
+  scope: rgNetwork
 }
 
 resource privateEndpointDnsZone 'Microsoft.Network/privateDnsZones@2020-06-01' existing = {
   name: dnsZoneName
+  scope: rgDns
 }
 
 resource privateEndpoint 'Microsoft.Network/privateEndpoints@2022-09-01' = {

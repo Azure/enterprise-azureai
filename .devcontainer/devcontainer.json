@@ -10,7 +10,14 @@
         "ghcr.io/devcontainers/features/docker-in-docker:2": {},
         "ghcr.io/devcontainers/features/dotnet:2": {},
         "ghcr.io/devcontainers/features/github-cli:1": {},
-        "ghcr.io/azure/azure-dev/azd:latest": {}
+        "ghcr.io/azure/azure-dev/azd:latest": {},
+        "ghcr.io/eitsupi/devcontainer-features/jq-likes:2" : {
+            "yqVersion": "none",
+            "gojqVersion": "none",
+            "xqVersion": "none",
+            "jqVersion": "latest"
+        },
+        "ghcr.io/devcontainers/features/node:1": {}
     },
     "customizations": {
         "vscode": {    
@@ -23,13 +30,14 @@
                 "humao.rest-client",
                 "ms-azuretools.vscode-apimanagement",
                 "ms-azuretools.vscode-azurecontainerapps",
-                "GitHub.copilot"
+                "GitHub.copilot",
+                "dbaeumer.vscode-eslint"
             ]
         }
     },
     "forwardPorts": [8080],
     "postCreateCommand": "sh .devcontainer/postCreate.sh",
-    "remoteUser": "vscode",
+    "remoteUser": "root",
     "hostRequirements": {
         "memory": "8gb"
     }

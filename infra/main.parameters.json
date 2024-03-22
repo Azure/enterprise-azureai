@@ -11,6 +11,9 @@
       "myIpAddress": {
         "value": "${MY_IP_ADDRESS}"
       },
+      "myPrincipalId": {
+        "value": "${MY_USER_ID}"
+      },
       "useRedisCacheForAPIM" : {
         "value": "${USE_REDIS_CACHE_APIM}"
       },

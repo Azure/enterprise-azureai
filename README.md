@@ -48,8 +48,8 @@ This repository provides guidance and tools for organizations looking to impleme
 ## Key features
 - **Infrastructure-as-code**: Bicep templates for provisioning and deploying the resources.
 - **CI/CD pipeline**: GitHub Actions and Azure DevOps Pipelines for continuous deployment of the resources to Azure.
-- **Secure Access Management**: Best practices and configurations for managing secure access to Azure OpenAI services.
-- **Usage Monitoring & Cost Control**: Solutions for tracking the usage of Azure OpenAI services to facilitate accurate cost allocation and team charge-back.
+- **Secure Access Management**: Best practices and configurations for managing secure access to Azure OpenAI Services.
+- **Usage Monitoring & Cost Control**: Solutions for tracking the usage of Azure OpenAI Services to facilitate accurate cost allocation and team charge-back.
 - **Load Balance**: Utilize & loadbalance the capacity of Azure OpenAI across regions or provisioned throughput (PTU)
 - **Streaming requests**: Support for streaming requests to Azure OpenAI, for all features (e.g. additional logging and charge-back)
 - **End-to-end sample**: Including Sample ChatApp, Azure Dashboards, content filters and policies
@@ -173,7 +173,7 @@ You can configure `azd` to provision and deploy resources to your deployment env
 
 ### Sample ChatApp
 
-The Sample ChatApp is a simple NodeJS application that uses the API Management endpoints, exposing Azure OpenAI service, to test the deployment and see how the Azure OpenAI service works. In the ChatApp you can configure which API Management Subscription you want to use and with which deployment model, creating an end-to-end experience.
+The Sample ChatApp is a simple NodeJS application that uses the API Management endpoints, exposing Azure OpenAI Service, to test the deployment and see how the Azure OpenAI Service works. In the ChatApp you can configure which API Management Subscription you want to use and with which deployment model, creating an end-to-end experience.
 
 ![enterprise-azureai](docs/images/config_chatapp.png)
 
@@ -182,7 +182,7 @@ The Sample ChatApp is a simple NodeJS application that uses the API Management e
 
 ### Monitoring
 
-The deployed resources include a Log Analytics workspace with an Application Insights based dashboard to measure metrics like server response time and failed requests. We also included some custom visuals in the dashboard to visualize the token usage per consumer of the Azure OpenAI service.
+The deployed resources include a Log Analytics workspace with an Application Insights based dashboard to measure metrics like server response time and failed requests. We also included some custom visuals in the dashboard to visualize the token usage per consumer of the Azure OpenAI Service.
 
 ![enterprise-azureai](docs/images/dashboard.png)
 
@@ -220,7 +220,7 @@ The following section examines different concepts that help tie in application a
 
 ### Architecture in detail
 
-This repository illustrates how to integrate Azure OpenAI as a central capability within an organization using Azure API Management and Azure Container Apps. Azure OpenAI offers AI models for generating text, images, etc., trained on extensive data. Azure API Management facilitates secure and managed exposure of APIs to the external environment. Azure Container Apps allows running containerized applications in Azure without infrastructure management. The repository includes a .NET 8.0 proxy application to allocate Azure OpenAI service costs to the consuming application, aiding in cost control. The proxy supports load balancing and horizontal scaling of Azure OpenAI instances. A chargeback report in the Azure Dashboard visualizes Azure OpenAI service costs, making it a centralized capability within the organization.
+This repository illustrates how to integrate Azure OpenAI as a central capability within an organization using Azure API Management and Azure Container Apps. Azure OpenAI offers AI models for generating text, images, etc., trained on extensive data. Azure API Management facilitates secure and managed exposure of APIs to the external environment. Azure Container Apps allows running containerized applications in Azure without infrastructure management. The repository includes a .NET 8.0 proxy application to allocate Azure OpenAI Service costs to the consuming application, aiding in cost control. The proxy supports load balancing and horizontal scaling of Azure OpenAI instances. A chargeback report in the Azure Dashboard visualizes Azure OpenAI Service costs, making it a centralized capability within the organization.
 
 We've used the Azure Developer CLI Bicep Starter template to create this repository. With `azd` you can create a new repository with a fully functional CI/CD pipeline in minutes. You can find more information about `azd` [here](https://learn.microsoft.com/en-us/azure/developer/azure-developer-cli/).
 

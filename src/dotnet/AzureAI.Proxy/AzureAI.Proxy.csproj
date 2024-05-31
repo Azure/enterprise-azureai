@@ -11,7 +11,7 @@
 
   <ItemGroup>
     <PackageReference Include="AsyncAwaitBestPractices" Version="7.0.0" />
-    <PackageReference Include="Azure.Identity" Version="1.10.4" />
+    <PackageReference Include="Azure.Identity" Version="1.11.0" />
     <PackageReference Include="Azure.Messaging.EventHubs" Version="5.10.0" />
     <PackageReference Include="Azure.Monitor.Ingestion" Version="1.1.1" />
     <PackageReference Include="Azure.Monitor.OpenTelemetry.AspNetCore" Version="1.0.0" />

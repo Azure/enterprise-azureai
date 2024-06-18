@@ -157,7 +157,7 @@ azd env set SECONDARY_OPENAI_LOCATION '<your-secondary-openai-location>'
 
 ### CI/CD pipeline
 
-This project includes a Github workflow and a Azure DevOps Pipeline for deploying the resources to Azure on every push to main. That workflow requires several Azure-related authentication secrets to be stored as Github action secrets. To set that up, run:
+This project includes a Github workflow and an Azure DevOps Pipeline for deploying the resources to Azure on every push to main. That workflow requires several Azure-related authentication secrets to be stored as Github action secrets. To set that up, run:
 
 ```shell
 azd pipeline config

@@ -29,7 +29,7 @@ param secondaryOpenAILocation string = ''
 
 @description('Azure API Management SKU.')
 //@allowed(['StandardV2', 'Developer', 'Premium'])
-param apimSku string = 'Developer'
+param apimSku string = 'StandardV2'
 
 //Leave blank to use default naming conventions
 param resourceGroupName string = ''

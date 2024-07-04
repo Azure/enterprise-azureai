@@ -14,7 +14,7 @@
     "@azure/cosmos": "^4.0.0",
     "@azure/identity": "^3.4.1",
     "@azure/keyvault-secrets": "^4.7.0",
-    "@azure/msal-node": "^2.6.3",
+    "@azure/msal-node": "^2.9.2",
     "@markdoc/markdoc": "^0.3.4",
     "@radix-ui/react-avatar": "^1.0.4",
     "@radix-ui/react-dialog": "^1.0.5",

@@ -2,7 +2,6 @@ param name string
 param location string = resourceGroup().location
 param tags object = {}
 param proxyManagedIdentityName string
-param chatappManagedIdentityName string
 param myIpAddress string = ''
 param containerRegistryDnsZoneName string = ''
 param containerRegistryPrivateEndpointName string = ''
@@ -46,9 +45,7 @@ resource managedIdentityProxy 'Microsoft.ManagedIdentity/userAssignedIdentities@
   name: proxyManagedIdentityName
 }
 
-resource managedIdentityChatapp 'Microsoft.ManagedIdentity/userAssignedIdentities@2018-11-30' existing = {
-  name: chatappManagedIdentityName
-}
+
 
 // 2022-02-01-preview needed for anonymousPullEnabled
 resource containerRegistry 'Microsoft.ContainerRegistry/registries@2022-02-01-preview' = {

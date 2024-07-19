@@ -45,7 +45,11 @@ Unleash the power of Azure OpenAI in your company in a secure & manageable way w
 
 This repository provides guidance and tools for organizations looking to implement Azure OpenAI in a production environment with an emphasis on cost control, secure access, and usage monitoring. The aim is to enable organizations to effectively manage expenses while ensuring that the consuming application or team is accountable for the costs incurred.
 
+> [!NOTE]  
+> This repository uses an AI Proxy to load-balance & log the traffic between Azure API Management and Azure OpenAI Service. In May 2024 Microsoft announced new features in Azure API Management Policies related to integrating with Azure OpenAI Service that overlap with the AI Proxy. We recommend to use the new features in Azure API Management Policies for new deployments, but if you need to implement customizations or additional features in the proxy, the AI Proxy is still very relevant. For `azd` implementation guidance on the new features in Azure API Management Policies, see [here](https://github.com/Azure-Samples/ai-hub-gateway-solution-accelerator).
+
 ## Key features
+
 - **Infrastructure-as-code**: Bicep templates for provisioning and deploying the resources.
 - **CI/CD pipeline**: GitHub Actions and Azure DevOps Pipelines for continuous deployment of the resources to Azure.
 - **Secure Access Management**: Best practices and configurations for managing secure access to Azure OpenAI Services.
@@ -82,11 +86,11 @@ Read more: [Architecture in detail](#architecture-in-detail)
 ```shell
 azd init -t Azure/enterprise-azureai
 ```
+
 If you already cloned this repository to your local machine or run from a Dev Container or GitHub Codespaces you can run the following command from the root folder.
 ```shell
 azd init
 ```
-
 
 It will prompt you to provide a name that will later be used in the name of the deployed resources. If you're not logged into Azure, it will also prompt you to first login.
 

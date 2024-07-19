@@ -29,7 +29,7 @@ param secondaryOpenAILocation string = ''
 
 @description('Azure API Management SKU.')
 //@allowed(['StandardV2', 'Developer', 'Premium'])
-param apimSku string = 'Developer'
+param apimSku string = 'StandardV2'
 
 //Leave blank to use default naming conventions
 param resourceGroupName string = ''
@@ -113,19 +113,6 @@ resource mainResourceGroup 'Microsoft.Resources/resourceGroups@2021-04-01' = {
   tags: tags
 }
 
-//revert change ChatApp in own resourcegroup. Due to cross RG network connections, AZD DOWN
-//will not work
-// resource chatappResourceGroup 'Microsoft.Resources/resourceGroups@2021-04-01' = if(deployChatApp) {
-//   name: '${mainResourceGroup.name}-chatapp'
-//   location: location
-//   tags: tags
-// }
-// for now we will be using the same RG
-resource chatappResourceGroup 'Microsoft.Resources/resourceGroups@2021-04-01' existing = if(deployChatApp) {
-  name: mainResourceGroup.name
-}
-
-
 
 module dnsDeployment './modules/networking/dns.bicep' = [for privateDnsZoneName in privateDnsZoneNames: {
   name: 'dns-deployment-${privateDnsZoneName}'
@@ -155,15 +142,7 @@ module managedIdentityProxy './modules/security/managed-identity.bicep' = {
   }
 }
 
-module managedIdentityChatApp './modules/security/managed-identity.bicep' = if(deployChatApp) {
-  name: 'managed-identity-chatapp'
-  scope: chatappResourceGroup
-  params: {
-    name: !empty(chatappIdentityName) ? chatappIdentityName : '${abbrs.managedIdentityUserAssignedIdentities}${resourceToken}-chatapp'
-    location: location
-    tags: tags
-  }
-}
+
 
 module managedIdentityDeploymentScript './modules/security/managed-identity.bicep' = {
   name: 'managed-identity-deployment-script'
@@ -355,7 +334,7 @@ module containerRegistry './modules/host/container-registry.bicep' = {
     location: location
     tags: tags
     proxyManagedIdentityName: managedIdentityProxy.outputs.managedIdentityName
-    chatappManagedIdentityName: managedIdentityChatApp.outputs.managedIdentityName
+    
     myIpAddress: myIpAddress
     //needed for container app deployment
     adminUserEnabled: true
@@ -436,21 +415,6 @@ module proxyApiBackend 'modules/apim/apim-backend.bicep' = {
 }
 
 
-module chatApp 'modules/appservice/azurechat.bicep'= if(deployChatApp){
-  name: 'appservice-app-azurechat'
-  scope: chatappResourceGroup
-  params: {
-    webapp_name: !empty(chatAppName) ? chatAppName : '${abbrs.webSitesAppService}${resourceToken}-azurechat'
-    appservice_name: !empty(chatAppName) ? '${abbrs.webServerFarms}${chatAppName}' : '${abbrs.webServerFarms}${resourceToken}-azurechat'
-    location: location
-    tags: tags
-    azureChatIdentityName: managedIdentityChatApp.outputs.managedIdentityName
-    appConfigEndpoint: appconfigChatApp.outputs.appConfigEndPoint
-    subnetId: vnet.outputs.appServiceSubnetId
-    keyvaultName: keyvault.outputs.keyvaultName
-  }
-}
-
 
 
 //create the proxyconfig structure for appconfig
@@ -484,23 +448,7 @@ var proxyConfig = {
   ]
 }
 
-module cosmosDb 'modules/cosmosdb/account.bicep' = if(deployChatApp){
-  name: 'cosmosdb'
-  scope: chatappResourceGroup
-  params: {
-    name: !empty(cosmosDbAccountName) ? cosmosDbAccountName : '${abbrs.documentDBDatabaseAccounts}${resourceToken}'
-    location: location
-    cosmosAccountPrivateDnsZoneName: cosmosAccountPrivateDnsZoneName
-    vNetName: vnet.outputs.vnetName
-    privateEndpointSubnetName: vnet.outputs.privateEndpointSubnetName
-    cosmosPrivateEndpointName: '${abbrs.documentDBDatabaseAccounts}${abbrs.privateEndpoints}${resourceToken}'
-    chatAppIdentityName: managedIdentityChatApp.outputs.managedIdentityName
-    myIpAddress: myIpAddress
-    myPrincipalId: myPrincipalId
-    dnsResourceGroupName: mainResourceGroup.name
-    vnetResourceGroupName: mainResourceGroup.name
-  }
-}
+
 
 module appconfigProxy 'modules/appconfig/configurationStore.bicep' = {
   name: 'appconfigProxy-deployment'
@@ -530,56 +478,36 @@ module appconfigProxySettings 'modules/appconfig/appconfig-proxy.bicep' = {
   }
 }
 
-module appconfigChatApp 'modules/appconfig/configurationStore.bicep' = if(deployChatApp) {
-  name: 'appconfigChatApp-deployment'
-  scope: chatappResourceGroup
-  params: {
-    name: !empty(chatappConfigurationName) ? chatappConfigurationName : '${abbrs.appConfigurationConfigurationStores}${resourceToken}-chatapp'
+module chatapp 'azurechat.bicep' = if(deployChatApp) {
+  scope: mainResourceGroup
+  name: 'deploy-chat-app'
+  params:{
     location: location
-    appconfigPrivateDnsZoneName: appConfigPrivateDnsZoneName
+    tags: tags
+    chatappIdentityName: !empty(chatappIdentityName) ? chatappIdentityName : '${abbrs.managedIdentityUserAssignedIdentities}${resourceToken}-chatapp'
+    chatAppName: !empty(chatAppName) ? chatAppName : '${abbrs.webSitesAppService}${resourceToken}-azurechat'
+    chatServiceName: !empty(chatAppName) ? '${abbrs.webServerFarms}${chatAppName}' : '${abbrs.webServerFarms}${resourceToken}-azurechat'
     vnetName: vnet.outputs.vnetName
+    appServiceSubnetName: vnet.outputs.appServiceSubnetName
+    keyVaultName: !empty(keyVaultName) ? keyVaultName : '${abbrs.keyVaultVaults}${resourceToken}'
+    keyvaultNamePrivateEndpointName: '${abbrs.keyVaultVaults}${abbrs.privateEndpoints}${resourceToken}'
+    keyvaultPrivateDnsZoneName: keyvaultPrivateDnsZoneName
+    cosmosDbAccountName: !empty(cosmosDbAccountName) ? cosmosDbAccountName : '${abbrs.documentDBDatabaseAccounts}${resourceToken}'
     privateEndpointSubnetName: vnet.outputs.privateEndpointSubnetName
     appconfigPrivateEndpointName: '${abbrs.appConfigurationConfigurationStores}${abbrs.privateEndpoints}${resourceToken}-chatapp'
-    dnsResourceGroupName: mainResourceGroup.name
-    vnetResourceGroupName: mainResourceGroup.name
-  }
-}
-
-module appconfigChatAppSettings 'modules/appconfig/appconfig-chatapp.bicep' = {
-  name: 'appconfigChatApp-setting'
-  scope: chatappResourceGroup
-  params:{
-    name: appconfigChatApp.outputs.appConfigName
+    chatappConfigurationName: !empty(chatappConfigurationName) ? chatappConfigurationName : '${abbrs.appConfigurationConfigurationStores}${resourceToken}-chatapp'
     apimEndpoint: apim.outputs.apimEndpoint
-    chatappIdentityName: managedIdentityChatApp.outputs.managedIdentityName
-    cosmosDbEndPoint: cosmosDb.outputs.cosmosDbEndPoint
-    keyVaultUrl: keyvault.outputs.keyvaultUrl
-    openAIApiVersion: OpenAIApiVersion
-    myPrincipalId: myPrincipalId
-  }
-}
-
-
-module keyvault 'modules/keyvault/keyvault.bicep' = if(deployChatApp){
-  name: 'keyvault'
-  scope: chatappResourceGroup
-  params: {
-    name: !empty(keyVaultName) ? keyVaultName : '${abbrs.keyVaultVaults}${resourceToken}'
-    location: location
-    chatappIdentityName: managedIdentityChatApp.outputs.managedIdentityName
-    vNetName: vnet.outputs.vnetName
-    privateEndpointSubnetName: vnet.outputs.privateEndpointSubnetName
-    keyvaultPrivateEndpointName: '${abbrs.keyVaultVaults}${abbrs.privateEndpoints}${resourceToken}'
-    keyvaultPrivateDnsZoneName: keyvaultPrivateDnsZoneName
     apimServiceName: apim.outputs.apimName
+    appConfigPrivateDnsZoneName: appConfigPrivateDnsZoneName
+    cosmosAccountPrivateDnsZoneName: cosmosAccountPrivateDnsZoneName
+    cosmosPrivateEndpointName: '${abbrs.documentDBDatabaseAccounts}${abbrs.privateEndpoints}${resourceToken}'
     myIpAddress: myIpAddress
     myPrincipalId: myPrincipalId
-    dnsResourceGroupName: mainResourceGroup.name
-    vnetResourceGroupName: mainResourceGroup.name
-    apimResourceGroupName: mainResourceGroup.name
-    
+    OpenAIApiVersion: OpenAIApiVersion
   }
+
 }
+
 
 output TENANT_ID string = subscription().tenantId
 output DEPLOYMENT_LOCATION string = location
@@ -593,8 +521,8 @@ output AZURE_APPCONFIG_ENDPOINT string = appconfigProxy.outputs.appConfigEndPoin
 output AZURE_RESOURCE_GROUP string = mainResourceGroup.name
 output APPLICATIONINSIGHTS_CONNECTION_STRING string = monitoring.outputs.applicationInsightsConnectionString
 output DEPLOY_AZURE_CHATAPP bool = deployChatApp
-output AZURE_CHATAPP_URL string = deployChatApp ? chatApp.outputs.webAppUrl : ''
-output AZURE_CHATAPP_KEYVAULT_NAME string = deployChatApp ? keyvault.outputs.keyvaultName : ''
-output AZURE_CLIENT_ID string = deployChatApp ? managedIdentityChatApp.outputs.managedIdentityClientId : ''
+output AZURE_CHATAPP_URL string = deployChatApp ? chatapp.outputs.webAppUrl : ''
+output AZURE_CHATAPP_KEYVAULT_NAME string = deployChatApp ? chatapp.outputs.keyvaultName : ''
+output AZURE_CLIENT_ID string = deployChatApp ? chatapp.outputs.managedIdentityClientId : ''
 output AZURE_TENANT_ID string = subscription().tenantId
 

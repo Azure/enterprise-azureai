@@ -25,32 +25,20 @@ services:
    
 hooks:
   preprovision: #determine "MY_IP" and write to .env file | whitelist IP during deployment
-    posix:  
-      shell: sh
-      run: ./scripts/set-env.sh
-      interactive: true
-    windows:
-      shell: pwsh
-      run: ./scripts/set-env.ps1
-      interactive: true
+    shell: pwsh
+    run: ./scripts/set-env.ps1
+    interactive: true
+    continueOnError: false
   postprovision: # Deploy the azurechat app if DEPLOY_AZURE_CHATAPP is set to true
-    posix:  
-      shell: sh
-      run: ./scripts/deploy-azurechat.sh
-      interactive: true
-    windows:
-      shell: pwsh
-      run: ./scripts/deploy-azurechat.ps1 
-      interactive: true
+    shell: pwsh
+    run: ./scripts/deploy-azurechat.ps1 
+    interactive: true
+    continueOnError: false
   postdown:
-    posix:  
-      shell: sh
-      run: ./scripts/cleanup.sh
-      interactive: true
-    windows:
-      shell: pwsh
-      run: ./scripts/cleanup.ps1
-      interactive: true
+    shell: pwsh
+    run: ./scripts/cleanup.ps1
+    interactive: true
+    continueOnError: false
     
 
 workflows:

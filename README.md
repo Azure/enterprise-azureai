@@ -80,6 +80,7 @@ Read more: [Architecture in detail](#architecture-in-detail)
 - [Docker Desktop](https://www.docker.com/products/docker-desktop)
 - [Node.js](https://nodejs.org/en/download/) v18.17 or higher
 - [jq](https://jqlang.github.io/jq/download/) required on Mac and Linux
+- [PowerShell](https://learn.microsoft.com/en-us/powershell/scripting/install/installing-powershell-on-macos?view=powershell-7.5) required on Mac 
 
 ### 1. Initialize a new `azd` environment
 

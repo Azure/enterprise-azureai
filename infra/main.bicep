@@ -7,8 +7,8 @@ targetScope = 'subscription'
 param environmentName string
 
 @minLength(1)
-@description('Primary location for all resources (filtered on available regions for Azure Open AI Service).')
-@allowed(['westeurope','southcentralus','australiaeast', 'canadaeast', 'eastus', 'eastus2', 'francecentral', 'japaneast', 'northcentralus', 'swedencentral', 'switzerlandnorth', 'uksouth'])
+@description('Primary location for all resources (filtered on available regions for Azure Open AI Service, model gpt-35-turbo).')
+@allowed(['australiaeast', 'eastus', 'eastus2', 'japaneast', 'francecentral' ,'swedencentral', 'uksouth', 'westus','westus3'])
 param location string
 
 @description('Use Redis Cache for Azure API Management.')
@@ -23,13 +23,24 @@ param useRedisCacheForAPIM bool = false
 param deployChatApp bool
 param OpenAIApiVersion string = '2023-03-15-preview'
 
-@description('Add Azure Open AI Service to secondary region for load balancing.')
-@allowed(['','westeurope','southcentralus','australiaeast', 'canadaeast', 'eastus', 'eastus2', 'francecentral', 'japaneast', 'northcentralus', 'swedencentral', 'switzerlandnorth', 'uksouth'])
+@description('Add Azure Open AI Service to secondary region for load balancing. Blank to disable.')
+@allowed(['','australiaeast', 'eastus', 'eastus2', 'japaneast', 'francecentral' ,'swedencentral', 'uksouth', 'westus','westus3'])
 param secondaryOpenAILocation string = ''
 
+// 3/3/2025 - V2 Tier available OpenAI locations for Azure API Management
+param arrayApimV2Locations array = [
+  'australiaeast'
+  'eastus'
+  'eastus2'
+  'japaneast'
+  'francecentral'
+  'uksouth'
+  'westus'
+]
+
 @description('Azure API Management SKU.')
-//@allowed(['StandardV2', 'Developer', 'Premium'])
-param apimSku string = 'StandardV2'
+@allowed(['StandardV2', 'Developer', 'Premium'])
+param apimSku string = ((contains(arrayApimV2Locations, location)) ? 'StandardV2' : 'Developer')
 
 //Leave blank to use default naming conventions
 param resourceGroupName string = ''
@@ -65,15 +76,13 @@ param myPrincipalId string = ''
 param cosmosDbAccountName string = ''
 param keyVaultName string = ''
 
-
-
-//Determine the version of the chat model to deploy
-param arrayVersion0301Locations array = [
-  'westeurope'
-  'southcentralus'
+//Determine the version of the chat model to deploy, update 03/03/2025 to the latest available version/model.
+param arrayVersion1106Locations array = [
+  'francecentral'
+  'swedencentral'
 ]
-param gptModelVersion string = ((contains(arrayVersion0301Locations, location)) ? '0301' : '0613')
-param gptModelVersionSecondary string = ((contains(arrayVersion0301Locations, secondaryOpenAILocation)) ? '0301' : '0613')
+param gptModelVersion string = ((contains(arrayVersion1106Locations, location)) ? '1106' : '0125')
+param gptModelVersionSecondary string = ((contains(arrayVersion1106Locations, secondaryOpenAILocation)) ? '1106' : '0125')
 
 var abbrs = loadJsonContent('./abbreviations.json')
 var resourceToken = toLower(uniqueString(subscription().id, environmentName, location))
